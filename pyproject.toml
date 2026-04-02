@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgegod"
+version = "0.1.0"
+description = "Multi-model autonomous coding engine. Local + Cloud. 24/7."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [{ name = "ForgeGod Contributors" }]
+keywords = ["ai", "coding", "agent", "autonomous", "multi-model", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+    "typer[all]>=0.15",
+    "httpx>=0.28",
+    "pydantic>=2.11",
+    "rich>=14",
+    "openai>=1.82",
+    "gitpython>=3.1",
+    "toml>=0.10",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.52"]
+all = ["anthropic>=0.52"]
+dev = ["pytest>=8", "pytest-asyncio>=0.25", "ruff>=0.11"]
+
+[project.scripts]
+forgegod = "forgegod.cli:app"
+fg = "forgegod.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/forgegod-ai/forgegod"
+Repository = "https://github.com/forgegod-ai/forgegod"
+
+[tool.setuptools.packages.find]
+include = ["forgegod*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
