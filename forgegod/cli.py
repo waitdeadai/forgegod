@@ -21,13 +21,47 @@ app = typer.Typer(
 )
 console = Console()
 
+# ── Mascot — The One-Eyed Triangle ──
+_VER = __version__
+
+
+def _build_banner():
+    """Build the full mascot banner using Rich Text (avoids markup escaping)."""
+    from rich.text import Text
+
+    t = Text()
+    t.append("         ___\n", style="yellow")
+    t.append("        (   )\n", style="yellow")
+    t.append("         ---\n", style="yellow")
+    t.append("          .\n", style="cyan")
+    t.append("         / \\\n", style="cyan")
+    t.append("        / ", style="cyan")
+    t.append("1", style="bold white")
+    t.append(" \\\n", style="cyan")
+    t.append("       /     \\\n", style="cyan")
+    t.append("      /       \\\n", style="cyan")
+    t.append("     /_________\\\n", style="cyan")
+    t.append("\n")
+    t.append("   F O R G E G O D", style="bold cyan")
+    t.append(f"  v{_VER}\n", style="dim")
+    t.append("   Autonomous coding engine\n", style="dim")
+    return t
+
+
+def _print_banner(mini: bool = False):
+    """Print the ForgeGod mascot banner."""
+    if mini:
+        console.print(f"[cyan]^[/cyan] [bold cyan]ForgeGod[/bold cyan] [dim]v{_VER}[/dim]")
+    else:
+        console.print(_build_banner())
+
 
 @app.callback(invoke_without_command=True)
 def main(
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
 ):
     if version:
-        console.print(f"ForgeGod v{__version__}")
+        _print_banner()
         raise typer.Exit()
 
 
@@ -38,11 +72,12 @@ def init(
 ):
     """Initialize a ForgeGod project with auto-detection."""
     import os
-    import shutil
 
     from forgegod.config import init_project
 
-    console.print(Panel("[bold cyan]ForgeGod[/bold cyan] — Initializing project", style="cyan"))
+    _print_banner()
+    console.print("[bold]Initializing project...[/bold]")
+    console.print()
 
     # 1. Detect API keys
     providers: list[str] = []
@@ -149,6 +184,7 @@ def run(
     """Execute a single coding task."""
     from forgegod.config import load_config
 
+    _print_banner(mini=True)
     config = load_config()
     if model:
         config.models.coder = model
@@ -205,7 +241,8 @@ def loop(
         router = ModelRouter(config)
         ralph = RalphLoop.from_prd_file(prd, config, router=router)
 
-        console.print(Panel("[bold green]ForgeGod Loop Started[/bold green]\nPress Ctrl+C to stop."))
+        _print_banner()
+        console.print("[bold green]Ralph Loop started.[/bold green] Press Ctrl+C to stop.\n")
         try:
             state = await ralph.run()
         except KeyboardInterrupt:
@@ -359,6 +396,7 @@ def memory():
     """Show memory system health and top learnings."""
     from forgegod.config import load_config
 
+    _print_banner(mini=True)
     config = load_config()
 
     async def _memory():
