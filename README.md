@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/mascot.svg" alt="ForgeGod" width="120" />
+  <img src="docs/mascot.png" alt="ForgeGod" width="120" />
 </p>
 
 <h1 align="center">ForgeGod</h1>
