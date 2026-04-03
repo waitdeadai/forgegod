@@ -30,6 +30,7 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5-20251001": (0.80, 4.00),
     # Local (free)
     "qwen3-coder-next": (0.0, 0.0),
+    "qwen3.5:9b": (0.0, 0.0),
     "devstral-small-2:24b": (0.0, 0.0),
     # OpenRouter (varies — user overrides)
 }
@@ -50,6 +51,7 @@ class BudgetConfig(BaseModel):
 
 class LoopConfig(BaseModel):
     max_iterations: int = 100
+    max_context_tokens: int = 100_000
     context_rotation_pct: int = 80
     gutter_detection: bool = True
     gutter_threshold: int = 3

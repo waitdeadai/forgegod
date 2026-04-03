@@ -513,7 +513,7 @@ class Agent:
         total_chars = sum(len(m.get("content", "")) for m in self.messages)
         # Rough: 4 chars ≈ 1 token, most models have 128K context
         estimated_tokens = total_chars / 4
-        max_tokens = 100_000  # Conservative limit
+        max_tokens = getattr(self.config.loop, "max_context_tokens", 100_000)
 
         threshold = max_tokens * (self.config.loop.context_rotation_pct / 100)
         if estimated_tokens < threshold:

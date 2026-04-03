@@ -204,6 +204,18 @@ class RalphLoop:
                 f"Story [{story.id}] DONE — {result.tool_calls_count} tool calls, "
                 f"${result.total_usage.cost_usd:.4f}"
             )
+            # Auto-push to remote after successful story
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "git", "push", "origin", "main",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await proc.communicate()
+                if proc.returncode == 0:
+                    logger.info(f"Story [{story.id}] pushed to origin/main")
+            except Exception:
+                logger.debug("Auto-push skipped")
         else:
             # Check retry limit
             if story.iterations >= self.config.loop.story_max_retries:
