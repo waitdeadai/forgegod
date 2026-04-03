@@ -97,8 +97,7 @@ class ModelRouter:
             return "[BUDGET HALT: All LLM calls paused]", ModelUsage()
 
         if self.config.budget.mode == BudgetMode.LOCAL_ONLY:
-            spec = ModelSpec.parse(self.config.ollama.model)
-            spec.provider = "ollama"
+            spec = ModelSpec(provider="ollama", model=self.config.ollama.model)
             return await self._call_single(
                 spec, prompt, system, json_mode, max_tokens, temperature, tools
             )

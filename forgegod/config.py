@@ -31,6 +31,7 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     # Local (free)
     "qwen3-coder-next": (0.0, 0.0),
     "qwen3.5:9b": (0.0, 0.0),
+    "tq-coder": (0.0, 0.0),
     "devstral-small-2:24b": (0.0, 0.0),
     # OpenRouter (varies — user overrides)
 }

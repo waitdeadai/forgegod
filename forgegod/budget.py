@@ -107,6 +107,10 @@ class BudgetTracker:
         if self.config.budget.mode == BudgetMode.HALT:
             return BudgetMode.HALT
 
+        # Local-only mode uses free models — skip spend checks entirely
+        if self.config.budget.mode == BudgetMode.LOCAL_ONLY:
+            return BudgetMode.LOCAL_ONLY
+
         status = self.get_status()
 
         # Auto-halt at 100% of daily limit (check FIRST — higher priority)

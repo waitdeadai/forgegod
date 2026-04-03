@@ -11,24 +11,26 @@ echo "=== ForgeGod Self-Improvement Launcher ==="
 echo "Repo: $REPO_DIR"
 echo ""
 
-# ── 1. Pre-flight checks ──
-if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "ERROR: Ollama is not running. Start it with: ollama serve"
-    exit 1
-fi
-echo "[OK] Ollama is running"
+# ── 1. Pre-flight checks (use Python — Git Bash curl can't reach WSL2 Ollama) ──
+python3 -c "
+import urllib.request, json, sys
+try:
+    r = urllib.request.urlopen('http://localhost:11434/api/tags', timeout=5)
+    data = json.loads(r.read())
+    names = [m['name'] for m in data.get('models', [])]
+    print('[OK] Ollama is running')
+    if not any('qwen3.5' in n for n in names):
+        print('ERROR: qwen3.5:9b not found. Pull it: ollama pull qwen3.5:9b')
+        sys.exit(1)
+    print('[OK] qwen3.5:9b model available')
+except Exception as e:
+    print(f'ERROR: Ollama is not running ({e}). Start it with: ollama serve')
+    sys.exit(1)
+"
 
-if ! curl -s http://localhost:11434/api/tags | grep -q "qwen3.5"; then
-    echo "ERROR: qwen3.5:9b not found. Pull it: ollama pull qwen3.5:9b"
-    exit 1
-fi
-echo "[OK] qwen3.5:9b model available"
-
-if ! command -v forgegod &> /dev/null; then
-    echo "Installing forgegod..."
-    pip install -e "$REPO_DIR[dev]" --quiet
-fi
-echo "[OK] forgegod CLI installed"
+# Install forgegod (use python3 -m since exe may not be on PATH)
+pip install -e ".[dev]" --quiet 2>/dev/null
+echo "[OK] forgegod installed"
 
 # ── 2. Create runtime directories ──
 mkdir -p .forgegod/hooks .forgegod/logs .forgegod/skills
@@ -125,8 +127,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add unit tests for router.py — circuit breaker and fallback chain logic",
       "description": "Create tests/test_router.py. Test ModelSpec.parse(), circuit breaker open/close, LOCAL_ONLY mode routing, fallback chain ordering. Use unittest.mock to mock httpx calls. Target: 8+ test functions.",
       "priority": 1,
-      "status": "TODO",
-      "files": ["tests/test_router.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -136,8 +137,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add unit tests for planner.py — PRD generation and story decomposition",
       "description": "Create tests/test_planner.py. Test _parse_prd_response(), story priority ordering, PRD JSON serialization round-trip. Mock the LLM call. Target: 6+ test functions.",
       "priority": 2,
-      "status": "TODO",
-      "files": ["tests/test_planner.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -147,8 +147,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add unit tests for reviewer.py — review verdict parsing and sampling logic",
       "description": "Create tests/test_reviewer.py. Test _parse_review(), should_review() sample rate, ReviewVerdict enum, edge cases (empty response, malformed JSON). Target: 6+ test functions.",
       "priority": 3,
-      "status": "TODO",
-      "files": ["tests/test_reviewer.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -158,8 +157,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add unit tests for coder.py — code extraction, AST validation, language detection",
       "description": "Create tests/test_coder.py. Test _extract_code() with markdown fences, _validate_python_ast() with valid/invalid code, _detect_language(). Target: 8+ test functions.",
       "priority": 4,
-      "status": "TODO",
-      "files": ["tests/test_coder.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -169,8 +167,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add unit tests for loop.py — story selection, state management, kill switch",
       "description": "Create tests/test_loop.py. Test _next_story() priority ordering, _all_done() detection, _is_killed() file check, _build_story_prompt() includes guardrails. Target: 6+ test functions.",
       "priority": 5,
-      "status": "TODO",
-      "files": ["tests/test_loop.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -180,8 +177,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add comprehensive type hints to tools/filesystem.py",
       "description": "Add return type annotations and parameter type hints to all functions in forgegod/tools/filesystem.py. Add 'from __future__ import annotations' if missing. Do NOT change any logic.",
       "priority": 6,
-      "status": "TODO",
-      "files": ["forgegod/tools/filesystem.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -191,8 +187,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add comprehensive type hints to tools/shell.py",
       "description": "Add return type annotations and parameter type hints to all functions in forgegod/tools/shell.py. Add 'from __future__ import annotations' if missing. Do NOT change any logic.",
       "priority": 7,
-      "status": "TODO",
-      "files": ["forgegod/tools/shell.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -202,8 +197,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add comprehensive type hints to tools/git.py",
       "description": "Add return type annotations and parameter type hints to all functions in forgegod/tools/git.py. Add 'from __future__ import annotations' if missing. Do NOT change any logic.",
       "priority": 8,
-      "status": "TODO",
-      "files": ["forgegod/tools/git.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -213,8 +207,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add module and function docstrings to budget.py",
       "description": "Add a module-level docstring and Google-style docstrings to all public functions in forgegod/budget.py. Include Args, Returns, and brief description. Do NOT change any logic.",
       "priority": 9,
-      "status": "TODO",
-      "files": ["forgegod/budget.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -224,8 +217,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add type hints and docstrings to tools/mcp.py",
       "description": "Add return type annotations, parameter type hints, and Google-style docstrings to all functions in forgegod/tools/mcp.py. Do NOT change any logic.",
       "priority": 10,
-      "status": "TODO",
-      "files": ["forgegod/tools/mcp.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -235,8 +227,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Improve edit_file error messages when fuzzy matching fails",
       "description": "In forgegod/tools/filesystem.py, improve the error message returned by edit_file when old_string is not found. Include: the filename, how many lines the file has, the first 50 chars of old_string searched for, and a hint to use read_file first.",
       "priority": 11,
-      "status": "TODO",
-      "files": ["forgegod/tools/filesystem.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -246,8 +237,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Graceful error handling when Ollama is unreachable",
       "description": "In forgegod/router.py, wrap the httpx call to Ollama in _call_ollama() with a specific error message when connection is refused (Ollama not running) vs timeout (model loading). Return a helpful error string instead of a raw exception trace.",
       "priority": 12,
-      "status": "TODO",
-      "files": ["forgegod/router.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -257,8 +247,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add --verbose flag to CLI for debug logging",
       "description": "In forgegod/cli.py, add a --verbose/-v flag to the run and loop commands that sets logging level to DEBUG. Currently logging is configured but there is no user-facing way to enable debug output.",
       "priority": 13,
-      "status": "TODO",
-      "files": ["forgegod/cli.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -268,8 +257,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Enhance repo_map to show file sizes and last-modified dates",
       "description": "In forgegod/tools/filesystem.py, enhance the repo_map tool output to include file size (human-readable) and last modified date for each file. Keep the existing tree structure but append size info.",
       "priority": 14,
-      "status": "TODO",
-      "files": ["forgegod/tools/filesystem.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -279,8 +267,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add forgegod doctor command for health checks",
       "description": "In forgegod/cli.py, add a 'doctor' subcommand that checks: (1) Ollama reachable + models available, (2) config.toml exists and is valid, (3) git repo initialized, (4) Python version >= 3.11, (5) ruff available, (6) pytest available. Print green checkmarks or red X for each.",
       "priority": 15,
-      "status": "TODO",
-      "files": ["forgegod/cli.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -290,8 +277,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Register git_log as an official tool in the tool registry",
       "description": "In forgegod/tools/git.py, git_log function exists but may not be registered via register_tool(). Ensure it is registered with proper name, description, and parameter schema so the agent can use it.",
       "priority": 16,
-      "status": "TODO",
-      "files": ["forgegod/tools/git.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -301,8 +287,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add --dry-run mode to the Ralph loop",
       "description": "In forgegod/loop.py and forgegod/cli.py, add a --dry-run flag that loads the PRD, prints the story execution order, and exits without running any agents. Useful for validating the PRD before committing to a long loop.",
       "priority": 17,
-      "status": "TODO",
-      "files": ["forgegod/loop.py", "forgegod/cli.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -312,8 +297,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Improve CONTRIBUTING.md with development setup instructions",
       "description": "Rewrite CONTRIBUTING.md to include: (1) git clone + pip install -e '.[dev]', (2) running tests with pytest, (3) linting with ruff, (4) how to add a new tool, (5) how to run the loop locally, (6) PR guidelines. Keep it concise.",
       "priority": 18,
-      "status": "TODO",
-      "files": ["CONTRIBUTING.md"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -323,8 +307,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Add __all__ exports to all __init__.py files",
       "description": "In forgegod/__init__.py and forgegod/tools/__init__.py, add __all__ lists that explicitly export the public API. This helps IDE autocompletion and prevents accidental internal imports.",
       "priority": 19,
-      "status": "TODO",
-      "files": ["forgegod/__init__.py", "forgegod/tools/__init__.py"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -334,8 +317,7 @@ cat > .forgegod/prd.json << 'PRDEOF'
       "title": "Fix any ruff formatting and lint violations",
       "description": "Run 'ruff check forgegod/ tests/ --fix' and 'ruff format forgegod/ tests/' to fix all auto-fixable issues. Then manually fix any remaining violations. Target: zero ruff errors.",
       "priority": 20,
-      "status": "TODO",
-      "files": ["forgegod/"],
+      "status": "todo",
       "iterations": 0,
       "error_log": [],
       "files_touched": []
@@ -473,4 +455,4 @@ echo "Auto-push: ON (after each passing story)"
 echo ""
 
 # ── 10. Launch ──
-forgegod loop --prd .forgegod/prd.json --max 200 2>&1 | tee -a .forgegod/logs/loop.log
+python3 -m forgegod loop --prd .forgegod/prd.json --max 200 2>&1 | tee -a .forgegod/logs/loop.log
