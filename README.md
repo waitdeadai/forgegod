@@ -1,86 +1,194 @@
-# ForgeGod
+<p align="center">
+  <img src="site/mascot.svg" alt="ForgeGod" width="120" />
+</p>
 
-**Multi-model autonomous coding engine. Local + Cloud. 24/7.**
+<h1 align="center">ForgeGod</h1>
 
-ForgeGod orchestrates OpenAI models + local LLMs (Qwen via Ollama) for continuous autonomous coding. It combines multi-model routing, Reflexion code generation, 24/7 autonomous loops, cost-aware budgets, and self-improving strategies into a single CLI.
+<p align="center">
+  <strong>The coding agent that runs 24/7, learns from its mistakes, and costs $0 when you want it to.</strong>
+</p>
 
-## Features
+<p align="center">
+  <a href="https://pypi.org/project/forgegod/"><img src="https://img.shields.io/pypi/v/forgegod?color=00e5ff&style=flat-square" alt="PyPI"></a>
+  <a href="https://github.com/waitdeadai/forgegod/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-00e5ff?style=flat-square" alt="License"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
+  <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
+  <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
+</p>
 
-- **Multi-model auto-routing** — Cloud (OpenAI, Anthropic, OpenRouter) + Local (Ollama/Qwen) with circuit breaker and fallback chains
-- **Ralph Loop** — 24/7 autonomous coding from a PRD. Progress in git, not LLM context. Fresh agent per story.
-- **Reflexion Coder** — 3-attempt code generation with escalating models and AST validation
-- **SICA** — Self-Improving Coding Agent: modifies its own strategy based on outcomes (6 safety layers)
-- **Cost-aware budgets** — normal/throttle/local-only/halt modes, auto-triggered by spend
-- **Parallel worktrees** — Multiple stories at once via git worktrees
-- **Cross-session memory** — Principles + causal graph learned from outcomes
-- **MCP support** — Connect to 5,800+ Model Context Protocol servers
-- **16 built-in tools** — File ops, shell, git, grep, glob, MCP
+<p align="center">
+  <code>16 built-in tools</code> &bull; <code>4 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
+</p>
 
-## Install
+---
+
+ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Ollama, OpenRouter) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
 
 ```bash
 pip install forgegod
 ```
 
-Or from source:
+## What Makes ForgeGod Different
 
-```bash
-git clone https://github.com/waitdead/forgegod.git
-cd forgegod
-pip install -e ".[dev]"
-```
+Every other coding CLI uses **one model at a time** and **resets to zero** each session. ForgeGod doesn't.
+
+| Capability | Claude Code | Codex CLI | Aider | Cursor | **ForgeGod** |
+|:-----------|:----------:|:---------:|:-----:|:------:|:------------:|
+| Multi-model auto-routing | - | - | manual | - | **yes** |
+| Local + cloud hybrid | - | basic | basic | - | **native** |
+| 24/7 autonomous loops | - | - | - | - | **yes** |
+| Cross-session memory | basic | - | - | removed | **5-tier** |
+| Self-improving strategy | - | - | - | - | **yes (SICA)** |
+| Cost-aware budget modes | - | - | - | - | **yes** |
+| Reflexion code generation | - | - | - | - | **3-attempt** |
+| Parallel git worktrees | subagents | - | - | - | **yes** |
+
+### The Moat: Harness > Model
+
+A [22-point SWE-bench swing](https://www.cognition.ai/blog/swe-bench-devin) comes from harness engineering, not model upgrades. ForgeGod is the harness:
+
+- **Ralph Loop** — 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
+- **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
+- **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). AST validation at every step.
+- **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. 6 safety layers prevent drift.
+- **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
 
 ## Quickstart
 
 ```bash
-# Initialize project
+# Install
+pip install forgegod
+
+# Initialize a project
 forgegod init
 
-# Single-shot task
+# Single task
 forgegod run "Add a /health endpoint to server.py with uptime and version info"
 
-# Plan a project (generates PRD)
+# Plan a project → generates PRD
 forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
 # 24/7 autonomous loop from PRD
 forgegod loop --prd .forgegod/prd.json
 
-# Check cost
+# Check what it learned
+forgegod memory
+
+# View cost breakdown
+forgegod cost
+```
+
+### Zero-Config Start
+
+ForgeGod auto-detects your environment on first run:
+
+1. Finds API keys in env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+2. Checks if Ollama is running locally
+3. Detects your project language, test framework, and linter
+4. Picks the best model for each role based on what's available
+5. Creates `.forgegod/config.toml` with sensible defaults
+
+No manual setup required. Just run `forgegod init` and go.
+
+## How the Ralph Loop Works
+
+```
+┌─────────────────────────────────────────────────┐
+│                  RALPH LOOP                      │
+│                                                  │
+│  ┌──────┐   ┌───────┐   ┌─────────┐   ┌─────┐ │
+│  │ READ │──▶│ SPAWN │──▶│ EXECUTE │──▶│ VAL │ │
+│  │ PRD  │   │ AGENT │   │  STORY  │   │IDATE│ │
+│  └──────┘   └───────┘   └─────────┘   └──┬──┘ │
+│      ▲                                    │     │
+│      │         ┌────────┐    ┌────────┐   │     │
+│      └─────────│ROTATE  │◀───│COMMIT  │◀──┘     │
+│                │CONTEXT │    │OR RETRY│   pass   │
+│                └────────┘    └────────┘          │
+│                                                  │
+│  Progress is in GIT, not LLM context.           │
+│  Fresh agent per story. No context rot.          │
+│  Create .forgegod/KILLSWITCH to stop.           │
+└─────────────────────────────────────────────────┘
+```
+
+1. **Read PRD** — Pick highest-priority TODO story
+2. **Spawn agent** — Fresh context (progress is in git, not memory)
+3. **Execute** — Agent uses 16 tools to implement the story
+4. **Validate** — Tests, lint, syntax, frontier review
+5. **Commit or retry** — Pass: commit + mark done. Fail: retry up to 3x with model escalation
+6. **Rotate** — Next story. Context is always fresh.
+
+## 5-Tier Memory System
+
+ForgeGod has the most advanced memory system of any open-source coding agent:
+
+| Tier | What | How | Retention |
+|:-----|:-----|:----|:----------|
+| **Episodic** | What happened per task | Full outcome records | 90 days |
+| **Semantic** | Extracted principles | Confidence + decay + reinforcement | Indefinite |
+| **Procedural** | Code patterns & fix recipes | Success rate tracking | Indefinite |
+| **Graph** | Entity relationships + causal edges | Auto-extracted from outcomes | Indefinite |
+| **Error-Solution** | Error pattern → fix mapping | Fuzzy match lookup | Indefinite |
+
+Memories **decay** without reinforcement (30-day half-life), **consolidate** automatically (merge similar, prune weak), and are **injected** into every prompt as a Memory Spine ranked by relevance + recency + importance.
+
+```bash
+# Check memory health
+forgegod memory
+
+# Memory is stored in .forgegod/memory.db (SQLite)
+# Global learnings in ~/.forgegod/memory.db (cross-project)
+```
+
+## Budget Modes
+
+| Mode | Behavior | Trigger |
+|:-----|:---------|:--------|
+| `normal` | Use all configured models | Default |
+| `throttle` | Prefer local, cloud for review only | 80% of daily limit |
+| `local-only` | Ollama only, **$0 operation** | Manual or 95% limit |
+| `halt` | Stop all LLM calls | 100% of daily limit |
+
+```bash
+# Check spend
 forgegod cost
 
-# View status
-forgegod status
+# Override mode
+export FORGEGOD_BUDGET_MODE=local-only
 ```
 
 ## Configuration
 
-ForgeGod uses TOML config files with 3-level priority:
-
-1. Environment variables (`FORGEGOD_*`)
-2. Project config (`.forgegod/config.toml`)
-3. Global config (`~/.forgegod/config.toml`)
+ForgeGod uses TOML config with 3-level priority: env vars > project > global.
 
 ```toml
+# .forgegod/config.toml
+
 [models]
-planner = "openai:gpt-4o-mini"
-coder = "ollama:qwen3-coder-next"
-reviewer = "openai:o4-mini"
-sentinel = "openai:gpt-4o"
-escalation = "openai:gpt-4o"
+planner = "openai:gpt-4o-mini"        # Cheap planning
+coder = "ollama:qwen3-coder-next"     # Free local coding
+reviewer = "openai:o4-mini"           # Quality gate
+sentinel = "openai:gpt-4o"            # Frontier sampling
+escalation = "openai:gpt-4o"          # Fallback for hard problems
 
 [budget]
 daily_limit_usd = 5.00
-mode = "normal"  # normal | throttle | local-only | halt
+mode = "normal"
 
 [loop]
 max_iterations = 100
-context_rotation_pct = 80
-gutter_detection = true
 parallel_workers = 2
+gutter_detection = true
 
 [ollama]
 host = "http://localhost:11434"
 model = "qwen3-coder-next"
+
+[security]
+sandbox_mode = "standard"    # permissive | standard | strict
+redact_secrets = true
+audit_commands = true
 ```
 
 ### Environment Variables
@@ -90,24 +198,32 @@ export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."     # Optional
 export OPENROUTER_API_KEY="sk-or-..."     # Optional
 export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
-export FORGEGOD_BUDGET_MODE=throttle
 ```
+
+## Supported Models
+
+| Provider | Models | Cost | Setup |
+|:---------|:-------|:-----|:------|
+| **Ollama** | qwen3-coder-next, devstral, any | **$0** | `ollama serve` |
+| OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
+| Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
+| OpenRouter | 200+ models | varies | `OPENROUTER_API_KEY` |
 
 ## Architecture
 
 ```
 forgegod/
-├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, status)
-├── config.py       # TOML config + env vars
-├── router.py       # Multi-provider LLM router + circuit breaker
-├── agent.py        # Core agent loop (tools + context compression)
-├── coder.py        # Reflexion code generation (3 attempts, model escalation)
-├── loop.py         # Ralph loop (24/7 autonomous coding)
+├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status)
+├── config.py       # TOML config + env vars + 3-level priority
+├── router.py       # Multi-provider LLM router + circuit breaker + Thompson sampling
+├── agent.py        # Core agent loop (tools + context compression + sub-agents)
+├── coder.py        # Reflexion code generation (3 attempts, model escalation, GOAP)
+├── loop.py         # Ralph loop (24/7 autonomous coding from PRD)
 ├── planner.py      # Task decomposition → PRD
-├── reviewer.py     # Frontier model quality gate
-├── sica.py         # Self-improving strategy modification
-├── memory.py       # Cross-session learning (principles, causal graph)
-├── budget.py       # SQLite cost tracking + budget modes
+├── reviewer.py     # Frontier model quality gate (sample-based)
+├── sica.py         # Self-improving strategy modification (6 safety layers)
+├── memory.py       # 5-tier cognitive memory (episodic/semantic/procedural/graph/errors)
+├── budget.py       # SQLite cost tracking + auto budget modes
 ├── worktree.py     # Parallel git worktree workers
 ├── tui.py          # Rich terminal dashboard
 ├── models.py       # Pydantic v2 data models
@@ -115,61 +231,31 @@ forgegod/
     ├── filesystem.py  # read, write, edit (fuzzy match), glob, grep, repo_map
     ├── shell.py       # bash (command denylist + secret redaction)
     ├── git.py         # git status, diff, commit, worktrees
-    ├── mcp.py         # MCP server client
-    └── skills.py      # on-demand skill loading (OpenClaw pattern)
+    ├── mcp.py         # MCP server client (5,800+ servers)
+    └── skills.py      # On-demand skill loading
 ```
-
-## How the Ralph Loop Works
-
-1. **Read PRD** — Pick highest priority TODO story
-2. **Spawn agent** — Fresh context per story (progress is in git, not LLM memory)
-3. **Execute** — Agent uses tools to implement the story
-4. **Validate** — Check tests, lint, syntax
-5. **Commit or retry** — If pass: commit + mark done. If fail: retry (up to 3x)
-6. **Rotate** — Move to next story. Context is always fresh.
-7. **Killswitch** — Create `.forgegod/KILLSWITCH` file to stop
-
-## Budget Modes
-
-| Mode | Behavior | Trigger |
-|------|----------|---------|
-| `normal` | Use all configured models | Default |
-| `throttle` | Prefer local, cloud for review only | 80% of daily limit |
-| `local-only` | Ollama only, $0 operation | Manual |
-| `halt` | Stop all LLM calls | 100% of daily limit |
 
 ## Security
 
-ForgeGod implements defense-in-depth security:
+Defense-in-depth, not security theater:
 
-- **Command denylist** — Destructive shell commands (`rm -rf /`, `curl | sh`, `sudo`) are blocked
-- **Secret redaction** — API keys and tokens are stripped from tool output before entering LLM context
-- **Prompt injection detection** — Project rules files are scanned for injection patterns
+- **Command denylist** — 13 dangerous patterns blocked (`rm -rf /`, `curl | sh`, `sudo`, fork bombs)
+- **Secret redaction** — 11 patterns strip API keys from tool output before LLM context
+- **Prompt injection detection** — Rules files scanned for injection patterns before loading
 - **Budget limits** — Cost controls prevent runaway API spend
 - **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
+- **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
 
-> **Warning**: ForgeGod executes shell commands and modifies files on your system. Review all changes before committing. The autonomous loop mode (`forgegod loop`) can make many changes without human review — start with `--max 5` to verify behavior.
+> **Warning**: ForgeGod executes shell commands and modifies files. Review changes before committing. Start autonomous mode with `--max 5` to verify behavior.
 
-> **Warning**: ForgeGod sends code and file contents to third-party LLM APIs (OpenAI, Anthropic, etc.). Do not use on repositories containing secrets, credentials, or proprietary code without appropriate safeguards.
+See [SECURITY.md](SECURITY.md) for the full policy and vulnerability reporting.
 
-See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability reporting.
+## Contributing
 
-```toml
-# .forgegod/config.toml — security section
-[security]
-sandbox_mode = "standard"  # permissive | standard | strict
-redact_secrets = true
-audit_commands = true
-```
+We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## Supported Models
-
-| Provider | Models | Setup |
-|----------|--------|-------|
-| OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | `OPENAI_API_KEY` |
-| Ollama | qwen3-coder-next, devstral, any | `ollama serve` |
-| Anthropic | claude-sonnet-4-6, claude-opus-4-6 | `ANTHROPIC_API_KEY` |
-| OpenRouter | Any model | `OPENROUTER_API_KEY` |
+- Bug reports and feature requests: [GitHub Issues](https://github.com/waitdeadai/forgegod/issues)
+- Questions and discussion: [GitHub Discussions](https://github.com/waitdeadai/forgegod/discussions)
 
 ## License
 
@@ -177,4 +263,6 @@ Apache 2.0 — see [LICENSE](LICENSE).
 
 ---
 
-Built by [WAITDEAD](https://waitdead.com). Powered by the techniques from OpenClaw, Hermes, and SOTA 2026 coding agent research.
+<p align="center">
+  Built by <a href="https://waitdead.com">WAITDEAD</a> &bull; Powered by techniques from OpenClaw, Hermes, and SOTA 2026 coding agent research.
+</p>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForgeGod — Autonomous Coding Agent. Multi-Model. 24/7. $0 Local.</title>
+<meta name="description" content="The coding agent that runs 24/7, learns from its mistakes, and costs $0 when you want it to. Multi-model routing, Reflexion code gen, self-improving strategy.">
+<meta property="og:title" content="ForgeGod — Autonomous Coding Agent">
+<meta property="og:description" content="Multi-model autonomous coding engine. Local + Cloud. 24/7.">
+<meta property="og:image" content="https://forgegod.com/og-image.png">
+<meta property="og:url" content="https://forgegod.com">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="mascot.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset + Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface-border: rgba(0, 229, 255, 0.08);
+  --cyan: #00e5ff;
+  --cyan-dim: rgba(0, 229, 255, 0.4);
+  --cyan-glow: rgba(0, 229, 255, 0.15);
+  --gold: #f0c040;
+  --text: #e0e6ed;
+  --text-dim: rgba(224, 230, 237, 0.55);
+  --green: #00ff88;
+  --red: #ff3366;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --max-w: 1100px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.75rem 0;
+}
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-pixel); font-size: 0.7rem; color: var(--cyan);
+  letter-spacing: 1px;
+}
+.nav-logo img { width: 28px; height: 28px; image-rendering: pixelated; }
+.nav-links { display: flex; align-items: center; gap: 1.5rem; }
+.nav-links a { color: var(--text-dim); font-size: 0.85rem; transition: color 0.2s; }
+.nav-links a:hover { color: var(--cyan); text-decoration: none; }
+.nav-install {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  background: var(--surface); border: 1px solid var(--surface-border);
+  padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;
+  color: var(--cyan); transition: border-color 0.2s;
+}
+.nav-install:hover { border-color: var(--cyan); }
+
+/* ── Hero ── */
+.hero {
+  padding: 8rem 0 4rem;
+  text-align: center;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.hero-mascot {
+  width: 140px; height: 140px;
+  margin: 0 auto 2rem;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 30px var(--cyan-dim));
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hero h1 {
+  font-family: var(--font-pixel); font-size: clamp(1.2rem, 4vw, 2rem);
+  color: var(--cyan); margin-bottom: 1rem; letter-spacing: 2px;
+  text-shadow: 0 0 20px var(--cyan-dim), 0 0 40px rgba(0, 229, 255, 0.15);
+}
+.hero-tagline {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  color: var(--text); max-width: 650px; margin: 0 auto 2rem;
+  font-weight: 500;
+}
+.hero-tagline strong { color: var(--cyan); }
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.95rem;
+  background: var(--surface); border: 1px solid var(--surface-border);
+  padding: 0.8rem 1.5rem; border-radius: 8px;
+  color: var(--green); cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.hero-cta:hover { border-color: var(--cyan); transform: translateY(-1px); }
+.hero-cta .prompt { color: var(--text-dim); }
+.hero-cta .copy-hint {
+  position: absolute; top: -1.8rem; left: 50%; transform: translateX(-50%);
+  font-size: 0.65rem; color: var(--text-dim); opacity: 0; transition: opacity 0.2s;
+  font-family: var(--font-body);
+}
+.hero-cta:hover .copy-hint { opacity: 1; }
+
+/* ── Stats Bar ── */
+.stats {
+  display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+  padding: 2rem 0; margin-top: 1rem;
+}
+.stat {
+  font-family: var(--font-mono); font-size: 0.8rem;
+  color: var(--text-dim); text-align: center;
+}
+.stat-value {
+  display: block; font-size: 1.1rem; color: var(--cyan);
+  font-weight: 700; margin-bottom: 0.15rem;
+}
+
+/* ── Terminal Demo ── */
+.terminal-section { padding: 3rem 0; }
+.terminal {
+  max-width: 700px; margin: 0 auto;
+  background: #0d0d14; border: 1px solid var(--surface-border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.5), 0 0 80px var(--cyan-glow);
+}
+.terminal-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0.6rem 1rem; background: #16161e;
+  border-bottom: 1px solid var(--surface-border);
+}
+.terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+.terminal-dot:nth-child(1) { background: #ff5f57; }
+.terminal-dot:nth-child(2) { background: #febc2e; }
+.terminal-dot:nth-child(3) { background: #28c840; }
+.terminal-title {
+  flex: 1; text-align: center; font-family: var(--font-mono);
+  font-size: 0.7rem; color: var(--text-dim);
+}
+.terminal-body {
+  padding: 1.2rem; font-family: var(--font-mono); font-size: 0.8rem;
+  line-height: 1.8; min-height: 280px;
+}
+.terminal-body .prompt { color: var(--cyan); }
+.terminal-body .command { color: var(--text); }
+.terminal-body .output { color: var(--text-dim); }
+.terminal-body .success { color: var(--green); }
+.terminal-body .cost { color: var(--gold); }
+.terminal-body .cursor-blink {
+  display: inline-block; width: 8px; height: 14px;
+  background: var(--cyan); vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Features Bento Grid ── */
+.features-section {
+  padding: 5rem 0;
+}
+.section-title {
+  font-family: var(--font-pixel); font-size: clamp(0.7rem, 2vw, 0.9rem);
+  color: var(--cyan); text-align: center; margin-bottom: 3rem;
+  letter-spacing: 1px;
+}
+.features {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px; padding: 1.5rem;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.feature:hover { border-color: rgba(0, 229, 255, 0.2); transform: translateY(-2px); }
+.feature-large { grid-column: span 2; }
+.feature-icon {
+  font-size: 1.5rem; margin-bottom: 0.8rem;
+  filter: grayscale(0.3);
+}
+.feature h3 {
+  font-family: var(--font-mono); font-size: 0.9rem;
+  color: var(--text); font-weight: 700; margin-bottom: 0.5rem;
+}
+.feature p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+.feature-tag {
+  display: inline-block; font-family: var(--font-mono);
+  font-size: 0.6rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: rgba(0, 229, 255, 0.1); color: var(--cyan);
+  margin-top: 0.6rem;
+}
+
+/* ── How It Works ── */
+.how-section { padding: 5rem 0; }
+.how-steps {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+  margin-top: 2rem;
+}
+.how-step { text-align: center; }
+.how-number {
+  font-family: var(--font-pixel); font-size: 1.5rem;
+  color: var(--cyan); margin-bottom: 0.5rem;
+  text-shadow: 0 0 10px var(--cyan-dim);
+}
+.how-step h3 {
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--text); margin-bottom: 0.4rem;
+}
+.how-step p { font-size: 0.8rem; color: var(--text-dim); }
+.how-arrow {
+  display: none;
+}
+
+/* ── Memory Section ── */
+.memory-section {
+  padding: 5rem 0;
+}
+.memory-tiers {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem;
+  margin-top: 2rem;
+}
+.memory-tier {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: 10px; padding: 1.2rem; text-align: center;
+  transition: border-color 0.3s;
+}
+.memory-tier:hover { border-color: rgba(0, 229, 255, 0.2); }
+.memory-tier-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.memory-tier h4 {
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--cyan); margin-bottom: 0.3rem;
+}
+.memory-tier p { font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; }
+
+/* ── Comparison ── */
+.comparison-section { padding: 5rem 0; }
+.comparison-table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem;
+  margin-top: 2rem;
+}
+.comparison-table th {
+  font-family: var(--font-mono); color: var(--cyan);
+  padding: 0.6rem; text-align: center; border-bottom: 1px solid var(--surface-border);
+  font-weight: 600; font-size: 0.7rem;
+}
+.comparison-table th:first-child { text-align: left; }
+.comparison-table td {
+  padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.03);
+  text-align: center; color: var(--text-dim);
+}
+.comparison-table td:first-child { text-align: left; color: var(--text); font-family: var(--font-mono); font-size: 0.75rem; }
+.comparison-table .yes { color: var(--green); font-weight: 700; }
+.comparison-table .no { color: rgba(255,255,255,0.15); }
+.comparison-table .partial { color: var(--gold); }
+.comparison-table .fg { background: rgba(0, 229, 255, 0.04); }
+
+/* ── Providers ── */
+.providers-section { padding: 4rem 0; text-align: center; }
+.providers {
+  display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
+  margin-top: 2rem;
+}
+.provider {
+  font-family: var(--font-mono); font-size: 0.8rem;
+  color: var(--text-dim); text-align: center;
+}
+.provider-name { display: block; margin-top: 0.3rem; font-size: 0.7rem; }
+.provider-icon { font-size: 2rem; }
+.provider-free {
+  font-family: var(--font-pixel); font-size: 0.5rem;
+  color: var(--green); margin-top: 0.2rem;
+}
+
+/* ── Install Section ── */
+.install-section {
+  padding: 5rem 0; text-align: center;
+}
+.install-box {
+  display: inline-block; background: var(--surface);
+  border: 1px solid var(--surface-border); border-radius: 10px;
+  padding: 1.5rem 3rem; margin-top: 1.5rem;
+}
+.install-box code {
+  font-family: var(--font-mono); font-size: 1.1rem; color: var(--green);
+}
+.install-note {
+  font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;
+}
+
+/* ── Footer ── */
+footer {
+  padding: 3rem 0; text-align: center;
+  border-top: 1px solid var(--surface-border);
+  margin-top: 4rem;
+}
+footer p { font-size: 0.8rem; color: var(--text-dim); }
+footer a { color: var(--cyan); }
+.footer-links {
+  display: flex; justify-content: center; gap: 2rem;
+  margin-bottom: 1rem;
+}
+.footer-links a { color: var(--text-dim); font-size: 0.8rem; }
+.footer-links a:hover { color: var(--cyan); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .features { grid-template-columns: 1fr; }
+  .feature-large { grid-column: span 1; }
+  .how-steps { grid-template-columns: 1fr; gap: 1.5rem; }
+  .memory-tiers { grid-template-columns: repeat(2, 1fr); }
+  .memory-tiers .memory-tier:last-child { grid-column: span 2; }
+  .comparison-table { font-size: 0.65rem; }
+  .stats { gap: 1rem; }
+  .nav-links { gap: 0.8rem; }
+  .nav-install { display: none; }
+  .providers { gap: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .memory-tiers { grid-template-columns: 1fr; }
+  .memory-tiers .memory-tier:last-child { grid-column: span 1; }
+  .hero { padding: 6rem 0 3rem; }
+}
+
+/* ── Scanline overlay (subtle CRT effect) ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a href="/" class="nav-logo">
+      <img src="mascot.png" alt="ForgeGod">
+      FORGEGOD
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#memory">Memory</a>
+      <a href="#compare">Compare</a>
+      <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
+      <button class="nav-install" onclick="copyInstall()">pip install forgegod</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <img src="mascot.png" alt="ForgeGod Mascot" class="hero-mascot">
+    <h1>FORGEGOD</h1>
+    <p class="hero-tagline">
+      The coding agent that runs <strong>24/7</strong>, learns from its mistakes, and costs <strong>$0</strong> when you want it to.
+    </p>
+    <div class="hero-cta" onclick="copyInstall()">
+      <span class="copy-hint">Click to copy</span>
+      <span class="prompt">$</span>
+      <span class="command">pip install forgegod</span>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats">
+  <div class="stat"><span class="stat-value">16</span>Built-in Tools</div>
+  <div class="stat"><span class="stat-value">4</span>LLM Providers</div>
+  <div class="stat"><span class="stat-value">5-Tier</span>Memory System</div>
+  <div class="stat"><span class="stat-value">24/7</span>Autonomous</div>
+  <div class="stat"><span class="stat-value">$0</span>Local Mode</div>
+</section>
+
+<!-- Terminal Demo -->
+<section class="terminal-section">
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <span class="terminal-title">forgegod</span>
+      </div>
+      <div class="terminal-body" id="terminal">
+        <div><span class="prompt">$</span> <span class="command" id="typewriter"></span><span class="cursor-blink" id="cursor"></span></div>
+        <div id="terminal-output"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="container">
+    <h2 class="section-title">WHAT MAKES IT DIFFERENT</h2>
+    <div class="features">
+
+      <div class="feature feature-large">
+        <div class="feature-icon">&#9881;</div>
+        <h3>Multi-Model Auto-Routing</h3>
+        <p>Route tasks to the right model automatically. Local Ollama for bulk coding ($0), cloud for review, frontier for hard problems. Circuit breaker + fallback chains. Thompson sampling learns which model works best for what.</p>
+        <span class="feature-tag">OpenAI + Anthropic + Ollama + OpenRouter</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#8734;</div>
+        <h3>Ralph Loop</h3>
+        <p>24/7 autonomous coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot, ever.</p>
+        <span class="feature-tag">Infinite loop</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128200;</div>
+        <h3>Reflexion Coder</h3>
+        <p>3-attempt code gen with escalating models. Local free, then cloud cheap, then frontier. AST validation at every step.</p>
+        <span class="feature-tag">3 attempts</span>
+      </div>
+
+      <div class="feature feature-large">
+        <div class="feature-icon">&#129504;</div>
+        <h3>5-Tier Memory System</h3>
+        <p>Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce. The most advanced memory of any open-source coding agent.</p>
+        <span class="feature-tag">Cross-session learning</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128176;</div>
+        <h3>Budget Modes</h3>
+        <p>normal &rarr; throttle &rarr; local-only &rarr; halt. Auto-triggered by daily spend. Run forever on Ollama for $0.</p>
+        <span class="feature-tag">Cost control</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#9889;</div>
+        <h3>SICA</h3>
+        <p>Self-Improving Coding Agent. Modifies its own prompts, routing, and strategy based on outcomes. 6 safety layers prevent drift.</p>
+        <span class="feature-tag">Self-improving</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Memory Deep Dive -->
+<section class="memory-section" id="memory">
+  <div class="container">
+    <h2 class="section-title">5-TIER COGNITIVE MEMORY</h2>
+    <div class="memory-tiers">
+      <div class="memory-tier">
+        <div class="memory-tier-icon">&#128218;</div>
+        <h4>Episodic</h4>
+        <p>What happened per task. Full outcome records. 90-day retention.</p>
+      </div>
+      <div class="memory-tier">
+        <div class="memory-tier-icon">&#128161;</div>
+        <h4>Semantic</h4>
+        <p>Extracted principles. Confidence scoring with exponential decay.</p>
+      </div>
+      <div class="memory-tier">
+        <div class="memory-tier-icon">&#9881;</div>
+        <h4>Procedural</h4>
+        <p>Code patterns and fix recipes. Success rate tracking.</p>
+      </div>
+      <div class="memory-tier">
+        <div class="memory-tier-icon">&#128279;</div>
+        <h4>Graph</h4>
+        <p>Entity relationships + causal edges. Auto-extracted.</p>
+      </div>
+      <div class="memory-tier">
+        <div class="memory-tier-icon">&#128295;</div>
+        <h4>Error-Solution</h4>
+        <p>Error pattern &rarr; fix mapping. Fuzzy match lookup.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section">
+  <div class="container">
+    <h2 class="section-title">HOW IT WORKS</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-number">1</div>
+        <h3>Plan</h3>
+        <p>Describe your project. ForgeGod decomposes it into stories with acceptance criteria.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-number">2</div>
+        <h3>Loop</h3>
+        <p>The Ralph Loop picks stories, spawns agents, implements, validates, commits. 24/7. Fresh context per story.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-number">3</div>
+        <h3>Ship</h3>
+        <p>Review the git log. Each story is a clean commit. Frontier model quality gate catches issues.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="comparison-section" id="compare">
+  <div class="container">
+    <h2 class="section-title">HOW WE COMPARE</h2>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Claude Code</th>
+          <th>Codex CLI</th>
+          <th>Aider</th>
+          <th>Cursor</th>
+          <th class="fg">ForgeGod</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Multi-model routing</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="partial">manual</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Local + cloud hybrid</td>
+          <td class="no">&mdash;</td>
+          <td class="partial">basic</td>
+          <td class="partial">basic</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">native</td>
+        </tr>
+        <tr>
+          <td>24/7 autonomous loops</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Cross-session memory</td>
+          <td class="partial">basic</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">removed</td>
+          <td class="fg yes">5-tier</td>
+        </tr>
+        <tr>
+          <td>Self-improving</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">SICA</td>
+        </tr>
+        <tr>
+          <td>Budget control</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">4 modes</td>
+        </tr>
+        <tr>
+          <td>Reflexion loop</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">3-attempt</td>
+        </tr>
+        <tr>
+          <td>$0 local mode</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="partial">manual</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">native</td>
+        </tr>
+        <tr>
+          <td>Open source</td>
+          <td class="partial">partial</td>
+          <td class="yes">Apache 2.0</td>
+          <td class="yes">Apache 2.0</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">Apache 2.0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Providers -->
+<section class="providers-section">
+  <div class="container">
+    <h2 class="section-title">SUPPORTED PROVIDERS</h2>
+    <div class="providers">
+      <div class="provider">
+        <div class="provider-icon">&#127968;</div>
+        <span class="provider-name">Ollama</span>
+        <div class="provider-free">$0 / FREE</div>
+      </div>
+      <div class="provider">
+        <div class="provider-icon">&#9883;</div>
+        <span class="provider-name">OpenAI</span>
+      </div>
+      <div class="provider">
+        <div class="provider-icon">&#9672;</div>
+        <span class="provider-name">Anthropic</span>
+      </div>
+      <div class="provider">
+        <div class="provider-icon">&#127760;</div>
+        <span class="provider-name">OpenRouter</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section class="install-section">
+  <div class="container">
+    <h2 class="section-title">GET STARTED IN 30 SECONDS</h2>
+    <div class="install-box">
+      <code>pip install forgegod</code>
+    </div>
+    <p class="install-note">
+      Then: <code style="color:var(--cyan)">forgegod init</code> &rarr;
+      <code style="color:var(--cyan)">forgegod run "your task"</code>
+    </p>
+    <p class="install-note" style="margin-top: 0.5rem;">
+      Python 3.11+ &bull; Works on macOS, Linux, Windows &bull;
+      <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>
+    </p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/CONTRIBUTING.md">Contributing</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/SECURITY.md">Security</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/LICENSE">Apache 2.0</a>
+    </div>
+    <p>Built by <a href="https://waitdead.com">WAITDEAD</a></p>
+  </div>
+</footer>
+
+<script>
+// Copy install command
+function copyInstall() {
+  navigator.clipboard.writeText('pip install forgegod').then(() => {
+    const btn = document.querySelector('.hero-cta .command');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#00ff88';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  });
+}
+
+// Terminal typing animation
+const lines = [
+  { cmd: 'forgegod init', delay: 1200, output: [
+    { text: '  ForgeGod \u2014 Initializing project', cls: 'output' },
+    { text: '  + OpenAI API key detected', cls: 'success' },
+    { text: '  + Ollama running (3 models)', cls: 'success' },
+    { text: '  + Detected: python', cls: 'success' },
+    { text: '  + Git repository', cls: 'success' },
+    { text: '  Initialized at .forgegod/', cls: 'success' },
+  ]},
+  { cmd: 'forgegod run "Add /health endpoint with uptime info"', delay: 1500, output: [
+    { text: '  \u25b6 ORIENT: reading codebase...', cls: 'output' },
+    { text: '  \u25b6 LOCATE: found server.py', cls: 'output' },
+    { text: '  \u25b6 IMPLEMENT: adding /health route', cls: 'output' },
+    { text: '  \u25b6 VERIFY: pytest passed (12/12)', cls: 'success' },
+    { text: '  \u2714 Task completed', cls: 'success' },
+    { text: '  Cost: $0.0023 | Tokens: 4,210', cls: 'cost' },
+  ]},
+  { cmd: 'forgegod memory', delay: 1000, output: [
+    { text: '  Episodic: 47  |  Semantic: 23  |  Procedural: 8', cls: 'output' },
+    { text: '  Error-Solutions: 12  |  Entities: 89', cls: 'output' },
+    { text: '  Health: 92%  |  Avg confidence: 71%', cls: 'success' },
+  ]},
+];
+
+let lineIdx = 0;
+const typewriter = document.getElementById('typewriter');
+const output = document.getElementById('terminal-output');
+const cursorEl = document.getElementById('cursor');
+
+function typeCommand(text, cb) {
+  let i = 0;
+  typewriter.textContent = '';
+  cursorEl.style.display = 'inline-block';
+  const iv = setInterval(() => {
+    typewriter.textContent += text[i];
+    i++;
+    if (i >= text.length) { clearInterval(iv); setTimeout(cb, 400); }
+  }, 35);
+}
+
+function showOutput(items, cb) {
+  cursorEl.style.display = 'none';
+  let i = 0;
+  const iv = setInterval(() => {
+    const div = document.createElement('div');
+    div.className = items[i].cls;
+    div.textContent = items[i].text;
+    output.appendChild(div);
+    i++;
+    if (i >= items.length) { clearInterval(iv); setTimeout(cb, items.length > 4 ? 2000 : 1500); }
+  }, 200);
+}
+
+function runLine() {
+  if (lineIdx >= lines.length) {
+    lineIdx = 0;
+    output.innerHTML = '';
+  }
+  const line = lines[lineIdx];
+  lineIdx++;
+
+  // Clear for new command cycle
+  if (lineIdx === 1 && output.children.length > 0) {
+    output.innerHTML = '';
+  }
+
+  typeCommand(line.cmd, () => {
+    // Add the typed command as a completed line
+    const cmdLine = document.createElement('div');
+    cmdLine.innerHTML = '<span class="prompt">$ </span><span class="command">' + typewriter.textContent + '</span>';
+    output.appendChild(cmdLine);
+    typewriter.textContent = '';
+
+    showOutput(line.output, () => {
+      if (lineIdx < lines.length) {
+        // Add blank line separator
+        output.appendChild(document.createElement('div'));
+        setTimeout(runLine, line.delay);
+      } else {
+        // Restart after pause
+        setTimeout(() => {
+          output.innerHTML = '';
+          lineIdx = 0;
+          runLine();
+        }, 4000);
+      }
+    });
+  });
+}
+
+// Start after page load
+setTimeout(runLine, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130" width="120" height="130">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-gold">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Aureola / Halo -->
+  <ellipse cx="60" cy="22" rx="20" ry="7" fill="none" stroke="#f0c040" stroke-width="4" filter="url(#glow-gold)" opacity="0.9"/>
+  <ellipse cx="60" cy="22" rx="16" ry="5" fill="none" stroke="#ffd700" stroke-width="2" opacity="0.6"/>
+  <!-- Triangle body -->
+  <polygon points="60,35 15,120 105,120" fill="#00e5ff" filter="url(#glow)" opacity="0.95"/>
+  <polygon points="60,42 22,116 98,116" fill="#00d4ee"/>
+  <!-- Eye: number 1 -->
+  <text x="60" y="100" text-anchor="middle" font-family="'Courier New', monospace" font-size="36" font-weight="bold" fill="white" filter="url(#glow)">1</text>
+</svg>
