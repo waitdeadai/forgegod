@@ -245,6 +245,56 @@ nav .container {
   margin-top: 0.6rem;
 }
 
+/* ── Best Results ── */
+.results-section { padding: 5rem 0; }
+.results-intro {
+  text-align: center; max-width: 700px; margin: -1.5rem auto 2.5rem;
+  font-size: 1.05rem; color: var(--text); line-height: 1.6;
+}
+.results-tiers {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+}
+.results-tier {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: 12px; padding: 1.8rem 1.5rem; text-align: center;
+  position: relative; transition: border-color 0.3s, transform 0.2s;
+}
+.results-tier:hover { transform: translateY(-2px); }
+.results-tier-recommended {
+  border-color: var(--cyan);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+}
+.results-tier-badge {
+  display: inline-block; font-family: var(--font-pixel); font-size: 0.5rem;
+  padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 1px;
+  background: rgba(0, 255, 136, 0.1); color: var(--green);
+  margin-bottom: 0.8rem;
+}
+.results-badge-cyan { background: rgba(0, 229, 255, 0.15); color: var(--cyan); }
+.results-badge-gold { background: rgba(240, 192, 64, 0.15); color: var(--gold); }
+.results-tier h3 {
+  font-family: var(--font-mono); font-size: 0.9rem;
+  color: var(--text); font-weight: 700; margin-bottom: 0.3rem;
+}
+.results-tier-cost {
+  font-family: var(--font-mono); font-size: 1.4rem;
+  color: var(--cyan); font-weight: 700; margin-bottom: 0.6rem;
+}
+.results-tier-cost span { font-size: 0.7rem; color: var(--text-dim); }
+.results-tier > p:not(.results-tier-cost) {
+  font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;
+  margin-bottom: 0.8rem;
+}
+.results-tier-cmd {
+  display: block; font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--green); margin-bottom: 0.6rem;
+}
+.results-why {
+  text-align: center; max-width: 750px; margin: 2rem auto 0;
+  font-size: 0.85rem; color: var(--text-dim); line-height: 1.6;
+}
+.results-why a { color: var(--cyan); }
+
 /* ── How It Works ── */
 .how-section { padding: 5rem 0; }
 .how-steps {
@@ -364,6 +414,7 @@ footer a { color: var(--cyan); }
   .how-steps { grid-template-columns: 1fr; gap: 1.5rem; }
   .memory-tiers { grid-template-columns: repeat(2, 1fr); }
   .memory-tiers .memory-tier:last-child { grid-column: span 2; }
+  .results-tiers { grid-template-columns: 1fr; }
   .comparison-table { font-size: 0.65rem; }
   .stats { gap: 1rem; }
   .nav-links { gap: 0.8rem; }
@@ -402,7 +453,7 @@ body::after {
     </a>
     <div class="nav-links">
       <a href="#features" data-i18n="nav_features">Features</a>
-      <a href="#memory" data-i18n="nav_memory">Memory</a>
+      <a href="#results" data-i18n="nav_results">Results</a>
       <a href="#compare" data-i18n="nav_compare">Compare</a>
       <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
       <div class="lang-toggle">
@@ -506,6 +557,45 @@ body::after {
       </div>
 
     </div>
+  </div>
+</section>
+
+<!-- Best Results -->
+<section class="results-section" id="results">
+  <div class="container">
+    <h2 class="section-title" data-i18n="title_results">GET THE BEST RESULTS</h2>
+    <p class="results-intro" data-i18n="results_intro">1 model is good. 2 models is 10x better. Different models catch different mistakes — like having two people proofread instead of one. ForgeGod does this automatically.</p>
+
+    <div class="results-tiers">
+      <div class="results-tier">
+        <div class="results-tier-badge" data-i18n="results_free_badge">FREE</div>
+        <h3 data-i18n="results_free_title">Ollama Only</h3>
+        <p class="results-tier-cost">$0</p>
+        <p data-i18n="results_free_desc">Great for learning and personal projects. One local model does everything.</p>
+        <code class="results-tier-cmd">forgegod init --quick</code>
+        <span class="feature-tag" data-i18n="results_free_tag">1 model</span>
+      </div>
+
+      <div class="results-tier results-tier-recommended">
+        <div class="results-tier-badge results-badge-cyan" data-i18n="results_best_badge">BEST VALUE</div>
+        <h3 data-i18n="results_best_title">Ollama + 1 API Key</h3>
+        <p class="results-tier-cost">~$0.05 <span data-i18n="results_per_task">per task</span></p>
+        <p data-i18n="results_best_desc">Local model writes code for free. Cloud model reviews it and catches bugs. Best bang for your buck.</p>
+        <code class="results-tier-cmd">forgegod init</code>
+        <span class="feature-tag" data-i18n="results_best_tag">2 models — recommended</span>
+      </div>
+
+      <div class="results-tier">
+        <div class="results-tier-badge results-badge-gold" data-i18n="results_max_badge">MAXIMUM</div>
+        <h3 data-i18n="results_max_title">Cloud + Local + Cloud</h3>
+        <p class="results-tier-cost">~$0.50 <span data-i18n="results_per_task">per task</span></p>
+        <p data-i18n="results_max_desc">Cloud plans the architecture, local codes for free, cloud reviews. Professional-grade output used by agencies.</p>
+        <code class="results-tier-cmd">forgegod init</code>
+        <span class="feature-tag" data-i18n="results_max_tag">3+ models</span>
+      </div>
+    </div>
+
+    <p class="results-why" data-i18n-html="results_why">Why does this work? A <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">22-point jump on SWE-bench</a> came from the harness, not the model. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model automatically. You just add an API key — ForgeGod handles the rest.</p>
   </div>
 </section>
 
@@ -724,7 +814,7 @@ var STRINGS = {
     page_title: "ForgeGod \u2014 Autonomous Coding Agent. Multi-Model. 24/7. $0 Local.",
     meta_desc: "The open-source coding agent that runs 24/7, learns from every outcome, and costs $0 with Ollama.",
     nav_features: "Features",
-    nav_memory: "Memory",
+    nav_results: "Results",
     nav_compare: "Compare",
     hero_tagline: 'The coding agent that runs <strong>24/7</strong>, learns from its mistakes, and costs <strong>$0</strong> when you want it to.',
     copy_hint: "Click to copy",
@@ -782,6 +872,22 @@ var STRINGS = {
     cmp_reflexion: "Reflexion loop",
     cmp_local: "$0 local mode",
     cmp_oss: "Open source",
+    title_results: "GET THE BEST RESULTS",
+    results_intro: "1 model is good. 2 models is 10x better. Different models catch different mistakes \u2014 like having two people proofread instead of one. ForgeGod does this automatically.",
+    results_free_badge: "FREE",
+    results_free_title: "Ollama Only",
+    results_free_desc: "Great for learning and personal projects. One local model does everything.",
+    results_free_tag: "1 model",
+    results_best_badge: "BEST VALUE",
+    results_best_title: "Ollama + 1 API Key",
+    results_per_task: "per task",
+    results_best_desc: "Local model writes code for free. Cloud model reviews it and catches bugs. Best bang for your buck.",
+    results_best_tag: "2 models \u2014 recommended",
+    results_max_badge: "MAXIMUM",
+    results_max_title: "Cloud + Local + Cloud",
+    results_max_desc: "Cloud plans the architecture, local codes for free, cloud reviews. Professional-grade output used by agencies.",
+    results_max_tag: "3+ models",
+    results_why: 'Why does this work? A <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">22-point jump on SWE-bench</a> came from the harness, not the model. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model automatically. You just add an API key \u2014 ForgeGod handles the rest.',
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod init</code> \u2192 <code style="color:var(--cyan)">forgegod run "your task"</code>',
     install_note: 'Python 3.11+ \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
@@ -793,7 +899,7 @@ var STRINGS = {
     page_title: "ForgeGod \u2014 Agente de Código Autónomo. Multi-Modelo. 24/7. $0 Local.",
     meta_desc: "El agente de código open-source que trabaja 24/7, aprende de cada resultado, y cuesta $0 con Ollama.",
     nav_features: "Características",
-    nav_memory: "Memoria",
+    nav_results: "Resultados",
     nav_compare: "Comparar",
     hero_tagline: 'El agente de código que trabaja <strong>24/7</strong>, aprende de sus errores, y cuesta <strong>$0</strong> cuando quieras.',
     copy_hint: "Click para copiar",
@@ -851,6 +957,22 @@ var STRINGS = {
     cmp_reflexion: "Loop de reflexión",
     cmp_local: "Modo local $0",
     cmp_oss: "Open source",
+    title_results: "MEJORES RESULTADOS",
+    results_intro: "1 modelo está bien. 2 modelos es 10x mejor. Distintos modelos detectan distintos errores \u2014 como tener dos personas revisando en vez de una. ForgeGod lo hace automáticamente.",
+    results_free_badge: "GRATIS",
+    results_free_title: "Solo Ollama",
+    results_free_desc: "Ideal para aprender y proyectos personales. Un modelo local hace todo.",
+    results_free_tag: "1 modelo",
+    results_best_badge: "MEJOR VALOR",
+    results_best_title: "Ollama + 1 Clave API",
+    results_per_task: "por tarea",
+    results_best_desc: "El modelo local escribe código gratis. El modelo en la nube lo revisa y detecta errores. La mejor relación calidad-precio.",
+    results_best_tag: "2 modelos \u2014 recomendado",
+    results_max_badge: "MÁXIMO",
+    results_max_title: "Nube + Local + Nube",
+    results_max_desc: "La nube planifica la arquitectura, el local codea gratis, la nube revisa. Calidad profesional para agencias.",
+    results_max_tag: "3+ modelos",
+    results_why: '¿Por qué funciona? Un <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">salto de 22 puntos en SWE-bench</a> vino del harness, no del modelo. ForgeGod asigna 5 roles (planificador, coder, revisor, centinela, escalación) y enruta cada uno al modelo correcto automáticamente. Solo agregá una clave API \u2014 ForgeGod se encarga del resto.',
     provider_free: "$0 / GRATIS",
     install_then: 'Luego: <code style="color:var(--cyan)">forgegod init --lang es</code> \u2192 <code style="color:var(--cyan)">forgegod run "tu tarea"</code>',
     install_note: 'Python 3.11+ \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
