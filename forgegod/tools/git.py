@@ -133,6 +133,19 @@ register_tool(
 )
 
 register_tool(
+    name="git_log",
+    description="Get recent git log.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "count": {"type": "integer", "description": "Number of commits to show", "default": 10},
+        },
+        "required": [],
+    },
+    handler=git_log,
+)
+
+register_tool(
     name="git_worktree_remove",
     description="Remove a git worktree.",
     parameters={

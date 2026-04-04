@@ -20,7 +20,14 @@ _MCP_SERVERS: dict[str, "MCPConnection"] = {}
 class MCPConnection:
     """Lightweight MCP client over stdio or SSE transport."""
 
-    def __init__(self, name: str, command: list[str] | None = None, url: str | None = None):
+    def __init__(self, name: str, command: list[str] | None = None, url: str | None = None) -> None:
+        """Initialize an MCP connection.
+
+        Args:
+            name: Server name for identification
+            command: Command list for stdio transport
+            url: URL for SSE transport
+        """
         self.name = name
         self.command = command  # stdio transport
         self.url = url  # SSE transport
@@ -29,7 +36,11 @@ class MCPConnection:
         self._tools: list[dict] = []
 
     async def connect(self) -> str:
-        """Connect and discover tools."""
+        """Connect and discover tools from the MCP server.
+
+        Returns:
+            Status message indicating connection success or failure
+        """
         if self.url:
             return await self._connect_sse()
         if self.command:
@@ -37,7 +48,11 @@ class MCPConnection:
         return "Error: No transport configured (need command or url)"
 
     async def _connect_stdio(self) -> str:
-        """Connect via stdio (spawn subprocess)."""
+        """Connect via stdio (spawn subprocess).
+
+        Returns:
+            Status message indicating connection success or failure
+        """
         try:
             self._process = await asyncio.create_subprocess_exec(
                 *self.command,
@@ -66,7 +81,11 @@ class MCPConnection:
             return f"Error connecting to {self.name}: {e}"
 
     async def _connect_sse(self) -> str:
-        """Connect via SSE transport (HTTP)."""
+        """Connect via SSE transport (HTTP).
+
+        Returns:
+            Status message indicating connection success or failure
+        """
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Discover endpoint

@@ -213,12 +213,23 @@ class ModelRouter:
             body["tools"] = ollama_tools
 
         async with httpx.AsyncClient(timeout=self.config.ollama.timeout) as client:
-            resp = await client.post(
-                f"{self.config.ollama.host}/api/chat",
-                json=body,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            try:
+                resp = await client.post(
+                    f"{self.config.ollama.host}/api/chat",
+                    json=body,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+            except httpx.ConnectError as e:
+                raise RuntimeError(
+                    f"Ollama is not running or unreachable at {self.config.ollama.host}. "
+                    f"Ensure Ollama service is started and accessible."
+                ) from e
+            except httpx.TimeoutException as e:
+                raise RuntimeError(
+                    f"Ollama request timed out. The model may be loading or the connection is slow. "
+                    f"Retry after a moment or check Ollama is responsive."
+                ) from e
 
         msg = data.get("message", {})
         content = msg.get("content", "")
