@@ -120,7 +120,9 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 p.write_text(updated, encoding="utf-8")
                 return f"Edited {path}: replaced 1 occurrence (fuzzy trailing-ws match)"
 
-        return f"Error: old_string not found in {path}"
+        file_lines = len(content.splitlines())
+        old_string_preview = old_string[:50] if len(old_string) > 50 else old_string
+        return f"Error: old_string not found in {path}. File has {file_lines} lines. Searching for: '{old_string_preview}...'. Hint: use read_file first to inspect the file contents."
     except Exception as e:
         return f"Error editing {path}: {e}"
 
