@@ -148,7 +148,7 @@ No manual setup required. Just run `forgegod init` and go.
 
 1. **Read PRD** — Pick highest-priority TODO story
 2. **Spawn agent** — Fresh context (progress is in git, not memory)
-3. **Execute** — Agent uses 16 tools to implement the story
+3. **Execute** — Agent uses 19 tools to implement the story
 4. **Validate** — Tests, lint, syntax, frontier review
 5. **Commit or retry** — Pass: commit + mark done. Fail: retry up to 3x with model escalation
 6. **Rotate** — Next story. Context is always fresh.

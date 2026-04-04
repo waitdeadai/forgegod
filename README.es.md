@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <code>16 herramientas</code> &bull; <code>4 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>19 herramientas</code> &bull; <code>4 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
@@ -136,7 +136,7 @@ forgegod doctor
 
 1. **Leer PRD** — Elegir la historia TODO de mayor prioridad
 2. **Crear agente** — Contexto fresco (el progreso está en git, no en memoria)
-3. **Ejecutar** — El agente usa 16 herramientas para implementar la historia
+3. **Ejecutar** — El agente usa 19 herramientas para implementar la historia
 4. **Validar** — Tests, lint, sintaxis, revisión frontier
 5. **Commit o retry** — Pasa: commit + marcar hecho. Falla: reintentar hasta 3x con escalamiento de modelo
 6. **Rotar** — Siguiente historia. El contexto siempre es fresco.

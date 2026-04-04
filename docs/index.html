@@ -407,6 +407,80 @@ footer a { color: var(--cyan); }
 .footer-links a { color: var(--text-dim); font-size: 0.8rem; }
 .footer-links a:hover { color: var(--cyan); }
 
+/* ── Hamburger Menu ── */
+.nav-hamburger {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 0.4rem; color: var(--text-dim); transition: color 0.2s;
+}
+.nav-hamburger:hover { color: var(--cyan); }
+.nav-hamburger svg { width: 22px; height: 22px; display: block; }
+
+/* ── Benchmark Charts ── */
+.bench-section { padding: 5rem 0; }
+.bench-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+.bench-card {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: 12px; padding: 1.5rem;
+}
+.bench-card h3 {
+  font-family: var(--font-mono); font-size: 0.8rem;
+  color: var(--text); margin-bottom: 1.2rem; text-align: center;
+}
+.bench-bar-group { margin-bottom: 0.9rem; }
+.bench-bar-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--font-mono); font-size: 0.65rem; margin-bottom: 0.25rem;
+}
+.bench-bar-label span:first-child { color: var(--text); }
+.bench-bar-label span:last-child { color: var(--text-dim); }
+.bench-bar-track {
+  height: 20px; background: rgba(255,255,255,0.04);
+  border-radius: 4px; overflow: hidden; position: relative;
+}
+.bench-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--cyan), rgba(0,229,255,0.6));
+  transition: width 1.5s ease-out;
+  position: relative;
+}
+.bench-bar-fill.bar-green {
+  background: linear-gradient(90deg, var(--green), rgba(0,255,136,0.6));
+}
+.bench-bar-fill.bar-gold {
+  background: linear-gradient(90deg, var(--gold), rgba(240,192,64,0.6));
+}
+.bench-bar-fill.bar-red {
+  background: linear-gradient(90deg, var(--red), rgba(255,51,102,0.6));
+}
+.bench-source {
+  font-size: 0.6rem; color: var(--text-dim); margin-top: 0.6rem;
+  text-align: right; font-style: italic;
+}
+.bench-source a { color: var(--cyan); font-size: 0.6rem; }
+.bench-callout {
+  background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.12);
+  border-radius: 10px; padding: 1.2rem 1.5rem; margin-top: 2rem;
+  text-align: center;
+}
+.bench-callout p {
+  font-size: 0.85rem; color: var(--text-dim); line-height: 1.6;
+}
+.bench-callout strong { color: var(--text); }
+.bench-callout a { color: var(--cyan); }
+
+/* ── Sources ── */
+.sources-list {
+  margin-top: 1rem; font-size: 0.65rem; color: var(--text-dim);
+  line-height: 1.8; text-align: center;
+}
+.sources-list a { color: var(--cyan); font-size: 0.65rem; }
+
+/* ── Comparison Table Wrapper ── */
+.comparison-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  margin: 0 -1.5rem; padding: 0 1.5rem;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .features { grid-template-columns: 1fr; }
@@ -415,16 +489,42 @@ footer a { color: var(--cyan); }
   .memory-tiers { grid-template-columns: repeat(2, 1fr); }
   .memory-tiers .memory-tier:last-child { grid-column: span 2; }
   .results-tiers { grid-template-columns: 1fr; }
-  .comparison-table { font-size: 0.65rem; }
+  .comparison-table { font-size: 0.65rem; min-width: 560px; }
   .stats { gap: 1rem; }
-  .nav-links { gap: 0.8rem; }
+  .nav-links a:not([href*="github"]) { display: none; }
+  .nav-links .lang-toggle { display: flex; }
   .nav-install { display: none; }
   .providers { gap: 1.5rem; }
+  .bench-grid { grid-template-columns: 1fr; }
+  .nav-hamburger { display: block; }
+  .nav-links { display: none; }
+  .nav-links.open {
+    display: flex; flex-direction: column; position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: rgba(10, 10, 15, 0.97); backdrop-filter: blur(16px);
+    padding: 1rem 1.5rem; gap: 1rem;
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .nav-links.open a { display: block; font-size: 1rem; padding: 0.3rem 0; }
+  .nav-links.open .lang-toggle { margin-top: 0.3rem; }
+  .hero-mascot { width: 100px; height: 100px; }
+  .hero h1 { font-size: 1rem; }
+  .section-title { font-size: 0.65rem; }
+  .install-box { padding: 1rem 1.5rem; }
+  .install-box code { font-size: 0.9rem; }
+  .bench-callout { padding: 1rem; }
+  .terminal-body { font-size: 0.7rem; min-height: 220px; padding: 0.8rem; }
 }
 @media (max-width: 480px) {
   .memory-tiers { grid-template-columns: 1fr; }
   .memory-tiers .memory-tier:last-child { grid-column: span 1; }
   .hero { padding: 6rem 0 3rem; }
+  .stats { flex-direction: column; align-items: center; gap: 0.6rem; }
+  .stat { display: flex; align-items: baseline; gap: 0.5rem; }
+  .results-tier { padding: 1.3rem 1rem; }
+  .hero-cta { font-size: 0.8rem; padding: 0.6rem 1rem; }
+  .feature { padding: 1.2rem; }
+  .container { padding: 0 1rem; }
 }
 
 /* ── Scanline overlay (subtle CRT effect) ── */
@@ -451,10 +551,14 @@ body::after {
       <img src="mascot.png" alt="ForgeGod">
       FORGEGOD
     </a>
-    <div class="nav-links">
-      <a href="#features" data-i18n="nav_features">Features</a>
-      <a href="#results" data-i18n="nav_results">Results</a>
-      <a href="#compare" data-i18n="nav_compare">Compare</a>
+    <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div class="nav-links" id="nav-links">
+      <a href="#features" data-i18n="nav_features" onclick="closeMenu()">Features</a>
+      <a href="#results" data-i18n="nav_results" onclick="closeMenu()">Results</a>
+      <a href="#benchmarks" data-i18n="nav_benchmarks" onclick="closeMenu()">Benchmarks</a>
+      <a href="#compare" data-i18n="nav_compare" onclick="closeMenu()">Compare</a>
       <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
       <div class="lang-toggle">
         <button id="lang-en" class="active" onclick="setLang('en')">EN</button>
@@ -483,7 +587,7 @@ body::after {
 
 <!-- Stats -->
 <section class="stats">
-  <div class="stat"><span class="stat-value">16</span><span data-i18n="stat_tools">Built-in Tools</span></div>
+  <div class="stat"><span class="stat-value">19</span><span data-i18n="stat_tools">Built-in Tools</span></div>
   <div class="stat"><span class="stat-value">4</span><span data-i18n="stat_providers">LLM Providers</span></div>
   <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Memory System</span></div>
   <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
@@ -595,7 +699,7 @@ body::after {
       </div>
     </div>
 
-    <p class="results-why" data-i18n-html="results_why">Why does this work? A <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">22-point jump on SWE-bench</a> came from the harness, not the model. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model automatically. You just add an API key — ForgeGod handles the rest.</p>
+    <p class="results-why" data-i18n-html="results_why">Why does this work? On SWE-bench, <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">scaffolding adds ~11 points</a> — the same model scores differently across frameworks. <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet hit SOTA at 14x less cost</a> than the previous best by splitting reasoning &amp; editing. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model. You just add an API key.</p>
   </div>
 </section>
 
@@ -657,10 +761,115 @@ body::after {
   </div>
 </section>
 
+<!-- Benchmarks -->
+<section class="bench-section" id="benchmarks">
+  <div class="container">
+    <h2 class="section-title" data-i18n="title_bench">BENCHMARKS &amp; RESEARCH</h2>
+    <div class="bench-grid">
+
+      <div class="bench-card">
+        <h3 data-i18n="bench_scaffolding_title">Scaffolding vs. Model (SWE-bench)</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_bare">Bare model</span><span>45.9%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-red" data-width="54"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_basic_scaffold">+ Basic scaffold</span><span>51.8%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="66"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_context_engine">+ Context engine</span><span>55.4%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill" data-width="78"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_full_harness">+ Full agent harness</span><span>57.0%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="85"></div></div>
+        </div>
+        <div class="bench-source" data-i18n-html="bench_src_swe">Source: <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Morph LLM Benchmarks 2026</a> &bull; <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Epoch AI SWE-bench</a></div>
+      </div>
+
+      <div class="bench-card">
+        <h3 data-i18n="bench_multimodel_title">Multi-Model vs. Single (Aider Polyglot)</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>GPT-4o <small data-i18n="bench_alone">(alone)</small></span><span>49.0%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="56"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>Sonnet <small data-i18n="bench_alone">(alone)</small></span><span>53.8%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="62"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>R1 + Sonnet <small data-i18n="bench_pair">(pair)</small></span><span>64.0%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="74"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>GPT-5 <small data-i18n="bench_best">(best single)</small></span><span>88.0%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill" data-width="100"></div></div>
+        </div>
+        <div class="bench-source" data-i18n-html="bench_src_aider">Source: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> &bull; <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a></div>
+      </div>
+
+      <div class="bench-card">
+        <h3 data-i18n="bench_cost_title">Cost per Task (Typical)</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_local_only">Local only (Ollama)</span><span>$0.00</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="3"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_local_cloud">Local + cloud review</span><span>~$0.05</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill" data-width="10"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_full_cloud">Full cloud pipeline</span><span>~$0.50</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="50"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_frontier">Frontier only</span><span>~$2.00</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-red" data-width="100"></div></div>
+        </div>
+        <div class="bench-source" data-i18n="bench_src_cost">Estimated from OpenAI/Anthropic pricing (Apr 2026)</div>
+      </div>
+
+      <div class="bench-card">
+        <h3 data-i18n="bench_arena_title">Coding Arena (Apr 2026)</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>Claude Sonnet 4.6</span><span>1062</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill" data-width="100"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>Gemini 2.5 Pro</span><span>1043</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="93"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>GPT-5</span><span>1038</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-gold" data-width="91"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span>Gemini 3 Flash</span><span>780</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="50"></div></div>
+        </div>
+        <div class="bench-source" data-i18n-html="bench_src_arena">Source: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Apr 2026</a></div>
+      </div>
+
+    </div>
+
+    <div class="bench-callout">
+      <p data-i18n-html="bench_callout">
+        <strong>The takeaway:</strong> Agent scaffolding adds ~11 points on SWE-bench — the same model scores 17 issues apart across different frameworks.
+        ForgeGod's 5-role routing, Reflexion Coder, and 5-tier memory <em>are</em> the harness.
+        <br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> &bull;
+        <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> &bull;
+        <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>
+      </p>
+    </div>
+  </div>
+</section>
+
 <!-- Comparison -->
 <section class="comparison-section" id="compare">
   <div class="container">
     <h2 class="section-title" data-i18n="title_compare">HOW WE COMPARE</h2>
+    <div class="comparison-scroll">
     <table class="comparison-table">
       <thead>
         <tr>
@@ -747,6 +956,13 @@ body::after {
         </tr>
       </tbody>
     </table>
+    </div>
+    <div class="sources-list" data-i18n-html="cmp_sources">
+      Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> &bull;
+      <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> &bull;
+      <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> &bull;
+      <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>
+    </div>
   </div>
 </section>
 
@@ -887,7 +1103,30 @@ var STRINGS = {
     results_max_title: "Cloud + Local + Cloud",
     results_max_desc: "Cloud plans the architecture, local codes for free, cloud reviews. Professional-grade output used by agencies.",
     results_max_tag: "3+ models",
-    results_why: 'Why does this work? A <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">22-point jump on SWE-bench</a> came from the harness, not the model. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model automatically. You just add an API key \u2014 ForgeGod handles the rest.',
+    results_why: 'Why does this work? On SWE-bench, <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">scaffolding adds ~11 points</a> \u2014 the same model scores differently across frameworks. <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet hit SOTA at 14x less cost</a> than the previous best by splitting reasoning & editing. ForgeGod assigns 5 roles (planner, coder, reviewer, sentinel, escalation) and routes each to the right model. You just add an API key.',
+    nav_benchmarks: "Benchmarks",
+    title_bench: "BENCHMARKS & RESEARCH",
+    bench_scaffolding_title: "Scaffolding vs. Model (SWE-bench)",
+    bench_bare: "Bare model",
+    bench_basic_scaffold: "+ Basic scaffold",
+    bench_context_engine: "+ Context engine",
+    bench_full_harness: "+ Full agent harness",
+    bench_multimodel_title: "Multi-Model vs. Single (Aider Polyglot)",
+    bench_alone: "(alone)",
+    bench_pair: "(pair)",
+    bench_best: "(best single)",
+    bench_cost_title: "Cost per Task (Typical)",
+    bench_local_only: "Local only (Ollama)",
+    bench_local_cloud: "Local + cloud review",
+    bench_full_cloud: "Full cloud pipeline",
+    bench_frontier: "Frontier only",
+    bench_arena_title: "Coding Arena (Apr 2026)",
+    bench_src_swe: 'Source: <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Morph LLM Benchmarks 2026</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Epoch AI SWE-bench</a>',
+    bench_src_aider: 'Source: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> \u2022 <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a>',
+    bench_src_cost: "Estimated from OpenAI/Anthropic pricing (Apr 2026)",
+    bench_src_arena: 'Source: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Apr 2026</a>',
+    bench_callout: '<strong>The takeaway:</strong> Agent scaffolding adds ~11 points on SWE-bench \u2014 the same model scores 17 issues apart across different frameworks. ForgeGod\u2019s 5-role routing, Reflexion Coder, and 5-tier memory <em>are</em> the harness.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
+    cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod init</code> \u2192 <code style="color:var(--cyan)">forgegod run "your task"</code>',
     install_note: 'Python 3.11+ \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
@@ -972,7 +1211,30 @@ var STRINGS = {
     results_max_title: "Nube + Local + Nube",
     results_max_desc: "La nube planifica la arquitectura, el local codea gratis, la nube revisa. Calidad profesional para agencias.",
     results_max_tag: "3+ modelos",
-    results_why: '¿Por qué funciona? Un <a href="https://www.cognition.ai/blog/swe-bench-devin" target="_blank">salto de 22 puntos en SWE-bench</a> vino del harness, no del modelo. ForgeGod asigna 5 roles (planificador, coder, revisor, centinela, escalación) y enruta cada uno al modelo correcto automáticamente. Solo agregá una clave API \u2014 ForgeGod se encarga del resto.',
+    results_why: '¿Por qué funciona? En SWE-bench, <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">el scaffolding agrega ~11 puntos</a> \u2014 el mismo modelo puntúa diferente en distintos frameworks. <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet alcanzó SOTA a 14x menos costo</a> separando razonamiento y edición. ForgeGod asigna 5 roles (planificador, coder, revisor, centinela, escalación) y enruta cada uno al modelo correcto. Solo agregá una clave API.',
+    nav_benchmarks: "Benchmarks",
+    title_bench: "BENCHMARKS E INVESTIGACIÓN",
+    bench_scaffolding_title: "Scaffolding vs. Modelo (SWE-bench)",
+    bench_bare: "Modelo solo",
+    bench_basic_scaffold: "+ Scaffold básico",
+    bench_context_engine: "+ Motor de contexto",
+    bench_full_harness: "+ Harness completo",
+    bench_multimodel_title: "Multi-Modelo vs. Uno Solo (Aider Polyglot)",
+    bench_alone: "(solo)",
+    bench_pair: "(par)",
+    bench_best: "(mejor individual)",
+    bench_cost_title: "Costo por Tarea (Típico)",
+    bench_local_only: "Solo local (Ollama)",
+    bench_local_cloud: "Local + revisión nube",
+    bench_full_cloud: "Pipeline nube completo",
+    bench_frontier: "Solo frontier",
+    bench_arena_title: "Arena de Código (Abr 2026)",
+    bench_src_swe: 'Fuente: <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Morph LLM Benchmarks 2026</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Epoch AI SWE-bench</a>',
+    bench_src_aider: 'Fuente: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> \u2022 <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a>',
+    bench_src_cost: "Estimado de precios OpenAI/Anthropic (Abr 2026)",
+    bench_src_arena: 'Fuente: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Abr 2026</a>',
+    bench_callout: '<strong>La conclusión:</strong> El scaffolding del agente agrega ~11 puntos en SWE-bench \u2014 el mismo modelo puntúa 17 issues de diferencia en distintos frameworks. El ruteo de 5 roles, Reflexion Coder y la memoria de 5 niveles de ForgeGod <em>son</em> el harness.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Análisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
+    cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
     provider_free: "$0 / GRATIS",
     install_then: 'Luego: <code style="color:var(--cyan)">forgegod init --lang es</code> \u2192 <code style="color:var(--cyan)">forgegod run "tu tarea"</code>',
     install_note: 'Python 3.11+ \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
@@ -1194,6 +1456,38 @@ function restartTerminal() {
 
   // Start terminal animation
   setTimeout(runLine, 1000);
+})();
+
+// ── Hamburger menu ──
+function toggleMenu() {
+  document.getElementById('nav-links').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('nav-links').classList.remove('open');
+}
+
+// ── Animate benchmark bars on scroll ──
+(function() {
+  var animated = false;
+  var benchSection = document.getElementById('benchmarks');
+  if (!benchSection) return;
+  function animateBars() {
+    if (animated) return;
+    var rect = benchSection.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.85) {
+      animated = true;
+      document.querySelectorAll('.bench-bar-fill').forEach(function(bar) {
+        var w = bar.getAttribute('data-width');
+        if (w) bar.style.width = w + '%';
+      });
+    }
+  }
+  // Init bars to 0 width
+  document.querySelectorAll('.bench-bar-fill').forEach(function(bar) {
+    bar.style.width = '0%';
+  });
+  window.addEventListener('scroll', animateBars, { passive: true });
+  animateBars(); // check on load
 })();
 </script>
 </body>
