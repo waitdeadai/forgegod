@@ -9,6 +9,8 @@ from forgegod.models import ToolDef
 # Global tool registry
 _TOOLS: dict[str, tuple[ToolDef, Callable[..., Coroutine[Any, Any, str]]]] = {}
 
+__all__ = ["register_tool", "get_tool_defs", "execute_tool", "load_all_tools"]
+
 
 def register_tool(
     name: str,
