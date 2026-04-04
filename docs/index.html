@@ -87,6 +87,23 @@ nav .container {
 }
 .nav-install:hover { border-color: var(--cyan); }
 
+/* ── Language Toggle ── */
+.lang-toggle {
+  display: flex; gap: 0;
+  border: 1px solid var(--surface-border); border-radius: 6px;
+  overflow: hidden;
+}
+.lang-toggle button {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  padding: 0.25rem 0.55rem; border: none; cursor: pointer;
+  background: transparent; color: var(--text-dim);
+  transition: all 0.2s; letter-spacing: 0.5px;
+}
+.lang-toggle button.active {
+  background: var(--cyan); color: var(--bg); font-weight: 700;
+}
+.lang-toggle button:hover:not(.active) { color: var(--cyan); }
+
 /* ── Hero ── */
 .hero {
   padding: 8rem 0 4rem;
@@ -384,10 +401,14 @@ body::after {
       FORGEGOD
     </a>
     <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#memory">Memory</a>
-      <a href="#compare">Compare</a>
+      <a href="#features" data-i18n="nav_features">Features</a>
+      <a href="#memory" data-i18n="nav_memory">Memory</a>
+      <a href="#compare" data-i18n="nav_compare">Compare</a>
       <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
+      <div class="lang-toggle">
+        <button id="lang-en" class="active" onclick="setLang('en')">EN</button>
+        <button id="lang-es" onclick="setLang('es')">ES</button>
+      </div>
       <button class="nav-install" onclick="copyInstall()">pip install forgegod</button>
     </div>
   </div>
@@ -398,11 +419,11 @@ body::after {
   <div class="container">
     <img src="mascot.png" alt="ForgeGod Mascot" class="hero-mascot">
     <h1>FORGEGOD</h1>
-    <p class="hero-tagline">
+    <p class="hero-tagline" data-i18n-html="hero_tagline">
       The coding agent that runs <strong>24/7</strong>, learns from its mistakes, and costs <strong>$0</strong> when you want it to.
     </p>
     <div class="hero-cta" onclick="copyInstall()">
-      <span class="copy-hint">Click to copy</span>
+      <span class="copy-hint" data-i18n="copy_hint">Click to copy</span>
       <span class="prompt">$</span>
       <span class="command">pip install forgegod</span>
     </div>
@@ -411,11 +432,11 @@ body::after {
 
 <!-- Stats -->
 <section class="stats">
-  <div class="stat"><span class="stat-value">16</span>Built-in Tools</div>
-  <div class="stat"><span class="stat-value">4</span>LLM Providers</div>
-  <div class="stat"><span class="stat-value">5-Tier</span>Memory System</div>
-  <div class="stat"><span class="stat-value">24/7</span>Autonomous</div>
-  <div class="stat"><span class="stat-value">$0</span>Local Mode</div>
+  <div class="stat"><span class="stat-value">16</span><span data-i18n="stat_tools">Built-in Tools</span></div>
+  <div class="stat"><span class="stat-value">4</span><span data-i18n="stat_providers">LLM Providers</span></div>
+  <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Memory System</span></div>
+  <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
+  <div class="stat"><span class="stat-value">$0</span><span data-i18n="stat_local">Local Mode</span></div>
 </section>
 
 <!-- Terminal Demo -->
@@ -439,49 +460,49 @@ body::after {
 <!-- Features -->
 <section class="features-section" id="features">
   <div class="container">
-    <h2 class="section-title">WHAT MAKES IT DIFFERENT</h2>
+    <h2 class="section-title" data-i18n="title_features">WHAT MAKES IT DIFFERENT</h2>
     <div class="features">
 
       <div class="feature feature-large">
         <div class="feature-icon">&#9881;</div>
-        <h3>Multi-Model Auto-Routing</h3>
-        <p>Route tasks to the right model automatically. Local Ollama for bulk coding ($0), cloud for review, frontier for hard problems. Circuit breaker + fallback chains. Thompson sampling learns which model works best for what.</p>
-        <span class="feature-tag">OpenAI + Anthropic + Ollama + OpenRouter</span>
+        <h3 data-i18n="feat_routing_title">Multi-Model Auto-Routing</h3>
+        <p data-i18n="feat_routing_desc">Route tasks to the right model automatically. Local Ollama for bulk coding ($0), cloud for review, frontier for hard problems. Circuit breaker + fallback chains. Thompson sampling learns which model works best for what.</p>
+        <span class="feature-tag" data-i18n="feat_routing_tag">OpenAI + Anthropic + Ollama + OpenRouter</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#8734;</div>
-        <h3>Ralph Loop</h3>
-        <p>24/7 autonomous coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot, ever.</p>
-        <span class="feature-tag">Infinite loop</span>
+        <h3 data-i18n="feat_loop_title">Ralph Loop</h3>
+        <p data-i18n="feat_loop_desc">24/7 autonomous coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot, ever.</p>
+        <span class="feature-tag" data-i18n="feat_loop_tag">Infinite loop</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#128200;</div>
-        <h3>Reflexion Coder</h3>
-        <p>3-attempt code gen with escalating models. Local free, then cloud cheap, then frontier. AST validation at every step.</p>
-        <span class="feature-tag">3 attempts</span>
+        <h3 data-i18n="feat_reflexion_title">Reflexion Coder</h3>
+        <p data-i18n="feat_reflexion_desc">3-attempt code gen with escalating models. Local free, then cloud cheap, then frontier. AST validation at every step.</p>
+        <span class="feature-tag" data-i18n="feat_reflexion_tag">3 attempts</span>
       </div>
 
       <div class="feature feature-large">
         <div class="feature-icon">&#129504;</div>
-        <h3>5-Tier Memory System</h3>
-        <p>Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce. The most advanced memory of any open-source coding agent.</p>
-        <span class="feature-tag">Cross-session learning</span>
+        <h3 data-i18n="feat_memory_title">5-Tier Memory System</h3>
+        <p data-i18n="feat_memory_desc">Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce. The most advanced memory of any open-source coding agent.</p>
+        <span class="feature-tag" data-i18n="feat_memory_tag">Cross-session learning</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#128176;</div>
-        <h3>Budget Modes</h3>
-        <p>normal &rarr; throttle &rarr; local-only &rarr; halt. Auto-triggered by daily spend. Run forever on Ollama for $0.</p>
-        <span class="feature-tag">Cost control</span>
+        <h3 data-i18n="feat_budget_title">Budget Modes</h3>
+        <p data-i18n="feat_budget_desc">normal &rarr; throttle &rarr; local-only &rarr; halt. Auto-triggered by daily spend. Run forever on Ollama for $0.</p>
+        <span class="feature-tag" data-i18n="feat_budget_tag">Cost control</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#9889;</div>
-        <h3>SICA</h3>
-        <p>Self-Improving Coding Agent. Modifies its own prompts, routing, and strategy based on outcomes. 6 safety layers prevent drift.</p>
-        <span class="feature-tag">Self-improving</span>
+        <h3 data-i18n="feat_sica_title">SICA</h3>
+        <p data-i18n="feat_sica_desc">Self-Improving Coding Agent. Modifies its own prompts, routing, and strategy based on outcomes. 6 safety layers prevent drift.</p>
+        <span class="feature-tag" data-i18n="feat_sica_tag">Self-improving</span>
       </div>
 
     </div>
@@ -491,32 +512,32 @@ body::after {
 <!-- Memory Deep Dive -->
 <section class="memory-section" id="memory">
   <div class="container">
-    <h2 class="section-title">5-TIER COGNITIVE MEMORY</h2>
+    <h2 class="section-title" data-i18n="title_memory">5-TIER COGNITIVE MEMORY</h2>
     <div class="memory-tiers">
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128218;</div>
-        <h4>Episodic</h4>
-        <p>What happened per task. Full outcome records. 90-day retention.</p>
+        <h4 data-i18n="mem_episodic_title">Episodic</h4>
+        <p data-i18n="mem_episodic_desc">What happened per task. Full outcome records. 90-day retention.</p>
       </div>
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128161;</div>
-        <h4>Semantic</h4>
-        <p>Extracted principles. Confidence scoring with exponential decay.</p>
+        <h4 data-i18n="mem_semantic_title">Semantic</h4>
+        <p data-i18n="mem_semantic_desc">Extracted principles. Confidence scoring with exponential decay.</p>
       </div>
       <div class="memory-tier">
         <div class="memory-tier-icon">&#9881;</div>
-        <h4>Procedural</h4>
-        <p>Code patterns and fix recipes. Success rate tracking.</p>
+        <h4 data-i18n="mem_procedural_title">Procedural</h4>
+        <p data-i18n="mem_procedural_desc">Code patterns and fix recipes. Success rate tracking.</p>
       </div>
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128279;</div>
-        <h4>Graph</h4>
-        <p>Entity relationships + causal edges. Auto-extracted.</p>
+        <h4 data-i18n="mem_graph_title">Graph</h4>
+        <p data-i18n="mem_graph_desc">Entity relationships + causal edges. Auto-extracted.</p>
       </div>
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128295;</div>
-        <h4>Error-Solution</h4>
-        <p>Error pattern &rarr; fix mapping. Fuzzy match lookup.</p>
+        <h4 data-i18n="mem_errors_title">Error-Solution</h4>
+        <p data-i18n="mem_errors_desc">Error pattern &rarr; fix mapping. Fuzzy match lookup.</p>
       </div>
     </div>
   </div>
@@ -525,22 +546,22 @@ body::after {
 <!-- How It Works -->
 <section class="how-section">
   <div class="container">
-    <h2 class="section-title">HOW IT WORKS</h2>
+    <h2 class="section-title" data-i18n="title_how">HOW IT WORKS</h2>
     <div class="how-steps">
       <div class="how-step">
         <div class="how-number">1</div>
-        <h3>Plan</h3>
-        <p>Describe your project. ForgeGod decomposes it into stories with acceptance criteria.</p>
+        <h3 data-i18n="how_plan_title">Plan</h3>
+        <p data-i18n="how_plan_desc">Describe your project. ForgeGod decomposes it into stories with acceptance criteria.</p>
       </div>
       <div class="how-step">
         <div class="how-number">2</div>
-        <h3>Loop</h3>
-        <p>The Ralph Loop picks stories, spawns agents, implements, validates, commits. 24/7. Fresh context per story.</p>
+        <h3 data-i18n="how_loop_title">Loop</h3>
+        <p data-i18n="how_loop_desc">The Ralph Loop picks stories, spawns agents, implements, validates, commits. 24/7. Fresh context per story.</p>
       </div>
       <div class="how-step">
         <div class="how-number">3</div>
-        <h3>Ship</h3>
-        <p>Review the git log. Each story is a clean commit. Frontier model quality gate catches issues.</p>
+        <h3 data-i18n="how_ship_title">Ship</h3>
+        <p data-i18n="how_ship_desc">Review the git log. Each story is a clean commit. Frontier model quality gate catches issues.</p>
       </div>
     </div>
   </div>
@@ -549,7 +570,7 @@ body::after {
 <!-- Comparison -->
 <section class="comparison-section" id="compare">
   <div class="container">
-    <h2 class="section-title">HOW WE COMPARE</h2>
+    <h2 class="section-title" data-i18n="title_compare">HOW WE COMPARE</h2>
     <table class="comparison-table">
       <thead>
         <tr>
@@ -563,7 +584,7 @@ body::after {
       </thead>
       <tbody>
         <tr>
-          <td>Multi-model routing</td>
+          <td data-i18n="cmp_routing">Multi-model routing</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="partial">manual</td>
@@ -571,7 +592,7 @@ body::after {
           <td class="fg yes">&#10003;</td>
         </tr>
         <tr>
-          <td>Local + cloud hybrid</td>
+          <td data-i18n="cmp_hybrid">Local + cloud hybrid</td>
           <td class="no">&mdash;</td>
           <td class="partial">basic</td>
           <td class="partial">basic</td>
@@ -579,7 +600,7 @@ body::after {
           <td class="fg yes">native</td>
         </tr>
         <tr>
-          <td>24/7 autonomous loops</td>
+          <td data-i18n="cmp_loops">24/7 autonomous loops</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
@@ -587,7 +608,7 @@ body::after {
           <td class="fg yes">&#10003;</td>
         </tr>
         <tr>
-          <td>Cross-session memory</td>
+          <td data-i18n="cmp_memory">Cross-session memory</td>
           <td class="partial">basic</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
@@ -595,7 +616,7 @@ body::after {
           <td class="fg yes">5-tier</td>
         </tr>
         <tr>
-          <td>Self-improving</td>
+          <td data-i18n="cmp_self">Self-improving</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
@@ -603,7 +624,7 @@ body::after {
           <td class="fg yes">SICA</td>
         </tr>
         <tr>
-          <td>Budget control</td>
+          <td data-i18n="cmp_budget">Budget control</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
@@ -611,7 +632,7 @@ body::after {
           <td class="fg yes">4 modes</td>
         </tr>
         <tr>
-          <td>Reflexion loop</td>
+          <td data-i18n="cmp_reflexion">Reflexion loop</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
@@ -619,7 +640,7 @@ body::after {
           <td class="fg yes">3-attempt</td>
         </tr>
         <tr>
-          <td>$0 local mode</td>
+          <td data-i18n="cmp_local">$0 local mode</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
           <td class="partial">manual</td>
@@ -627,7 +648,7 @@ body::after {
           <td class="fg yes">native</td>
         </tr>
         <tr>
-          <td>Open source</td>
+          <td data-i18n="cmp_oss">Open source</td>
           <td class="partial">partial</td>
           <td class="yes">Apache 2.0</td>
           <td class="yes">Apache 2.0</td>
@@ -642,12 +663,12 @@ body::after {
 <!-- Providers -->
 <section class="providers-section">
   <div class="container">
-    <h2 class="section-title">SUPPORTED PROVIDERS</h2>
+    <h2 class="section-title" data-i18n="title_providers">SUPPORTED PROVIDERS</h2>
     <div class="providers">
       <div class="provider">
         <div class="provider-icon">&#127968;</div>
         <span class="provider-name">Ollama</span>
-        <div class="provider-free">$0 / FREE</div>
+        <div class="provider-free" data-i18n="provider_free">$0 / FREE</div>
       </div>
       <div class="provider">
         <div class="provider-icon">&#9883;</div>
@@ -668,15 +689,15 @@ body::after {
 <!-- Install -->
 <section class="install-section">
   <div class="container">
-    <h2 class="section-title">GET STARTED IN 30 SECONDS</h2>
+    <h2 class="section-title" data-i18n="title_install">GET STARTED IN 30 SECONDS</h2>
     <div class="install-box">
       <code>pip install forgegod</code>
     </div>
-    <p class="install-note">
+    <p class="install-note" data-i18n-html="install_then">
       Then: <code style="color:var(--cyan)">forgegod init</code> &rarr;
       <code style="color:var(--cyan)">forgegod run "your task"</code>
     </p>
-    <p class="install-note" style="margin-top: 0.5rem;">
+    <p class="install-note" style="margin-top: 0.5rem;" data-i18n-html="install_note">
       Python 3.11+ &bull; Works on macOS, Linux, Windows &bull;
       <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>
     </p>
@@ -688,119 +709,370 @@ body::after {
   <div class="container">
     <div class="footer-links">
       <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
-      <a href="https://github.com/waitdeadai/forgegod/blob/main/CONTRIBUTING.md">Contributing</a>
-      <a href="https://github.com/waitdeadai/forgegod/blob/main/SECURITY.md">Security</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/CONTRIBUTING.md" data-i18n="footer_contributing">Contributing</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/SECURITY.md" data-i18n="footer_security">Security</a>
       <a href="https://github.com/waitdeadai/forgegod/blob/main/LICENSE">Apache 2.0</a>
     </div>
-    <p>Built by <a href="https://waitdead.com">WAITDEAD</a></p>
+    <p data-i18n-html="footer_built">Built by <a href="https://waitdead.com">WAITDEAD</a></p>
   </div>
 </footer>
 
 <script>
-// Copy install command
+// ── i18n Translation System ──
+var STRINGS = {
+  en: {
+    page_title: "ForgeGod \u2014 Autonomous Coding Agent. Multi-Model. 24/7. $0 Local.",
+    meta_desc: "The open-source coding agent that runs 24/7, learns from every outcome, and costs $0 with Ollama.",
+    nav_features: "Features",
+    nav_memory: "Memory",
+    nav_compare: "Compare",
+    hero_tagline: 'The coding agent that runs <strong>24/7</strong>, learns from its mistakes, and costs <strong>$0</strong> when you want it to.',
+    copy_hint: "Click to copy",
+    stat_tools: "Built-in Tools",
+    stat_providers: "LLM Providers",
+    stat_memory: "Memory System",
+    stat_autonomous: "Autonomous",
+    stat_local: "Local Mode",
+    title_features: "WHAT MAKES IT DIFFERENT",
+    title_memory: "5-TIER COGNITIVE MEMORY",
+    title_how: "HOW IT WORKS",
+    title_compare: "HOW WE COMPARE",
+    title_providers: "SUPPORTED PROVIDERS",
+    title_install: "GET STARTED IN 30 SECONDS",
+    feat_routing_title: "Multi-Model Auto-Routing",
+    feat_routing_desc: "Route tasks to the right model automatically. Local Ollama for bulk coding ($0), cloud for review, frontier for hard problems. Circuit breaker + fallback chains. Thompson sampling learns which model works best for what.",
+    feat_routing_tag: "OpenAI + Anthropic + Ollama + OpenRouter",
+    feat_loop_title: "Ralph Loop",
+    feat_loop_desc: "24/7 autonomous coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot, ever.",
+    feat_loop_tag: "Infinite loop",
+    feat_reflexion_title: "Reflexion Coder",
+    feat_reflexion_desc: "3-attempt code gen with escalating models. Local free, then cloud cheap, then frontier. AST validation at every step.",
+    feat_reflexion_tag: "3 attempts",
+    feat_memory_title: "5-Tier Memory System",
+    feat_memory_desc: "Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce. The most advanced memory of any open-source coding agent.",
+    feat_memory_tag: "Cross-session learning",
+    feat_budget_title: "Budget Modes",
+    feat_budget_desc: "normal \u2192 throttle \u2192 local-only \u2192 halt. Auto-triggered by daily spend. Run forever on Ollama for $0.",
+    feat_budget_tag: "Cost control",
+    feat_sica_title: "SICA",
+    feat_sica_desc: "Self-Improving Coding Agent. Modifies its own prompts, routing, and strategy based on outcomes. 6 safety layers prevent drift.",
+    feat_sica_tag: "Self-improving",
+    mem_episodic_title: "Episodic",
+    mem_episodic_desc: "What happened per task. Full outcome records. 90-day retention.",
+    mem_semantic_title: "Semantic",
+    mem_semantic_desc: "Extracted principles. Confidence scoring with exponential decay.",
+    mem_procedural_title: "Procedural",
+    mem_procedural_desc: "Code patterns and fix recipes. Success rate tracking.",
+    mem_graph_title: "Graph",
+    mem_graph_desc: "Entity relationships + causal edges. Auto-extracted.",
+    mem_errors_title: "Error-Solution",
+    mem_errors_desc: "Error pattern \u2192 fix mapping. Fuzzy match lookup.",
+    how_plan_title: "Plan",
+    how_plan_desc: "Describe your project. ForgeGod decomposes it into stories with acceptance criteria.",
+    how_loop_title: "Loop",
+    how_loop_desc: "The Ralph Loop picks stories, spawns agents, implements, validates, commits. 24/7. Fresh context per story.",
+    how_ship_title: "Ship",
+    how_ship_desc: "Review the git log. Each story is a clean commit. Frontier model quality gate catches issues.",
+    cmp_routing: "Multi-model routing",
+    cmp_hybrid: "Local + cloud hybrid",
+    cmp_loops: "24/7 autonomous loops",
+    cmp_memory: "Cross-session memory",
+    cmp_self: "Self-improving",
+    cmp_budget: "Budget control",
+    cmp_reflexion: "Reflexion loop",
+    cmp_local: "$0 local mode",
+    cmp_oss: "Open source",
+    provider_free: "$0 / FREE",
+    install_then: 'Then: <code style="color:var(--cyan)">forgegod init</code> \u2192 <code style="color:var(--cyan)">forgegod run "your task"</code>',
+    install_note: 'Python 3.11+ \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
+    footer_contributing: "Contributing",
+    footer_security: "Security",
+    footer_built: 'Built by <a href="https://waitdead.com">WAITDEAD</a>'
+  },
+  es: {
+    page_title: "ForgeGod \u2014 Agente de Codigo Autonomo. Multi-Modelo. 24/7. $0 Local.",
+    meta_desc: "El agente de codigo open-source que trabaja 24/7, aprende de cada resultado, y cuesta $0 con Ollama.",
+    nav_features: "Caracteristicas",
+    nav_memory: "Memoria",
+    nav_compare: "Comparar",
+    hero_tagline: 'El agente de codigo que trabaja <strong>24/7</strong>, aprende de sus errores, y cuesta <strong>$0</strong> cuando quieras.',
+    copy_hint: "Click para copiar",
+    stat_tools: "Herramientas",
+    stat_providers: "Proveedores LLM",
+    stat_memory: "Sistema de Memoria",
+    stat_autonomous: "Autonomo",
+    stat_local: "Modo Local",
+    title_features: "QUE LO HACE DIFERENTE",
+    title_memory: "MEMORIA COGNITIVA DE 5 NIVELES",
+    title_how: "COMO FUNCIONA",
+    title_compare: "COMO NOS COMPARAMOS",
+    title_providers: "PROVEEDORES SOPORTADOS",
+    title_install: "EMPIEZA EN 30 SEGUNDOS",
+    feat_routing_title: "Ruteo Multi-Modelo Automatico",
+    feat_routing_desc: "Enruta tareas al modelo correcto automaticamente. Ollama local para codigo en bulk ($0), nube para revision, frontier para problemas dificiles. Circuit breaker + cadenas de fallback. Thompson sampling aprende que modelo funciona mejor para cada cosa.",
+    feat_routing_tag: "OpenAI + Anthropic + Ollama + OpenRouter",
+    feat_loop_title: "Ralph Loop",
+    feat_loop_desc: "Codigo autonomo 24/7 desde un PRD. El progreso vive en git, no en contexto LLM. Agente fresco por historia. Sin degradacion de contexto.",
+    feat_loop_tag: "Loop infinito",
+    feat_reflexion_title: "Reflexion Coder",
+    feat_reflexion_desc: "3 intentos de generacion de codigo con modelos escalonados. Local gratis, luego nube barata, luego frontier. Validacion AST en cada paso.",
+    feat_reflexion_tag: "3 intentos",
+    feat_memory_title: "Sistema de Memoria de 5 Niveles",
+    feat_memory_desc: "Episodica (que paso) + Semantica (que se) + Procedimental (como lo hago) + Grafo (como se conectan las cosas) + Errores-Soluciones (que arregla que). Las memorias decaen, se consolidan y se refuerzan. La memoria mas avanzada de cualquier agente de codigo open-source.",
+    feat_memory_tag: "Aprendizaje entre sesiones",
+    feat_budget_title: "Modos de Presupuesto",
+    feat_budget_desc: "normal \u2192 throttle \u2192 local-only \u2192 halt. Activados automaticamente por gasto diario. Corre para siempre en Ollama por $0.",
+    feat_budget_tag: "Control de costos",
+    feat_sica_title: "SICA",
+    feat_sica_desc: "Agente de Codigo Auto-Mejorable. Modifica sus propios prompts, ruteo y estrategia basado en resultados. 6 capas de seguridad previenen la desviacion.",
+    feat_sica_tag: "Auto-mejorable",
+    mem_episodic_title: "Episodica",
+    mem_episodic_desc: "Que paso por tarea. Registros completos de resultado. Retencion de 90 dias.",
+    mem_semantic_title: "Semantica",
+    mem_semantic_desc: "Principios extraidos. Puntuacion de confianza con decaimiento exponencial.",
+    mem_procedural_title: "Procedimental",
+    mem_procedural_desc: "Patrones de codigo y recetas de solucion. Seguimiento de tasa de exito.",
+    mem_graph_title: "Grafo",
+    mem_graph_desc: "Relaciones entre entidades + aristas causales. Auto-extraido.",
+    mem_errors_title: "Errores-Soluciones",
+    mem_errors_desc: "Patron de error \u2192 solucion. Busqueda fuzzy.",
+    how_plan_title: "Planificar",
+    how_plan_desc: "Describe tu proyecto. ForgeGod lo descompone en historias con criterios de aceptacion.",
+    how_loop_title: "Loop",
+    how_loop_desc: "El Ralph Loop elige historias, crea agentes, implementa, valida, hace commit. 24/7. Contexto fresco por historia.",
+    how_ship_title: "Entregar",
+    how_ship_desc: "Revisa el git log. Cada historia es un commit limpio. La puerta de calidad frontier detecta problemas.",
+    cmp_routing: "Ruteo multi-modelo",
+    cmp_hybrid: "Hibrido local + nube",
+    cmp_loops: "Loops autonomos 24/7",
+    cmp_memory: "Memoria entre sesiones",
+    cmp_self: "Auto-mejorable",
+    cmp_budget: "Control de presupuesto",
+    cmp_reflexion: "Loop de reflexion",
+    cmp_local: "Modo local $0",
+    cmp_oss: "Open source",
+    provider_free: "$0 / GRATIS",
+    install_then: 'Luego: <code style="color:var(--cyan)">forgegod init --lang es</code> \u2192 <code style="color:var(--cyan)">forgegod run "tu tarea"</code>',
+    install_note: 'Python 3.11+ \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Docs completa en GitHub</a>',
+    footer_contributing: "Contribuir",
+    footer_security: "Seguridad",
+    footer_built: 'Hecho por <a href="https://waitdead.com">WAITDEAD</a>'
+  }
+};
+
+var currentLang = 'en';
+
+function setLang(lang) {
+  if (!STRINGS[lang]) lang = 'en';
+  currentLang = lang;
+  localStorage.setItem('forgegod-lang', lang);
+  document.documentElement.lang = lang;
+
+  // Toggle buttons
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-es').classList.toggle('active', lang === 'es');
+
+  // Plain text elements
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (STRINGS[lang][key]) el.textContent = STRINGS[lang][key];
+  });
+
+  // HTML content elements
+  document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-html');
+    if (STRINGS[lang][key]) el.innerHTML = STRINGS[lang][key];
+  });
+
+  // Meta tags
+  document.title = STRINGS[lang].page_title;
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.content = STRINGS[lang].meta_desc;
+
+  // Restart terminal with new language
+  restartTerminal();
+}
+
+// ── Terminal Demo Lines (per language) ──
+function getTerminalLines() {
+  if (currentLang === 'es') {
+    return [
+      { cmd: 'forgegod init --lang es', delay: 1200, output: [
+        { text: '  ForgeGod \u2014 Inicializando proyecto', cls: 'output' },
+        { text: '  + Clave API de OpenAI detectada', cls: 'success' },
+        { text: '  + Ollama corriendo (3 modelos)', cls: 'success' },
+        { text: '  + Detectado: python', cls: 'success' },
+        { text: '  + Repositorio Git', cls: 'success' },
+        { text: '  Inicializado en .forgegod/', cls: 'success' },
+      ]},
+      { cmd: 'forgegod run "Agrega endpoint /health con info de uptime"', delay: 1500, output: [
+        { text: '  \u25b6 ORIENT: leyendo codebase...', cls: 'output' },
+        { text: '  \u25b6 LOCATE: encontre server.py', cls: 'output' },
+        { text: '  \u25b6 IMPLEMENT: agregando ruta /health', cls: 'output' },
+        { text: '  \u25b6 VERIFY: pytest paso (12/12)', cls: 'success' },
+        { text: '  \u2714 Tarea completada', cls: 'success' },
+        { text: '  Costo: $0.0023 | Tokens: 4,210', cls: 'cost' },
+      ]},
+      { cmd: 'forgegod memory', delay: 1000, output: [
+        { text: '  Episodica: 47  |  Semantica: 23  |  Procedimental: 8', cls: 'output' },
+        { text: '  Errores-Soluciones: 12  |  Entidades: 89', cls: 'output' },
+        { text: '  Salud: 92%  |  Confianza prom: 71%', cls: 'success' },
+      ]},
+    ];
+  }
+  return [
+    { cmd: 'forgegod init', delay: 1200, output: [
+      { text: '  ForgeGod \u2014 Initializing project', cls: 'output' },
+      { text: '  + OpenAI API key detected', cls: 'success' },
+      { text: '  + Ollama running (3 models)', cls: 'success' },
+      { text: '  + Detected: python', cls: 'success' },
+      { text: '  + Git repository', cls: 'success' },
+      { text: '  Initialized at .forgegod/', cls: 'success' },
+    ]},
+    { cmd: 'forgegod run "Add /health endpoint with uptime info"', delay: 1500, output: [
+      { text: '  \u25b6 ORIENT: reading codebase...', cls: 'output' },
+      { text: '  \u25b6 LOCATE: found server.py', cls: 'output' },
+      { text: '  \u25b6 IMPLEMENT: adding /health route', cls: 'output' },
+      { text: '  \u25b6 VERIFY: pytest passed (12/12)', cls: 'success' },
+      { text: '  \u2714 Task completed', cls: 'success' },
+      { text: '  Cost: $0.0023 | Tokens: 4,210', cls: 'cost' },
+    ]},
+    { cmd: 'forgegod memory', delay: 1000, output: [
+      { text: '  Episodic: 47  |  Semantic: 23  |  Procedural: 8', cls: 'output' },
+      { text: '  Error-Solutions: 12  |  Entities: 89', cls: 'output' },
+      { text: '  Health: 92%  |  Avg confidence: 71%', cls: 'success' },
+    ]},
+  ];
+}
+
+// ── Copy install command ──
 function copyInstall() {
-  navigator.clipboard.writeText('pip install forgegod').then(() => {
-    const btn = document.querySelector('.hero-cta .command');
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
+  navigator.clipboard.writeText('pip install forgegod').then(function() {
+    var btn = document.querySelector('.hero-cta .command');
+    var orig = btn.textContent;
+    btn.textContent = currentLang === 'es' ? 'Copiado!' : 'Copied!';
     btn.style.color = '#00ff88';
-    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+    setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
   });
 }
 
-// Terminal typing animation
-const lines = [
-  { cmd: 'forgegod init', delay: 1200, output: [
-    { text: '  ForgeGod \u2014 Initializing project', cls: 'output' },
-    { text: '  + OpenAI API key detected', cls: 'success' },
-    { text: '  + Ollama running (3 models)', cls: 'success' },
-    { text: '  + Detected: python', cls: 'success' },
-    { text: '  + Git repository', cls: 'success' },
-    { text: '  Initialized at .forgegod/', cls: 'success' },
-  ]},
-  { cmd: 'forgegod run "Add /health endpoint with uptime info"', delay: 1500, output: [
-    { text: '  \u25b6 ORIENT: reading codebase...', cls: 'output' },
-    { text: '  \u25b6 LOCATE: found server.py', cls: 'output' },
-    { text: '  \u25b6 IMPLEMENT: adding /health route', cls: 'output' },
-    { text: '  \u25b6 VERIFY: pytest passed (12/12)', cls: 'success' },
-    { text: '  \u2714 Task completed', cls: 'success' },
-    { text: '  Cost: $0.0023 | Tokens: 4,210', cls: 'cost' },
-  ]},
-  { cmd: 'forgegod memory', delay: 1000, output: [
-    { text: '  Episodic: 47  |  Semantic: 23  |  Procedural: 8', cls: 'output' },
-    { text: '  Error-Solutions: 12  |  Entities: 89', cls: 'output' },
-    { text: '  Health: 92%  |  Avg confidence: 71%', cls: 'success' },
-  ]},
-];
+// ── Terminal typing animation ──
+var lineIdx = 0;
+var animGen = 0;
+var typewriter = document.getElementById('typewriter');
+var output = document.getElementById('terminal-output');
+var cursorEl = document.getElementById('cursor');
 
-let lineIdx = 0;
-const typewriter = document.getElementById('typewriter');
-const output = document.getElementById('terminal-output');
-const cursorEl = document.getElementById('cursor');
-
-function typeCommand(text, cb) {
-  let i = 0;
+function typeCommand(text, cb, gen) {
+  var i = 0;
   typewriter.textContent = '';
   cursorEl.style.display = 'inline-block';
-  const iv = setInterval(() => {
+  var iv = setInterval(function() {
+    if (gen !== animGen) { clearInterval(iv); return; }
     typewriter.textContent += text[i];
     i++;
-    if (i >= text.length) { clearInterval(iv); setTimeout(cb, 400); }
+    if (i >= text.length) {
+      clearInterval(iv);
+      setTimeout(function() { if (gen === animGen) cb(); }, 400);
+    }
   }, 35);
 }
 
-function showOutput(items, cb) {
+function showOutput(items, cb, gen) {
   cursorEl.style.display = 'none';
-  let i = 0;
-  const iv = setInterval(() => {
-    const div = document.createElement('div');
+  var i = 0;
+  var iv = setInterval(function() {
+    if (gen !== animGen) { clearInterval(iv); return; }
+    var div = document.createElement('div');
     div.className = items[i].cls;
     div.textContent = items[i].text;
     output.appendChild(div);
     i++;
-    if (i >= items.length) { clearInterval(iv); setTimeout(cb, items.length > 4 ? 2000 : 1500); }
+    if (i >= items.length) {
+      clearInterval(iv);
+      setTimeout(function() { if (gen === animGen) cb(); }, items.length > 4 ? 2000 : 1500);
+    }
   }, 200);
 }
 
 function runLine() {
+  var gen = animGen;
+  var lines = getTerminalLines();
+
   if (lineIdx >= lines.length) {
     lineIdx = 0;
     output.innerHTML = '';
   }
-  const line = lines[lineIdx];
+  var line = lines[lineIdx];
   lineIdx++;
 
-  // Clear for new command cycle
   if (lineIdx === 1 && output.children.length > 0) {
     output.innerHTML = '';
   }
 
-  typeCommand(line.cmd, () => {
-    // Add the typed command as a completed line
-    const cmdLine = document.createElement('div');
+  typeCommand(line.cmd, function() {
+    if (gen !== animGen) return;
+    var cmdLine = document.createElement('div');
     cmdLine.innerHTML = '<span class="prompt">$ </span><span class="command">' + typewriter.textContent + '</span>';
     output.appendChild(cmdLine);
     typewriter.textContent = '';
 
-    showOutput(line.output, () => {
+    showOutput(line.output, function() {
+      if (gen !== animGen) return;
       if (lineIdx < lines.length) {
-        // Add blank line separator
         output.appendChild(document.createElement('div'));
-        setTimeout(runLine, line.delay);
+        setTimeout(function() { if (gen === animGen) runLine(); }, line.delay);
       } else {
-        // Restart after pause
-        setTimeout(() => {
+        setTimeout(function() {
+          if (gen !== animGen) return;
           output.innerHTML = '';
           lineIdx = 0;
           runLine();
         }, 4000);
       }
-    });
-  });
+    }, gen);
+  }, gen);
 }
 
-// Start after page load
-setTimeout(runLine, 1000);
+function restartTerminal() {
+  animGen++;
+  lineIdx = 0;
+  output.innerHTML = '';
+  typewriter.textContent = '';
+  cursorEl.style.display = 'inline-block';
+  setTimeout(function() { runLine(); }, 500);
+}
+
+// ── Init: detect language + start ──
+(function() {
+  var saved = localStorage.getItem('forgegod-lang');
+  var browser = (navigator.language || '').startsWith('es') ? 'es' : 'en';
+  var lang = saved || browser;
+  currentLang = lang;
+
+  // Set toggle state before first render
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-es').classList.toggle('active', lang === 'es');
+
+  if (lang === 'es') {
+    // Apply Spanish translations
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      if (STRINGS.es[key]) el.textContent = STRINGS.es[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-html');
+      if (STRINGS.es[key]) el.innerHTML = STRINGS.es[key];
+    });
+    document.title = STRINGS.es.page_title;
+    document.documentElement.lang = 'es';
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.content = STRINGS.es.meta_desc;
+  }
+
+  // Start terminal animation
+  setTimeout(runLine, 1000);
+})();
 </script>
 </body>
 </html>
