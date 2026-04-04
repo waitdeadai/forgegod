@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -186,6 +187,7 @@ def run(
 
     _print_banner(mini=True)
     config = load_config()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
     if model:
         config.models.coder = model
     config.review.always_review_run = review
@@ -233,6 +235,18 @@ def loop(
         console.print(f"[red]PRD not found at {prd}[/red]")
         console.print("Create one with: forgegod plan <task>")
         raise typer.Exit(1)
+
+    # Configure logging to both console and file
+    log_file = config.project_dir / "logs" / "loop.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(str(log_file), mode="a"),
+        ],
+    )
 
     async def _loop():
         from forgegod.loop import RalphLoop

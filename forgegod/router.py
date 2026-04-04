@@ -193,6 +193,7 @@ class ModelRouter:
             "model": model,
             "messages": messages,
             "stream": False,
+            # Qwen3.5 thinking mode: slower but needed for multi-step tool workflows
             "options": {"num_predict": max_tokens, "temperature": temperature},
         }
 

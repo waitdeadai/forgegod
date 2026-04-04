@@ -282,12 +282,17 @@ class RalphLoop:
                 prompt += f"- {err[:500]}\n"
 
         prompt += """
-## Instructions
-1. Read relevant files to understand the codebase
-2. Implement the story requirements
-3. Run tests if they exist
-4. Commit your changes with a descriptive message
-5. When done, summarize what you implemented and what files changed
+## Instructions (MANDATORY — follow in ORDER)
+1. Call `repo_map` to orient yourself in the codebase
+2. Call `read_file` on the specific files relevant to this story
+3. Call `write_file` or `edit_file` to CREATE/MODIFY actual files — you MUST produce file changes
+4. Call `bash` to run `python -m pytest tests/ -x -v` (or relevant tests) to verify
+5. Call `bash` to run `git add . && git commit -m "story_id: description"` to commit
+
+CRITICAL: You MUST use `write_file` or `edit_file` tools to make actual code changes.
+Do NOT just describe what you would do — actually DO it by calling the tools.
+If the story says "add tests", CREATE the test file with `write_file`.
+If the story says "add type hints", EDIT the file with `edit_file`.
 """
         return prompt
 
