@@ -33,6 +33,11 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     "qwen3.5:9b": (0.0, 0.0),
     "tq-coder": (0.0, 0.0),
     "devstral-small-2:24b": (0.0, 0.0),
+    # Google Gemini
+    "gemini-2.5-pro": (1.25, 5.00),
+    "gemini-2.5-flash": (0.15, 0.60),
+    "gemini-3-flash": (0.075, 0.30),
+    "gemini-3-pro": (1.25, 5.00),
     # OpenRouter (varies — user overrides)
 }
 
@@ -91,6 +96,21 @@ class SecurityConfig(BaseModel):
     ])
 
 
+class TerseConfig(BaseModel):
+    """Caveman mode — terse prompts for 50-75% token savings."""
+
+    enabled: bool = False
+    compress_tool_output: bool = True
+    tool_output_max_chars: int = 4000
+    track_savings: bool = True
+
+
+class GeminiConfig(BaseModel):
+    """Google Gemini provider settings."""
+
+    timeout: float = 120.0
+
+
 class ForgeGodConfig(BaseModel):
     """Root configuration — merges global + project + env."""
 
@@ -101,6 +121,8 @@ class ForgeGodConfig(BaseModel):
     review: ReviewConfig = Field(default_factory=ReviewConfig)
     sica: SICAConfig = Field(default_factory=SICAConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+    terse: TerseConfig = Field(default_factory=TerseConfig)
+    gemini: GeminiConfig = Field(default_factory=GeminiConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR

@@ -57,7 +57,8 @@ class OnboardingWizard:
         console.print(f"  [cyan]2.[/cyan] {t('opt_openai')}")
         console.print(f"  [cyan]3.[/cyan] {t('opt_anthropic')}")
         console.print(f"  [cyan]4.[/cyan] {t('opt_openrouter')}")
-        console.print(f"  [cyan]5.[/cyan] {t('opt_multi')}")
+        console.print(f"  [cyan]5.[/cyan] {t('opt_gemini')}")
+        console.print(f"  [cyan]6.[/cyan] {t('opt_multi')}")
         console.print()
 
         choice = typer.prompt("Select", default="1")
@@ -71,6 +72,8 @@ class OnboardingWizard:
         elif choice == "4":
             self._setup_api_key("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys")
         elif choice == "5":
+            self._setup_gemini_key()
+        elif choice == "6":
             self._setup_ollama()
             for provider, env_var, url in [
                 ("openai", "OPENAI_API_KEY", "https://platform.openai.com/api-keys"),
@@ -80,6 +83,8 @@ class OnboardingWizard:
                 add = typer.confirm(f"  Add {provider}?", default=False)
                 if add:
                     self._setup_api_key(provider, env_var, url)
+            if typer.confirm("  Add Google Gemini?", default=False):
+                self._setup_gemini_key()
 
     def _setup_ollama(self) -> None:
         """Check Ollama availability and model list."""
@@ -92,7 +97,8 @@ class OnboardingWizard:
                 models = resp.json().get("models", [])
                 self._ollama_models = [m.get("name", "") for m in models]
                 self._providers.append("ollama")
-                console.print(f"  [green]+[/green] Ollama running ({len(self._ollama_models)} models)")
+                n = len(self._ollama_models)
+                console.print(f"  [green]+[/green] Ollama running ({n} models)")
                 for m in self._ollama_models[:5]:
                     console.print(f"    [dim]{m}[/dim]")
                 return
@@ -128,6 +134,26 @@ class OnboardingWizard:
         self._providers.append(provider)
         console.print(f"  [green]+[/green] {provider} key saved")
 
+    def _setup_gemini_key(self) -> None:
+        """Setup Google Gemini API key (checks GOOGLE_API_KEY and GEMINI_API_KEY)."""
+        existing = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        if existing:
+            console.print("  [green]+[/green] Gemini key already set")
+            self._providers.append("gemini")
+            return
+
+        console.print("\n  Get your key at: [link]https://aistudio.google.com/apikey[/link]")
+        key = typer.prompt(f"  {t('enter_key')} (Gemini)", hide_input=True)
+
+        if not key or len(key) < 10:
+            console.print(f"  [red]{t('verify_fail')}[/red] — key too short")
+            return
+
+        self._env_vars["GOOGLE_API_KEY"] = key
+        os.environ["GOOGLE_API_KEY"] = key
+        self._providers.append("gemini")
+        console.print("  [green]+[/green] Gemini key saved")
+
     def _step_verify(self) -> None:
         """Step 3: Verification smoke test."""
         if not self._providers:
@@ -155,7 +181,11 @@ class OnboardingWizard:
                 if resp.status_code == 200:
                     content = resp.json().get("message", {}).get("content", "")
                     if content:
-                        console.print(f"  [green]+[/green] {t('verify_ok')} ({model}: \"{content.strip()[:30]}\")")
+                        preview = content.strip()[:30]
+                        console.print(
+                            f"  [green]+[/green] {t('verify_ok')}"
+                            f" ({model}: \"{preview}\")"
+                        )
                         return
             except Exception:
                 pass
@@ -195,7 +225,7 @@ class OnboardingWizard:
                 existing = env_path.read_text(encoding="utf-8")
 
             lines = existing.rstrip().split("\n") if existing.strip() else []
-            existing_keys = {l.split("=")[0] for l in lines if "=" in l}
+            existing_keys = {ln.split("=")[0] for ln in lines if "=" in ln}
 
             for key, value in self._env_vars.items():
                 if key not in existing_keys:

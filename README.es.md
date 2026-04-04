@@ -22,12 +22,12 @@
 </p>
 
 <p align="center">
-  <code>19 herramientas</code> &bull; <code>4 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>19 herramientas</code> &bull; <code>5 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
 
-ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Ollama, OpenRouter) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
 
 ```bash
 pip install forgegod
@@ -73,7 +73,7 @@ Todos los demás CLIs de código usan **un modelo a la vez** y **se reinician a 
 
 ### La Ventaja: Harness > Modelo
 
-Un [salto de 22 puntos en SWE-bench](https://www.cognition.ai/blog/swe-bench-devin) viene de la ingeniería del harness, no de upgrades de modelo. ForgeGod es el harness:
+El scaffolding agrega [~11 puntos en SWE-bench](https://arxiv.org/abs/2410.06992) — la ingeniería del harness importa tanto como el modelo. ForgeGod es el harness:
 
 - **Ralph Loop** — Código 24/7 desde un PRD. El progreso vive en git, no en el contexto del LLM. Agente fresco por historia. Sin degradación de contexto.
 - **Memoria de 5 Niveles** — Episódica (qué pasó) + Semántica (qué sé) + Procedimental (cómo lo hago) + Grafo (cómo se conectan las cosas) + Errores-Soluciones (qué arregla qué). Las memorias decaen, se consolidan y se refuerzan automáticamente.
@@ -98,6 +98,9 @@ forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y te
 
 # Loop autónomo 24/7 desde PRD
 forgegod loop --prd .forgegod/prd.json
+
+# Modo cavernícola — 50-75% ahorro de tokens con prompts ultra-concisos
+forgegod run --terse "Agregá un endpoint /health"
 
 # Ver qué aprendió
 forgegod memory
@@ -164,6 +167,24 @@ Las memorias **decaen** sin refuerzo (vida media de 30 días), se **consolidan**
 | `local-only` | Solo Ollama, **operación $0** | Manual o 95% del límite |
 | `halt` | Detener todas las llamadas LLM | 100% del límite diario |
 
+## Modo Cavernícola (`--terse`)
+
+Prompts ultra-concisos que reducen el uso de tokens 50-75% sin pérdida de precisión para tareas de código. Respaldado por investigación 2026:
+
+- [Mini-SWE-Agent](https://github.com/SWE-agent/mini-swe-agent) — 100 líneas, >74% SWE-bench Verified
+- [Chain of Draft](https://arxiv.org/abs/2502.18600) — 7.6% tokens, misma precisión
+- [CCoT](https://arxiv.org/abs/2401.05618) — 48.7% más corto, impacto insignificante
+
+```bash
+# Agregá --terse a cualquier comando
+forgegod run --terse "Construí una API REST"
+forgegod loop --terse --prd .forgegod/prd.json
+
+# O habilitalo globalmente en config
+# [terse]
+# enabled = true
+```
+
 ## Leaderboard de Modelos
 
 Ejecutá el tuyo: `forgegod benchmark`
@@ -204,6 +225,7 @@ model = "qwen3-coder-next"
 export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."     # Opcional
 export OPENROUTER_API_KEY="sk-or-..."     # Opcional
+export GOOGLE_API_KEY="AIza..."           # Opcional (Gemini)
 ```
 
 O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
@@ -215,6 +237,7 @@ O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
 | **Ollama** | qwen3-coder-next, devstral, cualquiera | **$0** | `ollama serve` |
 | OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
+| Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
 | OpenRouter | 200+ modelos | varía | `OPENROUTER_API_KEY` |
 
 ## Seguridad

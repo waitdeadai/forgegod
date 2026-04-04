@@ -8,6 +8,7 @@ import logging
 from forgegod.config import ForgeGodConfig
 from forgegod.models import PRD, Story, StoryStatus
 from forgegod.router import ModelRouter
+from forgegod.terse import TERSE_PLANNER_PROMPT
 
 logger = logging.getLogger("forgegod.planner")
 
@@ -25,7 +26,13 @@ class Planner:
         Uses the planner model to analyze the task and produce stories
         with acceptance criteria, ordered by dependency.
         """
-        prompt = f"""You are a senior software architect. Decompose the following task into
+        if self.config.terse.enabled:
+            prompt = TERSE_PLANNER_PROMPT.format(
+                task=task,
+                project_name=project_name,
+            )
+        else:
+            prompt = f"""You are a senior software architect. Decompose the following task into
 ordered implementation stories. Each story should be independently testable.
 
 ## Task

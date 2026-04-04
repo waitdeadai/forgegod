@@ -178,16 +178,27 @@ class ReflexionCoder:
         lang = self._detect_language(file_path)
 
         # Pass 1: Architect (reasoning model — planner role)
-        architect_prompt = f"""You are a senior software architect. Analyze this task and create a detailed implementation plan.
+        existing_block = ""
+        if existing_code:
+            existing_block = (
+                f"## Existing Code\n```{lang}\n"
+                f"{existing_code[:6000]}\n```"
+            )
+        context_block = ""
+        if context:
+            context_block = f"## Context\n{context[:3000]}"
+
+        architect_prompt = f"""You are a senior software architect. \
+Analyze this task and create a detailed implementation plan.
 
 ## Task
 {task}
 
 ## File: {file_path} ({lang})
 
-{f'## Existing Code\n```{lang}\n{existing_code[:6000]}\n```' if existing_code else ''}
+{existing_block}
 
-{f'## Context\n{context[:3000]}' if context else ''}
+{context_block}
 
 ## Instructions
 Create a DETAILED implementation plan. For each change:
@@ -214,7 +225,7 @@ Output format: numbered steps with specific details."""
 
 ## File: {file_path} ({lang})
 
-{f'## Existing Code (modify this)\n```{lang}\n{existing_code[:6000]}\n```' if existing_code else ''}
+{existing_block}
 
 ## Instructions
 Implement the architect's plan precisely. Include ALL imports.
@@ -292,6 +303,12 @@ Output ONLY the {lang} code in ```{lang} fences. No explanations."""
         learnings: list[str],
     ) -> str:
         """Build generation prompt with escalating context."""
+        if self.config.terse.enabled:
+            return self._build_terse_prompt(
+                task, file_path, lang, context, existing_code,
+                reflections, attempt, learnings,
+            )
+
         # GOAP scratch pad (Hermes/Teknium pattern — Goal, Actions, Observation, Reflection)
         prompt = f"""You are ForgeGod Coder, an expert programmer.
 
@@ -300,7 +317,7 @@ Goal: {task}
 File: {file_path} ({lang})
 Attempt: {attempt}/{self.max_attempts}
 Actions needed: Analyze requirements → generate code → validate syntax
-Observation: {"First attempt — generate clean, correct code" if attempt == 1 else f"Previous attempts failed — applying reflections"}
+Observation: {"First attempt" if attempt == 1 else "Previous attempts failed"}
 Reflection: {"N/A" if not reflections else reflections[-1][:200]}
 </scratch_pad>
 
@@ -314,7 +331,10 @@ Reflection: {"N/A" if not reflections else reflections[-1][:200]}
             prompt += f"\n## Project Context\n{context[:4000]}\n"
 
         if existing_code:
-            prompt += f"\n## Existing Code (modify this)\n```{lang}\n{existing_code[:6000]}\n```\n"
+            prompt += (
+                f"\n## Existing Code (modify this)\n"
+                f"```{lang}\n{existing_code[:6000]}\n```\n"
+            )
 
         # Memory spine — past lessons
         if learnings:
@@ -330,9 +350,49 @@ Reflection: {"N/A" if not reflections else reflections[-1][:200]}
             prompt += "\nFix ALL issues mentioned above.\n"
 
         if attempt >= 3:
-            prompt += "\n## CRITICAL: FINAL attempt. Be extremely careful. Double-check every import and syntax construct.\n"
+            prompt += (
+                "\n## CRITICAL: FINAL attempt. Be extremely careful."
+                " Double-check every import and syntax construct.\n"
+            )
 
         prompt += f"\nOutput ONLY the {lang} code in ```{lang} fences. No explanations."
+        return prompt
+
+    def _build_terse_prompt(
+        self,
+        task: str,
+        file_path: str,
+        lang: str,
+        context: str,
+        existing_code: str,
+        reflections: list[str],
+        attempt: int,
+        learnings: list[str],
+    ) -> str:
+        """Terse variant — ~60% fewer tokens, same semantic content."""
+        reflection = "N/A" if not reflections else reflections[-1][:200]
+        prompt = f"""ForgeGod Coder.
+
+<sp>G:{task} F:{file_path}({lang}) A:{attempt}/{self.max_attempts} R:{reflection}</sp>
+
+{lang} idioms. async for I/O. All imports. Production-ready.
+"""
+        if context:
+            prompt += f"\n## Ctx\n{context[:4000]}\n"
+        if existing_code:
+            prompt += f"\n## Code\n```{lang}\n{existing_code[:6000]}\n```\n"
+        if learnings:
+            prompt += "\n## Lessons\n"
+            for lesson in learnings[:8]:
+                prompt += f"- {lesson}\n"
+        if reflections:
+            prompt += "\n## Prev Attempts\n"
+            for i, r in enumerate(reflections, 1):
+                prompt += f"A{i}: {r}\n"
+            prompt += "Fix ALL above.\n"
+        if attempt >= 3:
+            prompt += "\nFINAL attempt. Check every import+syntax.\n"
+        prompt += f"\nOutput ONLY {lang} code in ```{lang} fences."
         return prompt
 
     async def _generate_reflection(

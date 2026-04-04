@@ -104,6 +104,9 @@ def init(
     if os.environ.get("OPENROUTER_API_KEY"):
         providers.append("openrouter")
         console.print("  [green]+[/green] OpenRouter API key detected")
+    if os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"):
+        providers.append("gemini")
+        console.print("  [green]+[/green] Google Gemini API key detected")
 
     ollama_available = False
     try:
@@ -147,16 +150,24 @@ def run(
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Override coder model"),
     review: bool = typer.Option(True, "--review/--no-review", help="Review output with frontier"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    terse: bool = typer.Option(
+        False, "--terse", help="Caveman mode — terse prompts"
+    ),
 ):
     """Execute a single coding task."""
     from forgegod.config import load_config
 
     _print_banner(mini=True)
     config = load_config()
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
+    log_fmt = "%(asctime)s %(levelname)s %(name)s — %(message)s"
+    log_level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=log_level, format=log_fmt)
     if model:
         config.models.coder = model
     config.review.always_review_run = review
+    if terse:
+        config.terse.enabled = True
+        console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
 
     async def _run():
         from forgegod.agent import Agent
@@ -188,12 +199,19 @@ def loop(
     workers: int = typer.Option(1, "--workers", "-w", help="Parallel workers"),
     max_iterations: Optional[int] = typer.Option(None, "--max", help="Max iterations"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
-    dry_run: bool = typer.Option(False, "--dry-run", "-d", help="Print story order and exit without running"),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", "-d", help="Print story order, don't run"
+    ),
+    terse: bool = typer.Option(
+        False, "--terse", help="Caveman mode — terse prompts"
+    ),
 ):
     """Run 24/7 Ralph loop — autonomous coding from PRD."""
     from forgegod.config import load_config
 
     config = load_config()
+    if terse:
+        config.terse.enabled = True
     if workers > 1:
         config.loop.parallel_workers = workers
     if max_iterations is not None:
@@ -224,8 +242,15 @@ def loop(
         router = ModelRouter(config)
         ralph = RalphLoop.from_prd_file(prd, config, router=router)
 
+        if dry_run:
+            state = await ralph.run(dry_run=True)
+            return
+
         _print_banner()
-        console.print("[bold green]Ralph Loop started.[/bold green] Press Ctrl+C to stop.\n")
+        console.print(
+            "[bold green]Ralph Loop started.[/bold green]"
+            " Press Ctrl+C to stop.\n"
+        )
         try:
             state = await ralph.run()
         except KeyboardInterrupt:
@@ -239,27 +264,7 @@ def loop(
             f"Cost: ${state.total_cost_usd:.4f}"
         )
 
-    async def _dry_run():
-        """Print story execution order and exit without running agents."""
-        console.print("[bold yellow]DRY RUN MODE — No agents will be executed.[/bold yellow]")
-        console.print()
-        console.print("[bold]Story Execution Order:[/bold]")
-        console.print()
-        for i, story in enumerate(ralph.prd.stories, 1):
-            status = story.status
-            console.print(f"  {i}. [{story.id}] {story.title}")
-            console.print(f"     Status: {status.value}")
-            if story.description:
-                console.print(f"     Description: {story.description[:200]}...")
-            if story.files_touched:
-                console.print(f"     Files: {', '.join(story.files_touched)}")
-            console.print()
-        console.print("[bold green]Dry run complete.[/bold green]")
-
-    if dry_run:
-        asyncio.run(_dry_run())
-    else:
-        asyncio.run(_loop())
+    asyncio.run(_loop())
 
 
 @app.command()
@@ -268,11 +273,16 @@ def plan(
     output: Path = typer.Option(
         Path(".forgegod/prd.json"), "--output", "-o", help="Output PRD path"
     ),
+    terse: bool = typer.Option(
+        False, "--terse", help="Caveman mode — terse prompts"
+    ),
 ):
     """Generate a PRD (task decomposition) from a description."""
     from forgegod.config import load_config
 
     config = load_config()
+    if terse:
+        config.terse.enabled = True
 
     async def _plan():
         from forgegod.planner import Planner

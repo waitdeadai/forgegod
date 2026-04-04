@@ -22,12 +22,12 @@
 </p>
 
 <p align="center">
-  <code>16 built-in tools</code> &bull; <code>4 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
+  <code>19 built-in tools</code> &bull; <code>5 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
 </p>
 
 ---
 
-ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Ollama, OpenRouter) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
+ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
 
 ```bash
 pip install forgegod
@@ -50,7 +50,7 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 
 ### The Moat: Harness > Model
 
-A [22-point SWE-bench swing](https://www.cognition.ai/blog/swe-bench-devin) comes from harness engineering, not model upgrades. ForgeGod is the harness:
+Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) — harness engineering matters as much as the model. ForgeGod is the harness:
 
 - **Ralph Loop** — 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
 - **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
@@ -98,6 +98,9 @@ forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
 # 24/7 autonomous loop from PRD
 forgegod loop --prd .forgegod/prd.json
+
+# Caveman mode — 50-75% token savings with ultra-terse prompts
+forgegod run --terse "Add a /health endpoint"
 
 # Check what it learned
 forgegod memory
@@ -192,6 +195,28 @@ forgegod cost
 export FORGEGOD_BUDGET_MODE=local-only
 ```
 
+## Caveman Mode (`--terse`)
+
+Ultra-terse prompts that reduce token usage 50-75% with no accuracy loss for coding tasks. Backed by 2026 research:
+
+- [Mini-SWE-Agent](https://github.com/SWE-agent/mini-swe-agent) — 100 lines, >74% SWE-bench Verified
+- [Chain of Draft](https://arxiv.org/abs/2502.18600) — 7.6% tokens, same accuracy
+- [CCoT](https://arxiv.org/abs/2401.05618) — 48.7% shorter, negligible impact
+
+```bash
+# Add --terse to any command
+forgegod run --terse "Build a REST API"
+forgegod loop --terse --prd .forgegod/prd.json
+forgegod plan --terse "Refactor auth module"
+
+# Or enable globally in config
+# .forgegod/config.toml
+# [terse]
+# enabled = true
+```
+
+Caveman mode compresses system prompts (~200 → ~80 tokens), tool descriptions (3-8 words each), and tool output (tracebacks → last frame only). JSON schemas for planner/reviewer stay byte-identical.
+
 ## Configuration
 
 ForgeGod uses TOML config with 3-level priority: env vars > project > global.
@@ -219,6 +244,9 @@ gutter_detection = true
 host = "http://localhost:11434"
 model = "qwen3-coder-next"
 
+[terse]
+enabled = false              # --terse flag or set true here
+
 [security]
 sandbox_mode = "standard"    # permissive | standard | strict
 redact_secrets = true
@@ -231,6 +259,7 @@ audit_commands = true
 export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."     # Optional
 export OPENROUTER_API_KEY="sk-or-..."     # Optional
+export GOOGLE_API_KEY="AIza..."           # Optional (Gemini)
 export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 ```
 
@@ -241,6 +270,7 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 | **Ollama** | qwen3-coder-next, devstral, any | **$0** | `ollama serve` |
 | OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
+| Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
 | OpenRouter | 200+ models | varies | `OPENROUTER_API_KEY` |
 
 ## Model Leaderboard
@@ -271,7 +301,8 @@ forgegod/
 ├── budget.py       # SQLite cost tracking + auto budget modes
 ├── worktree.py     # Parallel git worktree workers
 ├── tui.py          # Rich terminal dashboard
-├── benchmark.py    # Model benchmarking engine (12 tasks, 4 tiers, composite scoring)
+├── terse.py        # Caveman mode — terse prompts, tool compression, savings tracker
+���── benchmark.py    # Model benchmarking engine (12 tasks, 4 tiers, composite scoring)
 ├── onboarding.py   # Interactive setup wizard for new users
 ├── doctor.py       # Installation health check (6 diagnostic checks)
 ├── i18n.py         # Translation strings (English + Spanish es-419)

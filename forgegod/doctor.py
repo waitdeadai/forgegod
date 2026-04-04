@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -165,6 +164,8 @@ def _check_api_keys() -> HealthCheck:
         "OPENAI_API_KEY": "OpenAI",
         "ANTHROPIC_API_KEY": "Anthropic",
         "OPENROUTER_API_KEY": "OpenRouter",
+        "GOOGLE_API_KEY": "Gemini",
+        "GEMINI_API_KEY": "Gemini",
     }
 
     found = []

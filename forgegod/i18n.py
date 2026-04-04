@@ -14,6 +14,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "opt_openai": "OpenAI API key (GPT-4o, o4-mini)",
         "opt_anthropic": "Anthropic API key (Claude)",
         "opt_openrouter": "OpenRouter API key (300+ models)",
+        "opt_gemini": "Google Gemini API key (Gemini 2.5 Pro, Gemini 3 Flash)",
         "opt_multi": "I have multiple providers",
         "enter_key": "Paste your API key",
         "verifying": "Verifying connection...",
@@ -82,6 +83,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "bench_readme_updated": "Leaderboard inserted into README.md",
         "bench_no_models": "No models available. Run 'forgegod init' first.",
         "bench_detecting": "Auto-detecting available models...",
+        # Terse / Caveman mode
+        "terse_enabled": "Caveman mode enabled — ultra-terse prompts",
+        "terse_savings": "Terse savings: {pct}% ({tokens} tokens saved)",
     },
     "es": {
         # Onboarding wizard
@@ -91,6 +95,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "opt_openai": "Clave API de OpenAI (GPT-4o, o4-mini)",
         "opt_anthropic": "Clave API de Anthropic (Claude)",
         "opt_openrouter": "Clave API de OpenRouter (300+ modelos)",
+        "opt_gemini": "Clave API de Google Gemini (Gemini 2.5 Pro, Gemini 3 Flash)",
         "opt_multi": "Tengo varios proveedores",
         "enter_key": "Pegá tu clave API",
         "verifying": "Verificando conexión...",
@@ -163,6 +168,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "bench_readme_updated": "Leaderboard insertado en README.md",
         "bench_no_models": "No hay modelos disponibles. Ejecutá 'forgegod init' primero.",
         "bench_detecting": "Auto-detectando modelos disponibles...",
+        # Terse / Caveman mode
+        "terse_enabled": "Modo cavernícola activado — prompts ultra-concisos",
+        "terse_savings": "Ahorro terse: {pct}% ({tokens} tokens ahorrados)",
     },
 }
 

@@ -12,6 +12,7 @@ import logging
 from forgegod.config import ForgeGodConfig
 from forgegod.models import ReviewResult, ReviewVerdict
 from forgegod.router import ModelRouter
+from forgegod.terse import TERSE_REVIEWER_PROMPT
 
 logger = logging.getLogger("forgegod.reviewer")
 
@@ -48,7 +49,17 @@ class Reviewer:
         Returns:
             ReviewResult with verdict, reasoning, and suggestions.
         """
-        prompt = f"""You are a senior code reviewer. Review the following code changes.
+        if self.config.terse.enabled:
+            test_block = f"## Tests\n{test_output[:2000]}" if test_output else ""
+            files_block = f"## Files\n{chr(10).join(files_changed)}" if files_changed else ""
+            prompt = TERSE_REVIEWER_PROMPT.format(
+                task=task,
+                code=code[:8000],
+                test_block=test_block,
+                files_block=files_block,
+            )
+        else:
+            prompt = f"""You are a senior code reviewer. Review the following code changes.
 
 ## Original Task
 {task}
@@ -58,9 +69,9 @@ class Reviewer:
 {code[:8000]}
 ```
 
-{f'## Test Output\n{test_output[:2000]}' if test_output else ''}
+{('## Test Output' + chr(10) + test_output[:2000]) if test_output else ''}
 
-{f'## Files Changed\n{chr(10).join(files_changed)}' if files_changed else ''}
+{('## Files Changed' + chr(10) + chr(10).join(files_changed)) if files_changed else ''}
 
 ## Review Criteria
 1. **Correctness**: Does the code fulfill the task requirements?

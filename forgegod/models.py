@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ── Enums ──
 
 
@@ -44,8 +43,8 @@ class LoopStatus(str, Enum):
 class ModelSpec(BaseModel):
     """Parsed model specification like 'openai:gpt-4o-mini'."""
 
-    provider: str  # openai, ollama, anthropic, openrouter
-    model: str  # gpt-4o-mini, qwen3-coder-next, etc.
+    provider: str  # openai, ollama, anthropic, openrouter, gemini
+    model: str  # gpt-4o-mini, qwen3-coder-next, gemini-2.5-pro, etc.
 
     @classmethod
     def parse(cls, spec: str) -> "ModelSpec":

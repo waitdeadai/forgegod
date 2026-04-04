@@ -10,7 +10,6 @@ Context compression kicks in at configurable % to keep running indefinitely.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
 import re
@@ -31,7 +30,8 @@ logger = logging.getLogger("forgegod.agent")
 # 3. Test-first verification loop
 # 4. Error recovery with strategy rotation
 # 5. Explicit anti-patterns to avoid common failure modes
-SYSTEM_PROMPT = """You are ForgeGod, an autonomous coding agent that solves software engineering tasks.
+SYSTEM_PROMPT = """You are ForgeGod, an autonomous coding agent \
+that solves software engineering tasks.
 
 ## Workflow — SDLC State Machine (advance gates in ORDER)
 1. **ORIENT** — Call `repo_map` to understand the codebase. Call `git_status` for current state.
@@ -42,7 +42,8 @@ SYSTEM_PROMPT = """You are ForgeGod, an autonomous coding agent that solves soft
 6. **VERIFY** — Run tests with `bash`. Check syntax/types. Run `git_diff` to review changes.
 7. **COMMIT** — Once verified, commit with a clear message describing the change.
 
-Gate rule: Do NOT advance to IMPLEMENT until PLAN is solid. Do NOT advance to COMMIT until VERIFY passes.
+Gate rule: Do NOT advance to IMPLEMENT until PLAN is solid. \
+Do NOT advance to COMMIT until VERIFY passes.
 
 ## Tools
 - `repo_map(path)` — Codebase overview (file tree + signatures). **Use FIRST.**
@@ -62,7 +63,9 @@ Gate rule: Do NOT advance to IMPLEMENT until PLAN is solid. Do NOT advance to CO
 - **One thing at a time**: Make one logical change, verify it, then move to the next.
 - **Existing code wins**: Edit existing files rather than creating new ones.
 - **No speculation**: Unsure about behavior? Read the code. Don't guess.
-- **Forced reflection**: If an approach fails twice, answer: (1) What specifically failed? (2) What concrete change fixes it? (3) Is this truly a new approach?
+- **Forced reflection**: If an approach fails twice, answer: \
+(1) What specifically failed? (2) What concrete change fixes it? \
+(3) Is this truly a new approach?
 - **Minimal changes**: Don't refactor code you weren't asked to change.
 - **Escalate when stuck**: If genuinely blocked, explain what's blocking you.
 
@@ -106,10 +109,12 @@ class Agent:
             env_info = self._detect_environment()
             rules = self._load_project_rules()
             skills_summary = self._load_skills_summary()
-            self.system_prompt = (
-                SYSTEM_PROMPT.format(cwd=Path.cwd())
-                + env_info + rules + skills_summary
-            )
+            if config.terse.enabled:
+                from forgegod.terse import TERSE_SYSTEM_PROMPT
+                base = TERSE_SYSTEM_PROMPT.format(cwd=Path.cwd())
+            else:
+                base = SYSTEM_PROMPT.format(cwd=Path.cwd())
+            self.system_prompt = base + env_info + rules + skills_summary
 
         # State
         self.messages: list[dict] = []
@@ -122,6 +127,9 @@ class Agent:
         # Load tools
         load_all_tools()
         self._tool_defs = get_tool_defs()
+        if config.terse.enabled:
+            from forgegod.terse import apply_terse_tool_defs
+            apply_terse_tool_defs(self._tool_defs)
 
     async def run(self, task: str) -> AgentResult:
         """Execute a task through the agent loop.
@@ -180,7 +188,10 @@ class Agent:
 
                 if not tool_calls:
                     # No tool calls → agent is done
-                    logger.info(f"Agent done after {self._turn} turns, {self.tool_calls_count} tool calls")
+                    logger.info(
+                        "Agent done after %d turns, %d tool calls",
+                        self._turn, self.tool_calls_count,
+                    )
                     await self._run_hooks("on_complete", {
                         "turns": self._turn,
                         "tool_calls": self.tool_calls_count,
@@ -229,7 +240,8 @@ class Agent:
                                 "Before your next action, answer these 3 questions:\n"
                                 "1. **What specifically failed?** (exact error or symptom)\n"
                                 "2. **What specific change would fix it?** (not 'try harder')\n"
-                                "3. **Am I repeating the same approach?** (if yes, what's fundamentally different now?)\n\n"
+                                "3. **Am I repeating the same approach?** "
+                                "(if yes, what's fundamentally different now?)\n\n"
                                 "If you cannot answer #3 with a genuinely new approach, "
                                 "STOP and explain what's blocking you."
                             ),
@@ -369,7 +381,10 @@ class Agent:
             return ToolResult(
                 tool_call_id=tc.id,
                 name=tc.name,
-                content=f"Error: Unknown tool '{tc.name}'. Available: {', '.join(sorted(_TOOLS.keys()))}",
+                content=(
+                    f"Error: Unknown tool '{tc.name}'. "
+                    f"Available: {', '.join(sorted(_TOOLS.keys()))}"
+                ),
                 error=True,
             )
 
@@ -440,6 +455,16 @@ class Agent:
         Pruning trims large tool results in-place, keeping the tool call
         record but reducing content to a summary.
         """
+        if self.config.terse.enabled and self.config.terse.compress_tool_output:
+            from forgegod.terse import compress_tool_output
+            max_chars = self.config.terse.tool_output_max_chars
+            for msg in self.messages:
+                if msg.get("role") == "tool":
+                    content = msg.get("content", "")
+                    if len(content) > max_chars:
+                        msg["content"] = compress_tool_output(content, max_chars)
+            return
+
         MAX_TOOL_RESULT_CHARS = 8000
         for msg in self.messages:
             if msg.get("role") == "tool":
@@ -616,7 +641,7 @@ class Agent:
                 if "test" in scripts:
                     info.append(f"Test runner: `npm test` ({scripts['test']})")
                 if "lint" in scripts:
-                    info.append(f"Linter: `npm run lint`")
+                    info.append("Linter: `npm run lint`")
             except (OSError, ValueError):
                 pass
 

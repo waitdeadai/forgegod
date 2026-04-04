@@ -13,26 +13,29 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+from rich.console import Console
 
 from forgegod.agent import Agent
 from forgegod.budget import BudgetTracker
 from forgegod.config import ForgeGodConfig
 from forgegod.models import (
+    PRD,
     BudgetMode,
     LoopState,
     LoopStatus,
-    PRD,
     ReviewVerdict,
     Story,
     StoryStatus,
 )
 from forgegod.reviewer import Reviewer
 from forgegod.router import ModelRouter
+from forgegod.terse import TERSE_STORY_INSTRUCTIONS
 
 logger = logging.getLogger("forgegod.loop")
+console = Console()
 
 
 class RalphLoop:
@@ -76,8 +79,34 @@ class RalphLoop:
         self._killswitch_path = config.project_dir / "KILLSWITCH"
         self._learnings_path = config.project_dir / "progress.txt"
 
-    async def run(self) -> LoopState:
-        """Run the Ralph loop until complete or killed."""
+    async def run(self, dry_run: bool = False) -> LoopState:
+        """Run the Ralph loop until complete or killed.
+
+        Args:
+            dry_run: If True, print story execution order and exit without running agents.
+        """
+        if dry_run:
+            console.print(
+                "[bold yellow]DRY RUN — No agents will be executed.[/bold yellow]"
+            )
+            console.print()
+            console.print("[bold]Story Execution Order:[/bold]")
+            console.print()
+            for i, story in enumerate(self.prd.stories, 1):
+                status = story.status
+                console.print(f"  {i}. [{story.id}] {story.title}")
+                console.print(f"     Status: {status.value}")
+                if story.description:
+                    console.print(f"     Description: {story.description[:200]}...")
+                if story.files_touched:
+                    console.print(f"     Files: {', '.join(story.files_touched)}")
+                console.print()
+            console.print("[bold green]Dry run complete.[/bold green]")
+            self.state.status = LoopStatus.IDLE
+            self._save_state()
+            self._save_prd()
+            return self.state
+
         self._running = True
         self.state.status = LoopStatus.RUNNING
         self.state.started_at = datetime.now(timezone.utc).isoformat()
@@ -273,15 +302,18 @@ class RalphLoop:
 
         if self.prd.learnings:
             prompt += "\n## Learnings from previous stories\n"
-            for l in self.prd.learnings[-5:]:
-                prompt += f"- {l}\n"
+            for learning in self.prd.learnings[-5:]:
+                prompt += f"- {learning}\n"
 
         if story.error_log:
             prompt += "\n## Previous attempt errors (FIX THESE)\n"
             for err in story.error_log[-2:]:
                 prompt += f"- {err[:500]}\n"
 
-        prompt += """
+        if self.config.terse.enabled:
+            prompt += TERSE_STORY_INSTRUCTIONS
+        else:
+            prompt += """
 ## Instructions (MANDATORY — follow in ORDER)
 1. Call `repo_map` to orient yourself in the codebase
 2. Call `read_file` on the specific files relevant to this story
