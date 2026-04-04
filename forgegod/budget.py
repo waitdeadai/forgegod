@@ -13,12 +13,31 @@ from forgegod.models import BudgetMode, BudgetStatus, CostRecord, ModelUsage
 class BudgetTracker:
     """Tracks LLM costs in local SQLite. Enforces budget modes."""
 
-    def __init__(self, config: ForgeGodConfig):
+    def __init__(self, config: ForgeGodConfig) -> None:
+        """Initialize the BudgetTracker.
+
+        Args:
+            config: The ForgeGodConfig instance containing budget settings.
+
+        Returns:
+            None
+        """
         self.config = config
         self._db_path = config.project_dir / "costs.db"
         self._ensure_db()
 
-    def _ensure_db(self):
+    def _ensure_db(self) -> None:
+        """Ensure the SQLite database exists and is properly initialized.
+
+        Creates the costs table with appropriate schema if it doesn't exist,
+        and creates an index on the timestamp column for efficient querying.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self._db_path))
         conn.execute("""
@@ -41,8 +60,17 @@ class BudgetTracker:
         conn.commit()
         conn.close()
 
-    def record(self, usage: ModelUsage, role: str = "", task_id: str = ""):
-        """Record a cost event."""
+    def record(self, usage: ModelUsage, role: str = "", task_id: str = "") -> None:
+        """Record a cost event to the database.
+
+        Args:
+            usage: The ModelUsage object containing token counts and cost.
+            role: The role that incurred the cost (e.g., 'user', 'assistant', 'system').
+            task_id: Optional task identifier for grouping costs.
+
+        Returns:
+            None
+        """
         conn = sqlite3.connect(str(self._db_path))
         conn.execute(
             "INSERT INTO costs (timestamp, model, provider, role, input_tokens, output_tokens, cost_usd, task_id) "
@@ -62,7 +90,17 @@ class BudgetTracker:
         conn.close()
 
     def get_status(self) -> BudgetStatus:
-        """Get current budget status."""
+        """Get the current budget status.
+
+        Retrieves the daily spend, total spend, budget mode, and remaining budget
+        for the current day from the SQLite database.
+
+        Args:
+            None
+
+        Returns:
+            BudgetStatus: A BudgetStatus object containing the current budget information.
+        """
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         conn = sqlite3.connect(str(self._db_path))
 
@@ -88,7 +126,17 @@ class BudgetTracker:
         )
 
     def get_model_breakdown(self) -> dict[str, dict]:
-        """Get per-model cost breakdown for today."""
+        """Get per-model cost breakdown for today.
+
+        Retrieves the call count and total cost for each model used today.
+
+        Args:
+            None
+
+        Returns:
+            dict[str, dict]: A dictionary mapping model names to dictionaries
+                containing 'calls' (int) and 'cost' (float) for each model.
+        """
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         conn = sqlite3.connect(str(self._db_path))
         rows = conn.execute(
@@ -100,9 +148,17 @@ class BudgetTracker:
         return {row[0]: {"calls": row[1], "cost": round(row[2], 6)} for row in rows}
 
     def check_budget(self) -> BudgetMode:
-        """Check if we should change budget mode based on spend.
+        """Check if we should change budget mode based on current spend.
 
-        Returns the effective mode (may auto-throttle if approaching limit).
+        Evaluates the current daily spend against configured limits and returns
+        the effective budget mode. May auto-throttle or halt if approaching
+        or exceeding the daily limit.
+
+        Args:
+            None
+
+        Returns:
+            BudgetMode: The effective budget mode (HALT, THROTTLE, NORMAL, or LOCAL_ONLY).
         """
         if self.config.budget.mode == BudgetMode.HALT:
             return BudgetMode.HALT
