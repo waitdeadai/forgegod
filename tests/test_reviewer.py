@@ -5,9 +5,8 @@ from __future__ import annotations
 import pytest
 
 from forgegod.config import ForgeGodConfig
-from forgegod.models import ReviewVerdict, ReviewResult
+from forgegod.models import ReviewVerdict
 from forgegod.reviewer import Reviewer
-from forgegod.router import ModelRouter
 
 
 class TestReviewVerdict:
@@ -127,34 +126,22 @@ class TestShouldReview:
     @pytest.fixture
     def reviewer_loop(self) -> Reviewer:
         """Create a reviewer for loop mode (sample every Nth)."""
-        config = ForgeGodConfig(
-            model="ollama:qwen3-coder-next",
-            review_enabled=True,
-            review_sample_rate=3,
-            review_always_review_run=False,
-        )
+        from forgegod.config import ReviewConfig
+        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=3, always_review_run=False))
         return Reviewer(config=config)
 
     @pytest.fixture
     def reviewer_run(self) -> Reviewer:
         """Create a reviewer for run mode (always review)."""
-        config = ForgeGodConfig(
-            model="ollama:qwen3-coder-next",
-            review_enabled=True,
-            review_sample_rate=1,
-            review_always_review_run=True,
-        )
+        from forgegod.config import ReviewConfig
+        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=1, always_review_run=True))
         return Reviewer(config=config)
 
     @pytest.fixture
     def reviewer_disabled(self) -> Reviewer:
         """Create a reviewer with review disabled."""
-        config = ForgeGodConfig(
-            model="ollama:qwen3-coder-next",
-            review_enabled=False,
-            review_sample_rate=1,
-            review_always_review_run=False,
-        )
+        from forgegod.config import ReviewConfig
+        config = ForgeGodConfig(review=ReviewConfig(enabled=False))
         return Reviewer(config=config)
 
     def test_should_review_disabled(self, reviewer_disabled: Reviewer) -> None:
@@ -169,17 +156,16 @@ class TestShouldReview:
 
     def test_should_review_loop_mode_sample_rate_3(self, reviewer_loop: Reviewer) -> None:
         """Test should_review samples every 3rd story when sample_rate=3."""
-        # sample_rate=3 means review stories 3, 6, 9, etc. (1-indexed)
-        # story_index is 0-based, so (story_index + 1) % 3 == 0
-        assert reviewer_loop.should_review(0) is False  # (0+1) % 3 = 1
-        assert reviewer_loop.should_review(1) is False  # (1+1) % 3 = 2
-        assert reviewer_loop.should_review(2) is False  # (2+1) % 3 = 0 -> True
-        assert reviewer_loop.should_review(3) is False  # (3+1) % 3 = 1
-        assert reviewer_loop.should_review(4) is False  # (4+1) % 3 = 2
-        assert reviewer_loop.should_review(5) is False  # (5+1) % 3 = 0 -> True
-        assert reviewer_loop.should_review(6) is False  # (6+1) % 3 = 1
-        assert reviewer_loop.should_review(7) is False  # (7+1) % 3 = 2
-        assert reviewer_loop.should_review(8) is False  # (8+1) % 3 = 0 -> True
+        # sample_rate=3: (story_index + 1) % 3 == 0 → review at index 2, 5, 8
+        assert reviewer_loop.should_review(0) is False
+        assert reviewer_loop.should_review(1) is False
+        assert reviewer_loop.should_review(2) is True   # 3rd story
+        assert reviewer_loop.should_review(3) is False
+        assert reviewer_loop.should_review(4) is False
+        assert reviewer_loop.should_review(5) is True   # 6th story
+        assert reviewer_loop.should_review(6) is False
+        assert reviewer_loop.should_review(7) is False
+        assert reviewer_loop.should_review(8) is True   # 9th story
 
     def test_should_review_loop_mode_sample_rate_1(self, reviewer_run: Reviewer) -> None:
         """Test should_review reviews every story when sample_rate=1."""
@@ -188,12 +174,8 @@ class TestShouldReview:
 
     def test_should_review_loop_mode_sample_rate_5(self) -> None:
         """Test should_review with sample_rate=5."""
-        config = ForgeGodConfig(
-            model="ollama:qwen3-coder-next",
-            review_enabled=True,
-            review_sample_rate=5,
-            review_always_review_run=False,
-        )
+        from forgegod.config import ReviewConfig
+        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=5, always_review_run=False))
         reviewer = Reviewer(config=config)
         # Review stories 5, 10, 15, etc.
         for i in range(10):
@@ -204,4 +186,6 @@ class TestShouldReview:
         """Test should_review in single shot mode with always_review_run=True."""
         for i in range(10):
             assert reviewer_run.should_review(i, is_single_shot=True) is True
+        # sample_rate=1 → every story reviewed in loop mode too
+        for i in range(10):
             assert reviewer_run.should_review(i, is_single_shot=False) is True
