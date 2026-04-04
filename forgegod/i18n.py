@@ -30,11 +30,17 @@ STRINGS: dict[str, dict[str, str]] = {
         "no_providers": "No API keys or Ollama found.",
         "set_one": "Set at least one:",
         "error_ollama_down": "Ollama isn't running. Start it with: ollama serve",
-        "error_ollama_no_model": "Model '{model}' not found in Ollama. Pull it with: ollama pull {model}",
+        "error_ollama_no_model": (
+            "Model '{model}' not found in Ollama. Pull it with: ollama pull {model}"
+        ),
         "error_key_invalid": "API key invalid. Check it at: {url}",
         "error_key_missing": "No API key set for {provider}.",
-        "error_rate_limit": "Rate limited by {provider}. Retrying in {seconds}s... (attempt {n}/{max})",
-        "error_rate_persist": "If this persists, consider switching to local mode: forgegod init --quick",
+        "error_rate_limit": (
+            "Rate limited by {provider}. Retrying in {seconds}s... (attempt {n}/{max})"
+        ),
+        "error_rate_persist": (
+            "If this persists, consider switching to local mode: forgegod init --quick"
+        ),
         "error_timeout": "Request timed out. The model may be loading. Retry in a moment.",
         "error_all_failed": "All models failed for role={role}.",
         # CLI commands
@@ -80,42 +86,52 @@ STRINGS: dict[str, dict[str, str]] = {
     "es": {
         # Onboarding wizard
         "welcome": "Configuremos ForgeGod en 2 minutos",
-        "provider_prompt": "Como quieres ejecutar los modelos de IA?",
-        "opt_local": "Modo local gratuito (Ollama — $0, corre en tu maquina)",
+        "provider_prompt": "¿Cómo querés ejecutar los modelos de IA?",
+        "opt_local": "Modo local gratuito (Ollama — $0, corre en tu máquina)",
         "opt_openai": "Clave API de OpenAI (GPT-4o, o4-mini)",
         "opt_anthropic": "Clave API de Anthropic (Claude)",
         "opt_openrouter": "Clave API de OpenRouter (300+ modelos)",
         "opt_multi": "Tengo varios proveedores",
-        "enter_key": "Pega tu clave API",
-        "verifying": "Verificando conexion...",
-        "verify_ok": "Conexion verificada!",
-        "verify_fail": "La conexion fallo",
+        "enter_key": "Pegá tu clave API",
+        "verifying": "Verificando conexión...",
+        "verify_ok": "¡Conexión verificada!",
+        "verify_fail": "La conexión falló",
         "saving_env": "Guardando en .forgegod/.env...",
-        "success": "Listo!",
-        "try_it": 'Probalo: forgegod run "Agrega un endpoint de hello world"',
+        "success": "¡Listo!",
+        "try_it": 'Probalo: forgegod run "Agregá un endpoint de hello world"',
         "init_done": "Inicializado en {path}",
-        "quick_start": "Inicio rapido:",
-        "run_hint": '  forgegod run "Describe tu tarea aqui"',
-        "local_only_hint": "Corriendo en modo local ($0). Agrega claves API para modelos en la nube.",
+        "quick_start": "Inicio rápido:",
+        "run_hint": '  forgegod run "Describí tu tarea acá"',
+        "local_only_hint": (
+            "Corriendo en modo local ($0). Agregá claves API para modelos en la nube."
+        ),
         # Errors
         "no_providers": "No se encontraron claves API ni Ollama.",
-        "set_one": "Configura al menos uno:",
-        "error_ollama_down": "Ollama no esta corriendo. Inicialo con: ollama serve",
-        "error_ollama_no_model": "Modelo '{model}' no encontrado en Ollama. Descargalo con: ollama pull {model}",
-        "error_key_invalid": "Clave API invalida. Revisala en: {url}",
+        "set_one": "Configurá al menos uno:",
+        "error_ollama_down": "Ollama no está corriendo. Inicialo con: ollama serve",
+        "error_ollama_no_model": (
+            "Modelo '{model}' no encontrado en Ollama. Descargalo con: ollama pull {model}"
+        ),
+        "error_key_invalid": "Clave API inválida. Revisala en: {url}",
         "error_key_missing": "No hay clave API configurada para {provider}.",
-        "error_rate_limit": "Limite de tasa de {provider}. Reintentando en {seconds}s... (intento {n}/{max})",
-        "error_rate_persist": "Si continua, considera cambiar a modo local: forgegod init --quick",
-        "error_timeout": "La solicitud expiro. El modelo puede estar cargando. Reintenta en un momento.",
+        "error_rate_limit": (
+            "Límite de tasa de {provider}. Reintentando en {seconds}s... (intento {n}/{max})"
+        ),
+        "error_rate_persist": (
+            "Si continúa, considerá cambiar a modo local: forgegod init --quick"
+        ),
+        "error_timeout": (
+            "La solicitud expiró. El modelo puede estar cargando. Reintentá en un momento."
+        ),
         "error_all_failed": "Todos los modelos fallaron para rol={role}.",
         # CLI commands
         "task_done": "Tarea completada",
         "task_fail": "Tarea fallida",
-        "loop_started": "Ralph Loop iniciado. Presiona Ctrl+C para detener.",
+        "loop_started": "Ralph Loop iniciado. Presioná Ctrl+C para detener.",
         "loop_stopped": "Loop detenido por el usuario.",
-        "loop_complete": "Todas las historias completadas!",
-        "dry_run_header": "MODO PRUEBA — No se ejecutaran agentes.",
-        "story_order": "Orden de Ejecucion de Historias:",
+        "loop_complete": "¡Todas las historias completadas!",
+        "dry_run_header": "MODO PRUEBA — No se ejecutarán agentes.",
+        "story_order": "Orden de Ejecución de Historias:",
         "dry_run_done": "Prueba completada.",
         # Doctor
         "doctor_title": "Chequeo de Salud de ForgeGod",
@@ -123,16 +139,16 @@ STRINGS: dict[str, dict[str, str]] = {
         "doctor_fail": "ERROR",
         "doctor_warn": "AVISO",
         "doctor_python": "Python >= 3.11",
-        "doctor_config": "Archivo de configuracion",
+        "doctor_config": "Archivo de configuración",
         "doctor_ollama": "Ollama accesible",
-        "doctor_api_keys": "Claves API validas",
+        "doctor_api_keys": "Claves API válidas",
         "doctor_git": "Git instalado",
         "doctor_tests": "Test runner detectado",
-        "doctor_all_ok": "Todos los chequeos pasaron!",
-        "doctor_has_issues": "{count} problema(s) encontrado(s). Corrigelos arriba.",
+        "doctor_all_ok": "¡Todos los chequeos pasaron!",
+        "doctor_has_issues": "{count} problema(s) encontrado(s). Corregílos arriba.",
         # Benchmark
         "bench_running": "Ejecutando benchmark...",
-        "bench_done": "Benchmark completo!",
+        "bench_done": "¡Benchmark completo!",
         "bench_task": "Tarea {n}/{total}: {name}",
         "bench_attempt": "Intento {n}/2",
         "bench_model": "Modelo: {model}",
@@ -142,10 +158,10 @@ STRINGS: dict[str, dict[str, str]] = {
         "bench_quality": "Calidad",
         "bench_speed": "Velocidad",
         "bench_cost": "Costo",
-        "bench_self_repair": "Auto-Reparacion",
+        "bench_self_repair": "Auto-Reparación",
         "bench_saved": "Resultados guardados en {path}",
         "bench_readme_updated": "Leaderboard insertado en README.md",
-        "bench_no_models": "No hay modelos disponibles. Ejecuta 'forgegod init' primero.",
+        "bench_no_models": "No hay modelos disponibles. Ejecutá 'forgegod init' primero.",
         "bench_detecting": "Auto-detectando modelos disponibles...",
     },
 }

@@ -10,7 +10,7 @@
 <h1 align="center">ForgeGod</h1>
 
 <p align="center">
-  <strong>El agente de codigo que trabaja 24/7, aprende de sus errores, y cuesta $0 cuando quieras.</strong>
+  <strong>El agente de código que trabaja 24/7, aprende de sus errores, y cuesta $0 cuando quieras.</strong>
 </p>
 
 <p align="center">
@@ -22,66 +22,66 @@
 </p>
 
 <p align="center">
-  <code>16 herramientas</code> &bull; <code>4 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autonomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>16 herramientas</code> &bull; <code>4 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
 
-ForgeGod orquesta multiples LLMs (OpenAI, Anthropic, Ollama, OpenRouter) en un unico motor de codigo autonomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usa modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Ollama, OpenRouter) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
 
 ```bash
 pip install forgegod
 ```
 
-## Inicio Rapido (Sin Saber Programar)
+## Inicio Rápido (Sin Saber Programar)
 
-No necesitas ser desarrollador para usar ForgeGod. Si puedes describir lo que quieres en espanol, ForgeGod escribe el codigo.
+No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que querés en español, ForgeGod escribe el código.
 
-### Opcion A: Modo Local Gratuito ($0)
+### Opción A: Modo Local Gratuito ($0)
 
-1. Instala Ollama: https://ollama.com/download
-2. Descarga un modelo: `ollama pull qwen3.5:9b`
-3. Instala ForgeGod: `pip install forgegod`
-4. Ejecuta: `forgegod init --lang es` (el asistente te guia)
-5. Probalo: `forgegod run "Crea un sitio web simple con un formulario de contacto"`
+1. Instalá Ollama: https://ollama.com/download
+2. Descargá un modelo: `ollama pull qwen3.5:9b`
+3. Instalá ForgeGod: `pip install forgegod`
+4. Ejecutá: `forgegod init --lang es` (el asistente te guía)
+5. Probalo: `forgegod run "Creá un sitio web simple con un formulario de contacto"`
 
-### Opcion B: Modo Nube (mas rapido, ~$0.01/tarea)
+### Opción B: Modo Nube (más rápido, ~$0.01/tarea)
 
-1. Obtene una clave de OpenAI: https://platform.openai.com/api-keys
-2. Instala ForgeGod: `pip install forgegod`
-3. Ejecuta: `forgegod init --lang es` → pega tu clave cuando te lo pida
-4. Probalo: `forgegod run "Construi una API REST con autenticacion de usuarios"`
+1. Obtené una clave de OpenAI: https://platform.openai.com/api-keys
+2. Instalá ForgeGod: `pip install forgegod`
+3. Ejecutá: `forgegod init --lang es` → pegá tu clave cuando te lo pida
+4. Probalo: `forgegod run "Construí una API REST con autenticación de usuarios"`
 
-### Algo no funciona?
+### ¿Algo no funciona?
 
-Ejecuta `forgegod doctor` — revisa tu instalacion y te dice exactamente que corregir.
+Ejecutá `forgegod doctor` — revisa tu instalación y te dice exactamente qué corregir.
 
-## Por Que ForgeGod es Diferente
+## Por Qué ForgeGod es Diferente
 
-Todos los demas CLIs de codigo usan **un modelo a la vez** y **se reinician a cero** cada sesion. ForgeGod no.
+Todos los demás CLIs de código usan **un modelo a la vez** y **se reinician a cero** cada sesión. ForgeGod no.
 
 | Capacidad | Claude Code | Codex CLI | Aider | Cursor | **ForgeGod** |
 |:----------|:----------:|:---------:|:-----:|:------:|:------------:|
-| Ruteo multi-modelo automatico | - | - | manual | - | **si** |
-| Hibrido local + nube | - | basico | basico | - | **nativo** |
-| Loops autonomos 24/7 | - | - | - | - | **si** |
-| Memoria entre sesiones | basica | - | - | removida | **5 niveles** |
-| Estrategia auto-mejorable | - | - | - | - | **si (SICA)** |
-| Modos de presupuesto | - | - | - | - | **si** |
-| Generacion Reflexion | - | - | - | - | **3 intentos** |
-| Worktrees git paralelos | subagentes | - | - | - | **si** |
+| Ruteo multi-modelo automático | - | - | manual | - | **sí** |
+| Híbrido local + nube | - | básico | básico | - | **nativo** |
+| Loops autónomos 24/7 | - | - | - | - | **sí** |
+| Memoria entre sesiones | básica | - | - | removida | **5 niveles** |
+| Estrategia auto-mejorable | - | - | - | - | **sí (SICA)** |
+| Modos de presupuesto | - | - | - | - | **sí** |
+| Generación Reflexión | - | - | - | - | **3 intentos** |
+| Worktrees git paralelos | subagentes | - | - | - | **sí** |
 
 ### La Ventaja: Harness > Modelo
 
-Un [salto de 22 puntos en SWE-bench](https://www.cognition.ai/blog/swe-bench-devin) viene de la ingenieria del harness, no de upgrades de modelo. ForgeGod es el harness:
+Un [salto de 22 puntos en SWE-bench](https://www.cognition.ai/blog/swe-bench-devin) viene de la ingeniería del harness, no de upgrades de modelo. ForgeGod es el harness:
 
-- **Ralph Loop** — Codigo 24/7 desde un PRD. El progreso vive en git, no en el contexto del LLM. Agente fresco por historia. Sin degradacion de contexto.
-- **Memoria de 5 Niveles** — Episodica (que paso) + Semantica (que se) + Procedimental (como lo hago) + Grafo (como se conectan las cosas) + Errores-Soluciones (que arregla que). Las memorias decaen, se consolidan y se refuerzan automaticamente.
-- **Coder Reflexion** — 3 intentos de generacion de codigo con modelos escalonados: local (gratis) → nube (barato) → frontier (cuando importa). Validacion AST en cada paso.
-- **SICA** — Agente de Codigo Auto-Mejorable. Modifica sus propios prompts, ruteo de modelos y estrategia basado en resultados. 6 capas de seguridad previenen la desviacion.
-- **Modos de Presupuesto** — `normal` → `throttle` → `local-only` → `halt`. Activados automaticamente por gasto. Corre para siempre en Ollama por $0.
+- **Ralph Loop** — Código 24/7 desde un PRD. El progreso vive en git, no en el contexto del LLM. Agente fresco por historia. Sin degradación de contexto.
+- **Memoria de 5 Niveles** — Episódica (qué pasó) + Semántica (qué sé) + Procedimental (cómo lo hago) + Grafo (cómo se conectan las cosas) + Errores-Soluciones (qué arregla qué). Las memorias decaen, se consolidan y se refuerzan automáticamente.
+- **Coder Reflexión** — 3 intentos de generación de código con modelos escalonados: local (gratis) → nube (barato) → frontier (cuando importa). Validación AST en cada paso.
+- **SICA** — Agente de Código Auto-Mejorable. Modifica sus propios prompts, ruteo de modelos y estrategia basado en resultados. 6 capas de seguridad previenen la desviación.
+- **Modos de Presupuesto** — `normal` → `throttle` → `local-only` → `halt`. Activados automáticamente por gasto. Corre para siempre en Ollama por $0.
 
-## Inicio Rapido
+## Inicio Rápido
 
 ```bash
 # Instalar
@@ -90,16 +90,16 @@ pip install forgegod
 # Inicializar un proyecto
 forgegod init --lang es
 
-# Tarea unica
-forgegod run "Agrega un endpoint /health a server.py con uptime e info de version"
+# Tarea única
+forgegod run "Agregá un endpoint /health a server.py con uptime e info de versión"
 
 # Planificar un proyecto → genera PRD
-forgegod plan "Construi una API REST para una app de tareas con auth, CRUD y tests"
+forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y tests"
 
-# Loop autonomo 24/7 desde PRD
+# Loop autónomo 24/7 desde PRD
 forgegod loop --prd .forgegod/prd.json
 
-# Ver que aprendio
+# Ver qué aprendió
 forgegod memory
 
 # Ver desglose de costos
@@ -112,7 +112,7 @@ forgegod benchmark
 forgegod doctor
 ```
 
-## Como Funciona el Ralph Loop
+## Cómo Funciona el Ralph Loop
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -128,54 +128,54 @@ forgegod doctor
 │                │CONTEXTO│    │O RETRY │   ok    │
 │                └────────┘    └────────┘          │
 │                                                  │
-│  El progreso esta en GIT, no en contexto LLM.   │
-│  Agente fresco por historia. Sin degradacion.    │
-│  Crea .forgegod/KILLSWITCH para detener.        │
+│  El progreso está en GIT, no en contexto LLM.   │
+│  Agente fresco por historia. Sin degradación.    │
+│  Creá .forgegod/KILLSWITCH para detener.         │
 └─────────────────────────────────────────────────┘
 ```
 
 1. **Leer PRD** — Elegir la historia TODO de mayor prioridad
-2. **Crear agente** — Contexto fresco (el progreso esta en git, no en memoria)
+2. **Crear agente** — Contexto fresco (el progreso está en git, no en memoria)
 3. **Ejecutar** — El agente usa 16 herramientas para implementar la historia
-4. **Validar** — Tests, lint, sintaxis, revision frontier
+4. **Validar** — Tests, lint, sintaxis, revisión frontier
 5. **Commit o retry** — Pasa: commit + marcar hecho. Falla: reintentar hasta 3x con escalamiento de modelo
 6. **Rotar** — Siguiente historia. El contexto siempre es fresco.
 
 ## Sistema de Memoria de 5 Niveles
 
-ForgeGod tiene el sistema de memoria mas avanzado de cualquier agente de codigo open-source:
+ForgeGod tiene el sistema de memoria más avanzado de cualquier agente de código open-source:
 
-| Nivel | Que | Como | Retencion |
+| Nivel | Qué | Cómo | Retención |
 |:------|:----|:-----|:----------|
-| **Episodica** | Que paso por tarea | Registros completos de resultado | 90 dias |
-| **Semantica** | Principios extraidos | Confianza + decaimiento + refuerzo | Indefinido |
-| **Procedimental** | Patrones de codigo y recetas | Seguimiento de tasa de exito | Indefinido |
-| **Grafo** | Relaciones + aristas causales | Auto-extraido de resultados | Indefinido |
-| **Errores-Soluciones** | Patron de error → solucion | Busqueda fuzzy | Indefinido |
+| **Episódica** | Qué pasó por tarea | Registros completos de resultado | 90 días |
+| **Semántica** | Principios extraídos | Confianza + decaimiento + refuerzo | Indefinido |
+| **Procedimental** | Patrones de código y recetas | Seguimiento de tasa de éxito | Indefinido |
+| **Grafo** | Relaciones + aristas causales | Auto-extraído de resultados | Indefinido |
+| **Errores-Soluciones** | Patrón de error → solución | Búsqueda fuzzy | Indefinido |
 
-Las memorias **decaen** sin refuerzo (vida media de 30 dias), se **consolidan** automaticamente (fusionan similares, podan debiles), y se **inyectan** en cada prompt como un Memory Spine ranqueado por relevancia + recencia + importancia.
+Las memorias **decaen** sin refuerzo (vida media de 30 días), se **consolidan** automáticamente (fusionan similares, podan débiles), y se **inyectan** en cada prompt como un Memory Spine ranqueado por relevancia + recencia + importancia.
 
 ## Modos de Presupuesto
 
 | Modo | Comportamiento | Disparador |
 |:-----|:---------------|:-----------|
 | `normal` | Usa todos los modelos configurados | Por defecto |
-| `throttle` | Preferir local, nube solo para revision | 80% del limite diario |
-| `local-only` | Solo Ollama, **operacion $0** | Manual o 95% del limite |
-| `halt` | Detener todas las llamadas LLM | 100% del limite diario |
+| `throttle` | Preferir local, nube solo para revisión | 80% del límite diario |
+| `local-only` | Solo Ollama, **operación $0** | Manual o 95% del límite |
+| `halt` | Detener todas las llamadas LLM | 100% del límite diario |
 
 ## Leaderboard de Modelos
 
-Ejecuta el tuyo: `forgegod benchmark`
+Ejecutá el tuyo: `forgegod benchmark`
 
-| Modelo | Compuesto | Correctitud | Calidad | Velocidad | Costo | Auto-Reparacion |
+| Modelo | Compuesto | Correctitud | Calidad | Velocidad | Costo | Auto-Reparación |
 |:-------|:---------:|:-----------:|:-------:|:---------:|:-----:|:---------------:|
 | openai:gpt-4o-mini | 81.5 | 10/12 | 7.4 | 12s prom | $0.08 | 4/4 |
 | ollama:qwen3.5:9b | 72.3 | 8/12 | 6.8 | 45s prom | $0.00 | 3/4 |
 
-*Ejecuta `forgegod benchmark --update-readme` para actualizar con tus propios resultados.*
+*Ejecutá `forgegod benchmark --update-readme` para actualizar con tus propios resultados.*
 
-## Configuracion
+## Configuración
 
 ForgeGod usa config TOML con prioridad de 3 niveles: variables de entorno > proyecto > global.
 
@@ -183,11 +183,11 @@ ForgeGod usa config TOML con prioridad de 3 niveles: variables de entorno > proy
 # .forgegod/config.toml
 
 [models]
-planner = "openai:gpt-4o-mini"        # Planificacion barata
-coder = "ollama:qwen3-coder-next"     # Codigo local gratis
+planner = "openai:gpt-4o-mini"        # Planificación barata
+coder = "ollama:qwen3-coder-next"     # Código local gratis
 reviewer = "openai:o4-mini"           # Puerta de calidad
 sentinel = "openai:gpt-4o"            # Muestreo frontier
-escalation = "openai:gpt-4o"          # Fallback para problemas dificiles
+escalation = "openai:gpt-4o"          # Fallback para problemas difíciles
 
 [budget]
 daily_limit_usd = 5.00
@@ -206,7 +206,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."     # Opcional
 export OPENROUTER_API_KEY="sk-or-..."     # Opcional
 ```
 
-O usa el archivo `.forgegod/.env` — `forgegod init` lo crea automaticamente.
+O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
 
 ## Modelos Soportados
 
@@ -215,27 +215,27 @@ O usa el archivo `.forgegod/.env` — `forgegod init` lo crea automaticamente.
 | **Ollama** | qwen3-coder-next, devstral, cualquiera | **$0** | `ollama serve` |
 | OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
-| OpenRouter | 200+ modelos | varia | `OPENROUTER_API_KEY` |
+| OpenRouter | 200+ modelos | varía | `OPENROUTER_API_KEY` |
 
 ## Seguridad
 
 Defensa en profundidad, no teatro de seguridad:
 
 - **Lista de comandos bloqueados** — 13 patrones peligrosos bloqueados (`rm -rf /`, `curl | sh`, `sudo`, fork bombs)
-- **Redaccion de secretos** — 11 patrones eliminan claves API de la salida de herramientas antes del contexto LLM
-- **Deteccion de inyeccion de prompts** — Archivos de reglas escaneados por patrones de inyeccion antes de cargar
-- **Limites de presupuesto** — Controles de costo previenen gasto descontrolado de API
-- **Killswitch** — Crea `.forgegod/KILLSWITCH` para detener inmediatamente los loops autonomos
-- **Proteccion de archivos sensibles** — `.env`, archivos de credenciales reciben advertencias + redaccion automatica
+- **Redacción de secretos** — 11 patrones eliminan claves API de la salida de herramientas antes del contexto LLM
+- **Detección de inyección de prompts** — Archivos de reglas escaneados por patrones de inyección antes de cargar
+- **Límites de presupuesto** — Controles de costo previenen gasto descontrolado de API
+- **Killswitch** — Creá `.forgegod/KILLSWITCH` para detener inmediatamente los loops autónomos
+- **Protección de archivos sensibles** — `.env`, archivos de credenciales reciben advertencias + redacción automática
 
-> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Revisa los cambios antes de hacer commit. Inicia el modo autonomo con `--max 5` para verificar el comportamiento.
+> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Revisá los cambios antes de hacer commit. Iniciá el modo autónomo con `--max 5` para verificar el comportamiento.
 
 ## Contribuir
 
-Damos la bienvenida a contribuciones. Ver [CONTRIBUTING.md](CONTRIBUTING.md) para las guias.
+Damos la bienvenida a contribuciones. Ver [CONTRIBUTING.md](CONTRIBUTING.md) para las guías.
 
 - Reportes de bugs y solicitudes de features: [GitHub Issues](https://github.com/waitdeadai/forgegod/issues)
-- Preguntas y discusion: [GitHub Discussions](https://github.com/waitdeadai/forgegod/discussions)
+- Preguntas y discusión: [GitHub Discussions](https://github.com/waitdeadai/forgegod/discussions)
 
 ## Licencia
 
@@ -244,5 +244,5 @@ Apache 2.0 — ver [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  Construido por <a href="https://waitdead.com">WAITDEAD</a> &bull; Potenciado por tecnicas de OpenClaw, Hermes, e investigacion SOTA 2026 de agentes de codigo.
+  Construido por <a href="https://waitdead.com">WAITDEAD</a> &bull; Potenciado por técnicas de OpenClaw, Hermes, e investigación SOTA 2026 de agentes de código.
 </p>
