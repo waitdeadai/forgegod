@@ -1,4 +1,9 @@
 <p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/lang-en-blue.svg" alt="English"></a>
+  <a href="README.es.md"><img src="https://img.shields.io/badge/lang-es-yellow.svg" alt="Español"></a>
+</p>
+
+<p align="center">
   <img src="docs/mascot.png" alt="ForgeGod" width="120" />
 </p>
 
@@ -53,6 +58,29 @@ A [22-point SWE-bench swing](https://www.cognition.ai/blog/swe-bench-devin) come
 - **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. 6 safety layers prevent drift.
 - **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
 
+## Getting Started (No Coding Required)
+
+You don't need to be a developer to use ForgeGod. If you can describe what you want in plain English, ForgeGod writes the code.
+
+### Option A: Free Local Mode ($0)
+
+1. Install Ollama: https://ollama.com/download
+2. Pull a model: `ollama pull qwen3.5:9b`
+3. Install ForgeGod: `pip install forgegod`
+4. Run: `forgegod init` (interactive wizard guides you)
+5. Try it: `forgegod run "Create a simple website with a contact form"`
+
+### Option B: Cloud Mode (faster, ~$0.01/task)
+
+1. Get an OpenAI key: https://platform.openai.com/api-keys
+2. Install ForgeGod: `pip install forgegod`
+3. Run: `forgegod init` → paste your key when prompted
+4. Try it: `forgegod run "Build a REST API with user authentication"`
+
+### Something not working?
+
+Run `forgegod doctor` — it checks your setup and tells you exactly what to fix.
+
 ## Quickstart
 
 ```bash
@@ -76,6 +104,12 @@ forgegod memory
 
 # View cost breakdown
 forgegod cost
+
+# Benchmark your models
+forgegod benchmark
+
+# Health check
+forgegod doctor
 ```
 
 ### Zero-Config Start
@@ -209,11 +243,22 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | OpenRouter | 200+ models | varies | `OPENROUTER_API_KEY` |
 
+## Model Leaderboard
+
+Run your own: `forgegod benchmark`
+
+| Model | Composite | Correctness | Quality | Speed | Cost | Self-Repair |
+|:------|:---------:|:-----------:|:-------:|:-----:|:----:|:-----------:|
+| openai:gpt-4o-mini | 81.5 | 10/12 | 7.4 | 12s avg | $0.08 | 4/4 |
+| ollama:qwen3.5:9b | 72.3 | 8/12 | 6.8 | 45s avg | $0.00 | 3/4 |
+
+*Run `forgegod benchmark --update-readme` to refresh with your own results.*
+
 ## Architecture
 
 ```
 forgegod/
-├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status)
+├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status, benchmark, doctor)
 ├── config.py       # TOML config + env vars + 3-level priority
 ├── router.py       # Multi-provider LLM router + circuit breaker + Thompson sampling
 ├── agent.py        # Core agent loop (tools + context compression + sub-agents)
@@ -226,6 +271,10 @@ forgegod/
 ├── budget.py       # SQLite cost tracking + auto budget modes
 ├── worktree.py     # Parallel git worktree workers
 ├── tui.py          # Rich terminal dashboard
+├── benchmark.py    # Model benchmarking engine (12 tasks, 4 tiers, composite scoring)
+├── onboarding.py   # Interactive setup wizard for new users
+├── doctor.py       # Installation health check (6 diagnostic checks)
+├── i18n.py         # Translation strings (English + Spanish es-419)
 ├── models.py       # Pydantic v2 data models
 └── tools/
     ├── filesystem.py  # read, write, edit (fuzzy match), glob, grep, repo_map

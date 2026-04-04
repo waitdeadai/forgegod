@@ -69,9 +69,23 @@ def main(
 @app.command()
 def init(
     path: Path = typer.Argument(Path("."), help="Project root directory"),
-    quick: bool = typer.Option(False, "--quick", "-q", help="Skip detection, use defaults"),
+    quick: bool = typer.Option(False, "--quick", "-q", help="Skip wizard, auto-detect only"),
+    lang: str = typer.Option("auto", "--lang", "-l", help="Language: en, es, auto"),
 ):
-    """Initialize a ForgeGod project with auto-detection."""
+    """Initialize a ForgeGod project — interactive wizard or quick auto-detect."""
+    from forgegod.i18n import set_lang
+
+    set_lang(lang)
+
+    if not quick:
+        # Interactive wizard (default for new users)
+        from forgegod.onboarding import OnboardingWizard
+
+        wizard = OnboardingWizard(project_path=path, lang=lang)
+        wizard.run()
+        return
+
+    # Quick mode: silent auto-detect (original behavior)
     import os
 
     from forgegod.config import init_project
@@ -80,7 +94,6 @@ def init(
     console.print("[bold]Initializing project...[/bold]")
     console.print()
 
-    # 1. Detect API keys
     providers: list[str] = []
     if os.environ.get("OPENAI_API_KEY"):
         providers.append("openai")
@@ -92,7 +105,6 @@ def init(
         providers.append("openrouter")
         console.print("  [green]+[/green] OpenRouter API key detected")
 
-    # 2. Check Ollama
     ollama_available = False
     try:
         import httpx
@@ -116,60 +128,13 @@ def init(
         console.print("  or: ollama serve  (for free local mode)")
         console.print()
 
-    # 3. Detect project environment
-    project = Path(path).resolve()
-    lang = "unknown"
-    test_cmd = ""
-    lint_cmd = ""
-
-    if (project / "pyproject.toml").exists() or (project / "setup.py").exists():
-        lang = "python"
-        test_cmd = "pytest"
-        if (project / "pyproject.toml").exists():
-            content = (project / "pyproject.toml").read_text(errors="replace")
-            if "ruff" in content:
-                lint_cmd = "ruff check ."
-    elif (project / "package.json").exists():
-        lang = "javascript"
-        test_cmd = "npm test"
-    elif (project / "go.mod").exists():
-        lang = "go"
-        test_cmd = "go test ./..."
-    elif (project / "Cargo.toml").exists():
-        lang = "rust"
-        test_cmd = "cargo test"
-
-    if lang != "unknown":
-        console.print(f"  [green]+[/green] Detected: {lang}")
-        if test_cmd:
-            console.print(f"    Test runner: {test_cmd}")
-
-    git_init = (project / ".git").exists()
-    if git_init:
-        console.print("  [green]+[/green] Git repository")
-    else:
-        console.print("  [dim]-[/dim] No git repo (recommended: git init)")
-
-    # 4. Pick optimal model config based on what's available
-    coder = "ollama:qwen3-coder-next" if ollama_available else (
-        "openai:gpt-4o-mini" if "openai" in providers else
-        "anthropic:claude-sonnet-4-6" if "anthropic" in providers else
-        "openrouter:meta-llama/llama-3.3-70b-instruct"
-    )
-    reviewer = (
-        "openai:o4-mini" if "openai" in providers else
-        "anthropic:claude-sonnet-4-6" if "anthropic" in providers else
-        coder  # fallback: same as coder
-    )
-
-    # 5. Initialize
     project_dir = init_project(path)
 
     console.print()
     console.print(f"[green]Initialized at {project_dir}[/green]")
     console.print()
     console.print("[bold]Quick start:[/bold]")
-    console.print(f'  forgegod run "Describe your task here"')
+    console.print('  forgegod run "Describe your task here"')
     console.print()
     console.print("[dim]Config: .forgegod/config.toml | Memory: .forgegod/memory.db[/dim]")
     if ollama_available and not providers:
@@ -223,6 +188,7 @@ def loop(
     workers: int = typer.Option(1, "--workers", "-w", help="Parallel workers"),
     max_iterations: Optional[int] = typer.Option(None, "--max", help="Max iterations"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    dry_run: bool = typer.Option(False, "--dry-run", "-d", help="Print story order and exit without running"),
 ):
     """Run 24/7 Ralph loop — autonomous coding from PRD."""
     from forgegod.config import load_config
@@ -273,7 +239,27 @@ def loop(
             f"Cost: ${state.total_cost_usd:.4f}"
         )
 
-    asyncio.run(_loop())
+    async def _dry_run():
+        """Print story execution order and exit without running agents."""
+        console.print("[bold yellow]DRY RUN MODE — No agents will be executed.[/bold yellow]")
+        console.print()
+        console.print("[bold]Story Execution Order:[/bold]")
+        console.print()
+        for i, story in enumerate(ralph.prd.stories, 1):
+            status = story.status
+            console.print(f"  {i}. [{story.id}] {story.title}")
+            console.print(f"     Status: {status.value}")
+            if story.description:
+                console.print(f"     Description: {story.description[:200]}...")
+            if story.files_touched:
+                console.print(f"     Files: {', '.join(story.files_touched)}")
+            console.print()
+        console.print("[bold green]Dry run complete.[/bold green]")
+
+    if dry_run:
+        asyncio.run(_dry_run())
+    else:
+        asyncio.run(_loop())
 
 
 @app.command()
@@ -447,6 +433,90 @@ def memory():
             console.print(Panel(learnings, title="Top Learnings"))
 
     asyncio.run(_memory())
+
+
+@app.command()
+def doctor():
+    """Check ForgeGod installation health."""
+    from forgegod.doctor import print_doctor_results, run_doctor
+
+    _print_banner(mini=True)
+    checks = run_doctor()
+    print_doctor_results(checks)
+
+
+@app.command()
+def benchmark(
+    models: Optional[str] = typer.Option(
+        None, "--models", "-m",
+        help="Comma-separated models (e.g. 'ollama:qwen3.5:9b,openai:gpt-4o-mini')",
+    ),
+    tiers: Optional[str] = typer.Option(
+        None, "--tiers", "-t",
+        help="Tier filter: 1,2,3,4 or comma-separated",
+    ),
+    output: Path = typer.Option(
+        Path(".forgegod/benchmark_results.json"), "--output", "-o",
+        help="Output JSON path",
+    ),
+    update_readme: bool = typer.Option(
+        False, "--update-readme",
+        help="Auto-insert leaderboard table into README.md",
+    ),
+    runs: int = typer.Option(1, "--runs", "-r", help="Runs per task (Pass@k)"),
+    lang: str = typer.Option("auto", "--lang", "-l", help="Language: en, es, auto"),
+):
+    """Benchmark models — compare speed, quality, cost, and self-repair."""
+    from forgegod.benchmark import BenchmarkRunner, detect_available_models
+    from forgegod.config import load_config
+    from forgegod.i18n import set_lang
+    from forgegod.i18n import t as tr
+
+    set_lang(lang)
+    _print_banner(mini=True)
+    config = load_config()
+
+    # Parse models
+    if models:
+        model_list = [m.strip() for m in models.split(",") if m.strip()]
+    else:
+        console.print(f"[dim]{tr('bench_detecting')}[/dim]")
+        model_list = detect_available_models(config)
+        if not model_list:
+            console.print(f"[red]{tr('bench_no_models')}[/red]")
+            raise typer.Exit(1)
+        console.print(f"  Found: {', '.join(model_list)}")
+
+    # Parse tier filter
+    tier_filter: set[int] | None = None
+    if tiers:
+        tier_filter = set()
+        for t_val in tiers.split(","):
+            t_val = t_val.strip().lower()
+            if t_val in ("1", "trivial"):
+                tier_filter.add(1)
+            elif t_val in ("2", "easy"):
+                tier_filter.add(2)
+            elif t_val in ("3", "medium"):
+                tier_filter.add(3)
+            elif t_val in ("4", "hard"):
+                tier_filter.add(4)
+
+    console.print(f"\n[bold cyan]{tr('bench_running')}[/bold cyan]")
+
+    async def _bench():
+        runner = BenchmarkRunner(config, model_list)
+        await runner.run_all(tier_filter=tier_filter, runs_per_task=runs)
+        runner.print_results()
+        runner.save_results(output)
+
+        if update_readme:
+            readme = Path("README.md")
+            runner.update_readme(readme)
+
+        console.print(f"\n[bold green]{tr('bench_done')}[/bold green]")
+
+    asyncio.run(_bench())
 
 
 if __name__ == "__main__":

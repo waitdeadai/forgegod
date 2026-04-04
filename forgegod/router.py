@@ -130,7 +130,11 @@ class ModelRouter:
                 logger.warning(f"{spec} failed: {e}, trying next")
 
         logger.error(f"All models failed for role={role}. Last: {last_error}")
-        return f"[ERROR: All models failed. {last_error}]", ModelUsage()
+        return (
+            f"[ERROR: All models failed for role={role}.\n"
+            f"  Last error: {last_error}\n"
+            f"  Fix: Check `forgegod doctor` or try a different model with --model]"
+        ), ModelUsage()
 
     async def _call_single(
         self,
@@ -222,13 +226,15 @@ class ModelRouter:
                 data = resp.json()
             except httpx.ConnectError as e:
                 raise RuntimeError(
-                    f"Ollama is not running or unreachable at {self.config.ollama.host}. "
-                    f"Ensure Ollama service is started and accessible."
+                    f"error: Cannot connect to Ollama at {self.config.ollama.host}\n"
+                    f"  Ollama doesn't appear to be running.\n"
+                    f"  Fix: Start it with `ollama serve`, then retry."
                 ) from e
             except httpx.TimeoutException as e:
                 raise RuntimeError(
-                    f"Ollama request timed out. The model may be loading or the connection is slow. "
-                    f"Retry after a moment or check Ollama is responsive."
+                    f"error: Ollama request timed out after {self.config.ollama.timeout}s\n"
+                    f"  The model may still be loading into memory.\n"
+                    f"  Fix: Wait a moment and retry, or increase timeout in .forgegod/config.toml"
                 ) from e
 
         msg = data.get("message", {})
