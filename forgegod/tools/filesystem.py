@@ -249,17 +249,38 @@ async def repo_map(path: str = ".", max_files: int = 200) -> str:
             rel_path = fpath.relative_to(base)
             indent = "  " * depth
 
+            # Get file metadata
+            try:
+                stat = fpath.stat()
+                size_bytes = stat.st_size
+                mtime = stat.st_mtime
+                # Human-readable size
+                if size_bytes < 1024:
+                    size_str = f"{size_bytes}B"
+                elif size_bytes < 1024 ** 2:
+                    size_str = f"{size_bytes / 1024:.1f}KB"
+                elif size_bytes < 1024 ** 3:
+                    size_str = f"{size_bytes / (1024 ** 2):.1f}MB"
+                else:
+                    size_str = f"{size_bytes / (1024 ** 3):.1f}GB"
+                # Human-readable date
+                from datetime import datetime
+                mtime_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M")
+            except OSError:
+                size_str = "?"
+                mtime_str = "?"
+
             # For Python files: extract class/function signatures
             if fpath.suffix == ".py":
                 sigs = _extract_python_signatures(fpath)
                 if sigs:
-                    lines.append(f"{indent}{rel_path}")
+                    lines.append(f"{indent}{rel_path} ({size_str}, {mtime_str})")
                     for sig in sigs:
                         lines.append(f"{indent}  {sig}")
                 else:
-                    lines.append(f"{indent}{rel_path}")
+                    lines.append(f"{indent}{rel_path} ({size_str}, {mtime_str})")
             else:
-                lines.append(f"{indent}{rel_path}")
+                lines.append(f"{indent}{rel_path} ({size_str}, {mtime_str})")
 
             file_count += 1
 
