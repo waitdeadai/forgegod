@@ -181,13 +181,14 @@ def run(
     task: str = typer.Argument(..., help="Task description"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Override coder model"),
     review: bool = typer.Option(True, "--review/--no-review", help="Review output with frontier"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
 ):
     """Execute a single coding task."""
     from forgegod.config import load_config
 
     _print_banner(mini=True)
     config = load_config()
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
     if model:
         config.models.coder = model
     config.review.always_review_run = review
@@ -221,6 +222,7 @@ def loop(
     ),
     workers: int = typer.Option(1, "--workers", "-w", help="Parallel workers"),
     max_iterations: Optional[int] = typer.Option(None, "--max", help="Max iterations"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
 ):
     """Run 24/7 Ralph loop — autonomous coding from PRD."""
     from forgegod.config import load_config
@@ -239,8 +241,9 @@ def loop(
     # Configure logging to both console and file
     log_file = config.project_dir / "logs" / "loop.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
+    logging_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging_level,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",
         handlers=[
             logging.StreamHandler(),
