@@ -15,6 +15,7 @@ import logging
 import re
 import time
 from pathlib import Path
+from typing import Any
 
 from forgegod.budget import BudgetTracker
 from forgegod.config import ForgeGodConfig
@@ -245,11 +246,30 @@ class Agent:
                     await self._record_episode(task_id, task, result)
                     return result
 
-                # Add assistant message
-                self.messages.append({
-                    "role": "assistant",
-                    "content": response_text,
-                })
+                # Add assistant message with structured tool_calls
+                # (required by Gemini/OpenAI — raw text causes
+                #  "function_response.name cannot be empty" errors)
+                assistant_msg: dict[str, Any] = {"role": "assistant"}
+                if tool_calls:
+                    assistant_msg["content"] = None
+                    assistant_msg["tool_calls"] = [
+                        {
+                            "id": tc.id or f"call_{i}",
+                            "type": "function",
+                            "function": {
+                                "name": tc.name,
+                                "arguments": (
+                                    json.dumps(tc.arguments)
+                                    if isinstance(tc.arguments, dict)
+                                    else str(tc.arguments)
+                                ),
+                            },
+                        }
+                        for i, tc in enumerate(tool_calls)
+                    ]
+                else:
+                    assistant_msg["content"] = response_text
+                self.messages.append(assistant_msg)
 
                 # Execute tool calls — parallel for read-only, sequential for writes
                 results = await self._execute_tool_batch(tool_calls)
@@ -673,7 +693,7 @@ class Agent:
         Summarize everything in between into a single "context summary" message.
         """
         # Estimate context size by character count (rough proxy for tokens)
-        total_chars = sum(len(m.get("content", "")) for m in self.messages)
+        total_chars = sum(len(m.get("content") or "") for m in self.messages)
         # Rough: 4 chars ≈ 1 token, most models have 128K context
         estimated_tokens = total_chars / 4
         max_tokens = getattr(self.config.loop, "max_context_tokens", 100_000)
@@ -699,7 +719,7 @@ class Agent:
         for m in dropped:
             if m.get("role") == "tool":
                 name = m.get("name", "unknown")
-                content_preview = m.get("content", "")[:100]
+                content_preview = (m.get("content") or "")[:100]
                 tool_calls_summary.append(f"  - {name}: {content_preview}")
 
         summary_text = (
@@ -718,7 +738,7 @@ class Agent:
             *recent,
         ]
 
-        new_chars = sum(len(m.get("content", "")) for m in self.messages)
+        new_chars = sum(len(m.get("content") or "") for m in self.messages)
         logger.info(f"Context compressed: {total_chars} → {new_chars} chars")
 
     def _accumulate_usage(self, usage: ModelUsage):
@@ -746,7 +766,7 @@ class Agent:
     @property
     def context_size_estimate(self) -> int:
         """Rough token estimate of current context."""
-        return sum(len(m.get("content", "")) for m in self.messages) // 4
+        return sum(len(m.get("content") or "") for m in self.messages) // 4
 
     @staticmethod
     def _detect_environment() -> str:

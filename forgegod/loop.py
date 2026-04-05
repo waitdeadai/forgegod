@@ -260,6 +260,19 @@ class RalphLoop:
 
         # 7. Evaluate result
         if result.success:
+            # Guard: if agent produced no work (0 tool calls, likely router failure),
+            # don't mark as DONE — retry instead
+            if result.tool_calls_count == 0 and not result.files_modified:
+                story.iterations += 1
+                story.status = StoryStatus.TODO
+                story.error_log.append("Agent produced no output (0 tool calls)")
+                logger.warning(
+                    f"Story [{story.id}] produced no work, will retry "
+                    f"(attempt {story.iterations}/{story.max_iterations})"
+                )
+                self._save_prd()
+                return
+
             # Quality gate: sample-based frontier review (SOTA pattern)
             story_idx = self.prd.stories.index(story)
             if self.reviewer.should_review(story_idx):

@@ -181,7 +181,12 @@ class ModelRouter:
                 )
             except Exception as e:
                 last_error = str(e)
-                self.circuit.record_failure(spec.provider)
+                # Only trip circuit breaker for server errors (5xx, timeouts),
+                # NOT for client errors (400) which are our bug, not provider outage
+                err_str = str(e)
+                is_client_error = "400" in err_str or "422" in err_str
+                if not is_client_error:
+                    self.circuit.record_failure(spec.provider)
                 logger.warning(f"{spec} failed: {e}, trying next")
 
         logger.error(f"All models failed for role={role}. Last: {last_error}")
