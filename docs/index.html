@@ -240,11 +240,15 @@ nav .container {
 }
 .section-title {
   font-family: var(--font-pixel); font-size: clamp(0.7rem, 2vw, 0.9rem);
-  color: var(--cyan); text-align: center; margin-bottom: 3rem;
+  color: var(--cyan); text-align: center; margin-bottom: 1rem;
   letter-spacing: 1px;
 }
+.section-subtitle {
+  text-align: center; color: var(--text-dim); font-size: 0.95rem;
+  max-width: 700px; margin: 0 auto 3rem; line-height: 1.6;
+}
 .features {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   gap: 1rem;
 }
 .feature {
@@ -252,9 +256,11 @@ nav .container {
   border: 1px solid var(--surface-border);
   border-radius: 12px; padding: 1.5rem;
   transition: border-color 0.3s, transform 0.2s;
+  grid-column: span 2;
 }
 .feature:hover { border-color: rgba(0, 229, 255, 0.2); transform: translateY(-2px); }
-.feature-large { grid-column: span 2; }
+.feature-hero { grid-column: span 3; }
+.feature-full { grid-column: span 6; }
 .feature-icon {
   font-size: 1.5rem; margin-bottom: 0.8rem;
   filter: grayscale(0.3);
@@ -270,6 +276,33 @@ nav .container {
   background: rgba(0, 229, 255, 0.1); color: var(--cyan);
   margin-top: 0.6rem;
 }
+
+/* ── Moat Section ── */
+.moat-section { padding: 5rem 0; }
+.moat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem; margin-top: 2rem;
+}
+.moat {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: 12px; padding: 1.8rem; position: relative;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.moat:hover { border-color: rgba(0, 229, 255, 0.2); transform: translateY(-2px); }
+.moat-number {
+  font-family: var(--font-pixel); font-size: 0.55rem;
+  color: var(--cyan); opacity: 0.5; margin-bottom: 0.6rem;
+  letter-spacing: 1px;
+}
+.moat h3 {
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--text); font-weight: 700; margin-bottom: 0.4rem;
+}
+.moat-stat {
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--green); margin-bottom: 0.5rem;
+}
+.moat p { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
 
 /* ── Best Results ── */
 .results-section { padding: 5rem 0; }
@@ -508,14 +541,22 @@ footer a { color: var(--cyan); }
 }
 
 /* ── Responsive ── */
+@media (max-width: 1024px) {
+  .features { grid-template-columns: repeat(2, 1fr); }
+  .feature { grid-column: span 1; }
+  .feature-hero { grid-column: span 2; }
+  .feature-full { grid-column: span 2; }
+  .moat-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .features { grid-template-columns: 1fr; }
-  .feature-large { grid-column: span 1; }
+  .feature, .feature-hero, .feature-full { grid-column: span 1; }
+  .moat-grid { grid-template-columns: 1fr; }
   .how-steps { grid-template-columns: 1fr; gap: 1.5rem; }
   .memory-tiers { grid-template-columns: repeat(2, 1fr); }
   .memory-tiers .memory-tier:last-child { grid-column: span 2; }
   .results-tiers { grid-template-columns: 1fr; }
-  .comparison-table { font-size: 0.65rem; min-width: 560px; }
+  .comparison-table { font-size: 0.65rem; min-width: 600px; }
   .stats { gap: 1rem; }
   .nav-links a:not([href*="github"]) { display: none; }
   .nav-links .lang-toggle { display: flex; }
@@ -536,6 +577,7 @@ footer a { color: var(--cyan); }
   .hero-mascot { width: 100px; height: 100px; }
   .hero h1 { font-size: 1rem; }
   .section-title { font-size: 0.65rem; }
+  .section-subtitle { font-size: 0.85rem; }
   .install-box { padding: 1rem 1.5rem; }
   .install-box code { font-size: 0.9rem; }
   .bench-callout { padding: 1rem; }
@@ -550,6 +592,7 @@ footer a { color: var(--cyan); }
   .results-tier { padding: 1.3rem 1rem; }
   .hero-cta { font-size: 0.8rem; padding: 0.6rem 1rem; }
   .feature { padding: 1.2rem; }
+  .moat { padding: 1.3rem; }
   .container { padding: 0 1rem; }
 }
 
@@ -582,6 +625,7 @@ body::after {
     </button>
     <div class="nav-links" id="nav-links">
       <a href="#features" data-i18n="nav_features" onclick="closeMenu()">Features</a>
+      <a href="#moats" data-i18n="nav_moats" onclick="closeMenu()">Why Us</a>
       <a href="#results" data-i18n="nav_results" onclick="closeMenu()">Results</a>
       <a href="#benchmarks" data-i18n="nav_benchmarks" onclick="closeMenu()">Benchmarks</a>
       <a href="#compare" data-i18n="nav_compare" onclick="closeMenu()">Compare</a>
@@ -642,76 +686,156 @@ body::after {
 <section class="features-section" id="features">
   <div class="container">
     <h2 class="section-title" data-i18n="title_features">WHAT MAKES IT DIFFERENT</h2>
+    <p class="section-subtitle" data-i18n="features_subtitle">45% of AI-generated code has security flaws. All other agents code from stale training data. ForgeGod fixes both problems.</p>
     <div class="features">
 
-      <div class="feature feature-large" style="border-color:rgba(0,255,136,0.25);background:linear-gradient(135deg,var(--surface),rgba(0,255,136,0.03));">
+      <!-- Row 1: Recon hero (3) + Adversarial (3) -->
+      <div class="feature feature-hero" style="border-color:rgba(0,255,136,0.25);background:linear-gradient(135deg,var(--surface),rgba(0,255,136,0.03));">
         <div class="feature-icon">&#128270;</div>
         <h3 data-i18n="feat_recon_title">Researches Before It Codes</h3>
         <p data-i18n="feat_recon_desc">Every other coding agent builds from stale training data. ForgeGod searches the web in real-time before writing a single line. It finds the best libraries, checks for CVEs, reads the latest docs, and verifies compatibility. Then two AIs debate the plan across 6 dimensions until it scores 7+/10. Your code uses 2026 tools, not 2024 leftovers.</p>
         <span class="feature-tag" style="background:rgba(0,255,136,0.12);color:var(--green);" data-i18n="feat_recon_tag">No other agent does this</span>
       </div>
 
-      <div class="feature">
+      <div class="feature feature-hero">
         <div class="feature-icon">&#9878;</div>
         <h3 data-i18n="feat_debate_title">Adversarial Plan Review</h3>
         <p data-i18n="feat_debate_desc">A second AI attacks your plan like a hostile code reviewer. Security gaps? Deprecated deps? Missing edge cases? It finds them in 3 rounds of debate before you burn a single API call on coding. Research shows actor-critic eliminates 90%+ of catchable issues.</p>
         <span class="feature-tag" data-i18n="feat_debate_tag">3 rounds, 6 dimensions</span>
       </div>
 
-      <div class="feature feature-large">
-        <div class="feature-icon">&#9881;</div>
-        <h3 data-i18n="feat_routing_title">Picks the Best AI for Each Job</h3>
-        <p data-i18n="feat_routing_desc">ForgeGod connects to 6 different AI providers and automatically picks the right one for each task. Use a free local AI for everyday work, and only call the expensive cloud AI when the task is hard. If one provider goes down, it switches to the next one instantly. Over time, it learns which AI performs best for which type of work.</p>
-        <span class="feature-tag" data-i18n="feat_routing_tag">OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter</span>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon">&#8734;</div>
-        <h3 data-i18n="feat_loop_title">Works While You Sleep</h3>
-        <p data-i18n="feat_loop_desc">Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back in the morning to a finished project with a clean history of every change.</p>
-        <span class="feature-tag" data-i18n="feat_loop_tag">Runs 24/7</span>
-      </div>
-
-      <div class="feature">
-        <div class="feature-icon">&#128200;</div>
-        <h3 data-i18n="feat_reflexion_title">Checks Its Own Work</h3>
-        <p data-i18n="feat_reflexion_desc">Every piece of code gets up to 3 attempts. First it tries with the free local AI. If that fails, it escalates to a smarter (but cheap) cloud AI. If that fails too, it brings in the most powerful AI available. It validates the code is correct at every step before moving on.</p>
-        <span class="feature-tag" data-i18n="feat_reflexion_tag">3 attempts, escalating quality</span>
-      </div>
-
-      <div class="feature feature-large">
+      <!-- Row 2: Memory hero (3) + MemoryAgent (3) -->
+      <div class="feature feature-hero">
         <div class="feature-icon">&#129504;</div>
         <h3 data-i18n="feat_memory_title">Remembers and Learns From Every Task</h3>
         <p data-i18n="feat_memory_desc">Most AI tools forget everything the moment you close them. ForgeGod remembers. It stores what happened on each task, what principles work best, which code patterns succeed, how things connect to each other, and which errors it has solved before. Old memories fade, new ones get stronger. It literally gets better the more you use it.</p>
         <span class="feature-tag" data-i18n="feat_memory_tag">Gets smarter over time</span>
       </div>
 
+      <div class="feature feature-hero">
+        <div class="feature-icon">&#129302;</div>
+        <h3 data-i18n="feat_memoryagent_title">Dedicated Memory Agent</h3>
+        <p data-i18n="feat_memoryagent_desc">After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching — an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent's intelligence compounds automatically.</p>
+        <span class="feature-tag" data-i18n="feat_memoryagent_tag">LLM-powered extraction</span>
+      </div>
+
+      <!-- Row 3: Routing (2) + Loop (2) + Reflexion (2) -->
+      <div class="feature">
+        <div class="feature-icon">&#9881;</div>
+        <h3 data-i18n="feat_routing_title">Picks the Best AI for Each Job</h3>
+        <p data-i18n="feat_routing_desc">Connects to 6 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.</p>
+        <span class="feature-tag" data-i18n="feat_routing_tag">OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#8734;</div>
+        <h3 data-i18n="feat_loop_title">Works While You Sleep</h3>
+        <p data-i18n="feat_loop_desc">Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back to a finished project.</p>
+        <span class="feature-tag" data-i18n="feat_loop_tag">Runs 24/7</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128200;</div>
+        <h3 data-i18n="feat_reflexion_title">Checks Its Own Work</h3>
+        <p data-i18n="feat_reflexion_desc">Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.</p>
+        <span class="feature-tag" data-i18n="feat_reflexion_tag">3 attempts, escalating quality</span>
+      </div>
+
+      <!-- Row 4: Budget (2) + SICA (2) + Terse (2) -->
       <div class="feature">
         <div class="feature-icon">&#128176;</div>
         <h3 data-i18n="feat_budget_title">You Control the Spending</h3>
-        <p data-i18n="feat_budget_desc">Set a daily budget and ForgeGod respects it. As you approach your limit, it automatically shifts to cheaper AI models. Hit the limit? It switches to the free local AI or pauses entirely. You can also run 100% free forever using only your own computer.</p>
+        <p data-i18n="feat_budget_desc">Set a daily budget and ForgeGod respects it. As you approach your limit, it shifts to cheaper models. Hit the limit? It switches to free local AI or pauses. Run 100% free forever.</p>
         <span class="feature-tag" data-i18n="feat_budget_tag">Never an unexpected bill</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#9889;</div>
         <h3 data-i18n="feat_sica_title">Gets Better on Its Own</h3>
-        <p data-i18n="feat_sica_desc">After each task, ForgeGod analyzes what worked and what didn't, then adjusts its own approach for next time. It rewrites its own instructions, changes which AI it prefers, and refines its strategy. Six safety layers make sure it only improves and never goes off track.</p>
+        <p data-i18n="feat_sica_desc">After each task, ForgeGod analyzes what worked and what didn't, adjusts its approach for next time. Rewrites its own instructions. Six safety layers keep it on track.</p>
         <span class="feature-tag" data-i18n="feat_sica_tag">Self-improving</span>
       </div>
 
       <div class="feature">
         <div class="feature-icon">&#129452;</div>
         <h3 data-i18n="feat_terse_title">Caveman Mode</h3>
-        <p data-i18n="feat_terse_desc">A special mode that cuts AI costs by 50-75% with no drop in quality. It uses shorter, more efficient instructions internally. Proven by 5 independent research studies in 2026. Just add --terse to any command.</p>
+        <p data-i18n="feat_terse_desc">Cuts AI costs by 50-75% with no quality drop. Uses shorter, more efficient instructions internally. Proven by 5 independent research studies. Just add --terse.</p>
         <span class="feature-tag" data-i18n="feat_terse_tag">Save 50-75% on AI costs</span>
       </div>
 
+      <!-- Row 5: Security (2) + MCP (2) + Skills (2) -->
       <div class="feature">
         <div class="feature-icon">&#128737;</div>
         <h3 data-i18n="feat_security_title">Built-In Security</h3>
-        <p data-i18n="feat_security_desc">Every file the agent reads is scanned for prompt injection attacks before processing. A canary token system detects if anyone tries to extract the AI's instructions. Dangerous code patterns like credential access or shell injection are flagged before they can execute. Defense-in-depth, not just a filter.</p>
+        <p data-i18n="feat_security_desc">Every file is scanned for prompt injection attacks. Canary tokens detect instruction extraction. Dangerous code patterns are flagged before execution. Defense-in-depth.</p>
         <span class="feature-tag" data-i18n="feat_security_tag">7-layer defense</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128268;</div>
+        <h3 data-i18n="feat_mcp_title">MCP Tool Server</h3>
+        <p data-i18n="feat_mcp_desc">Connect any external tool via the Model Context Protocol. Databases, APIs, Slack, GitHub — ForgeGod can use them all mid-task. Extend its capabilities without forking the code.</p>
+        <span class="feature-tag" data-i18n="feat_mcp_tag">Infinitely extensible</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128218;</div>
+        <h3 data-i18n="feat_skills_title">Loadable Skills</h3>
+        <p data-i18n="feat_skills_desc">Pre-built instruction sets for common tasks — Django, FastAPI, React, testing, deployment. Load a skill and the agent follows battle-tested patterns instead of improvising.</p>
+        <span class="feature-tag" data-i18n="feat_skills_tag">Reusable expertise</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Why ForgeGod (Moats) -->
+<section class="moat-section" id="moats">
+  <div class="container">
+    <h2 class="section-title" data-i18n="title_moats">WHY FORGEGOD</h2>
+    <p class="section-subtitle" data-i18n="moats_subtitle">Six technical advantages no other coding agent has — free or paid.</p>
+    <div class="moat-grid">
+
+      <div class="moat">
+        <div class="moat-number">MOAT 01</div>
+        <h3 data-i18n="moat_1_title">Googles It First</h3>
+        <div class="moat-stat" data-i18n="moat_1_stat">0 other agents do pre-flight web research</div>
+        <p data-i18n="moat_1_desc">Before writing a line, ForgeGod searches the web for current libraries, checks CVEs, reads latest docs. Claude Code, Cursor, Aider, Devin — none of them do this. Your code uses 2026 tools, not whatever the model was trained on.</p>
+      </div>
+
+      <div class="moat">
+        <div class="moat-number">MOAT 02</div>
+        <h3 data-i18n="moat_2_title">Two AIs Argue First</h3>
+        <div class="moat-stat" data-i18n="moat_2_stat">90%+ catchable issues eliminated in 3 rounds</div>
+        <p data-i18n="moat_2_desc">A hostile reviewer AI attacks your plan before coding starts. It scores 6 dimensions: SOTA-ness, security, architecture, completeness, dependencies, and novelty. Only Devin has a critic — one round, not configurable.</p>
+      </div>
+
+      <div class="moat">
+        <div class="moat-number">MOAT 03</div>
+        <h3 data-i18n="moat_3_title">24/7 Autonomous Loop</h3>
+        <div class="moat-stat" data-i18n="moat_3_stat">Fresh context per task — zero context rot</div>
+        <p data-i18n="moat_3_desc">Give it a PRD with 10 stories. Walk away. Each story gets a clean agent — no context window degradation. If one fails, it retries with a smarter model. No other OSS agent has a production-quality autonomous loop.</p>
+      </div>
+
+      <div class="moat">
+        <div class="moat-number">MOAT 04</div>
+        <h3 data-i18n="moat_4_title">$0 Mode That Works</h3>
+        <div class="moat-stat" data-i18n="moat_4_stat">Claude Code costs $150-200/mo per developer</div>
+        <p data-i18n="moat_4_desc">Every competitor needs API keys or subscriptions. ForgeGod runs 100% free with Ollama. Qwen 3.5 9B fits in 8GB VRAM. When you need cloud power, it auto-escalates — then drops back to free.</p>
+      </div>
+
+      <div class="moat">
+        <div class="moat-number">MOAT 05</div>
+        <h3 data-i18n="moat_5_title">5-Tier Cognitive Memory</h3>
+        <div class="moat-stat" data-i18n="moat_5_stat">Cursor removed their memory. Aider has none.</div>
+        <p data-i18n="moat_5_desc">Not flat-file notes. 5 tiers of SQLite-backed intelligence: task history, lessons learned, code patterns, causal graph, error solutions. A dedicated MemoryAgent extracts learnings after every single task. AutoDream prunes weak memories overnight.</p>
+      </div>
+
+      <div class="moat">
+        <div class="moat-number">MOAT 06</div>
+        <h3 data-i18n="moat_6_title">Budget That Never Surprises</h3>
+        <div class="moat-stat" data-i18n="moat_6_stat">Cursor users report caps dropping from 50hrs to 6hrs</div>
+        <p data-i18n="moat_6_desc">4 budget modes: Normal, Throttle, Local-Only, Halt. Auto-downgrades at 80% of your daily limit. Uses free local models for bulk work, cloud only when needed. Real-time cost tracking per model, per role, per task.</p>
       </div>
 
     </div>
@@ -1147,6 +1271,7 @@ var STRINGS = {
     meta_desc: "Open-source autonomous coding agent with real-time web research, adversarial plan review, 5-tier memory, and $0 local mode.",
     nav_features: "Features",
     nav_results: "Results",
+    nav_moats: "Why Us",
     nav_compare: "Compare",
     hero_tagline: 'The only coding agent that <strong>researches the web</strong> before it codes. Multi-model. 24/7. <strong>$0</strong> local.',
     copy_hint: "Click to copy",
@@ -1191,6 +1316,43 @@ var STRINGS = {
     feat_debate_title: "Adversarial Plan Review",
     feat_debate_desc: "A second AI attacks your plan like a hostile code reviewer. Security gaps? Deprecated deps? Missing edge cases? It finds them in 3 rounds of debate before you burn a single API call on coding. Research shows actor-critic eliminates 90%+ of catchable issues.",
     feat_debate_tag: "3 rounds, 6 dimensions",
+    feat_memoryagent_title: "Dedicated Memory Agent",
+    feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent\u2019s intelligence compounds automatically.",
+    feat_memoryagent_tag: "LLM-powered extraction",
+    feat_routing_desc: "Connects to 6 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.",
+    feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back to a finished project.",
+    feat_reflexion_desc: "Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.",
+    feat_budget_desc: "Set a daily budget and ForgeGod respects it. As you approach your limit, it shifts to cheaper models. Hit the limit? It switches to free local AI or pauses. Run 100% free forever.",
+    feat_sica_desc: "After each task, ForgeGod analyzes what worked and what didn\u2019t, adjusts its approach for next time. Rewrites its own instructions. Six safety layers keep it on track.",
+    feat_terse_desc: "Cuts AI costs by 50-75% with no quality drop. Uses shorter, more efficient instructions internally. Proven by 5 independent research studies. Just add --terse.",
+    feat_security_desc: "Every file is scanned for prompt injection attacks. Canary tokens detect instruction extraction. Dangerous code patterns are flagged before execution. Defense-in-depth.",
+    feat_mcp_title: "MCP Tool Server",
+    feat_mcp_desc: "Connect any external tool via the Model Context Protocol. Databases, APIs, Slack, GitHub \u2014 ForgeGod can use them all mid-task. Extend its capabilities without forking the code.",
+    feat_mcp_tag: "Infinitely extensible",
+    feat_skills_title: "Loadable Skills",
+    feat_skills_desc: "Pre-built instruction sets for common tasks \u2014 Django, FastAPI, React, testing, deployment. Load a skill and the agent follows battle-tested patterns instead of improvising.",
+    feat_skills_tag: "Reusable expertise",
+    features_subtitle: "45% of AI-generated code has security flaws. All other agents code from stale training data. ForgeGod fixes both problems.",
+    title_moats: "WHY FORGEGOD",
+    moats_subtitle: "Six technical advantages no other coding agent has \u2014 free or paid.",
+    moat_1_title: "Googles It First",
+    moat_1_stat: "0 other agents do pre-flight web research",
+    moat_1_desc: "Before writing a line, ForgeGod searches the web for current libraries, checks CVEs, reads latest docs. Claude Code, Cursor, Aider, Devin \u2014 none of them do this. Your code uses 2026 tools, not whatever the model was trained on.",
+    moat_2_title: "Two AIs Argue First",
+    moat_2_stat: "90%+ catchable issues eliminated in 3 rounds",
+    moat_2_desc: "A hostile reviewer AI attacks your plan before coding starts. It scores 6 dimensions: SOTA-ness, security, architecture, completeness, dependencies, and novelty. Only Devin has a critic \u2014 one round, not configurable.",
+    moat_3_title: "24/7 Autonomous Loop",
+    moat_3_stat: "Fresh context per task \u2014 zero context rot",
+    moat_3_desc: "Give it a PRD with 10 stories. Walk away. Each story gets a clean agent \u2014 no context window degradation. If one fails, it retries with a smarter model. No other OSS agent has a production-quality autonomous loop.",
+    moat_4_title: "$0 Mode That Works",
+    moat_4_stat: "Claude Code costs $150-200/mo per developer",
+    moat_4_desc: "Every competitor needs API keys or subscriptions. ForgeGod runs 100% free with Ollama. Qwen 3.5 9B fits in 8GB VRAM. When you need cloud power, it auto-escalates \u2014 then drops back to free.",
+    moat_5_title: "5-Tier Cognitive Memory",
+    moat_5_stat: "Cursor removed their memory. Aider has none.",
+    moat_5_desc: "Not flat-file notes. 5 tiers of SQLite-backed intelligence: task history, lessons learned, code patterns, causal graph, error solutions. A dedicated MemoryAgent extracts learnings after every single task. AutoDream prunes weak memories overnight.",
+    moat_6_title: "Budget That Never Surprises",
+    moat_6_stat: "Cursor users report caps dropping from 50hrs to 6hrs",
+    moat_6_desc: "4 budget modes: Normal, Throttle, Local-Only, Halt. Auto-downgrades at 80% of your daily limit. Uses free local models for bulk work, cloud only when needed. Real-time cost tracking per model, per role, per task.",
     cmp_research: "Researches web before coding",
     cmp_debate: "Adversarial plan review",
     cmp_sota: "Real-time SOTA verification",
@@ -1274,6 +1436,7 @@ var STRINGS = {
     meta_desc: "Agente de código autónomo con investigación web en tiempo real, revisión adversarial de planes, memoria cognitiva de 5 niveles, y modo local $0.",
     nav_features: "Características",
     nav_results: "Resultados",
+    nav_moats: "Por Qu\u00e9",
     nav_compare: "Comparar",
     hero_tagline: 'El único agente de código que <strong>investiga la web</strong> antes de programar. Multi-modelo. 24/7. <strong>$0</strong> local.',
     copy_hint: "Click para copiar",
@@ -1314,10 +1477,47 @@ var STRINGS = {
     feat_security_tag: "Defensa de 7 capas",
     feat_recon_title: "Investiga Antes de Programar",
     feat_recon_desc: "Todos los otros agentes programan con datos de entrenamiento desactualizados. ForgeGod busca en la web en tiempo real antes de escribir una sola l\u00ednea. Encuentra las mejores librer\u00edas, verifica CVEs, lee la documentaci\u00f3n m\u00e1s reciente, y confirma compatibilidad. Luego dos IAs debaten el plan en 6 dimensiones hasta que puntúe 7+/10. Tu c\u00f3digo usa herramientas 2026, no sobras de 2024.",
-    feat_recon_tag: "Ningún otro agente hace esto",
+    feat_recon_tag: "Ning\u00fan otro agente hace esto",
     feat_debate_title: "Revisi\u00f3n Adversarial del Plan",
     feat_debate_desc: "Una segunda IA ataca tu plan como un revisor de c\u00f3digo hostil. \u00bfBrechas de seguridad? \u00bfDependencias obsoletas? \u00bfCasos borde faltantes? Los encuentra en 3 rondas de debate antes de gastar una sola llamada API en programar. La investigaci\u00f3n muestra que actor-cr\u00edtico elimina el 90%+ de problemas detectables.",
     feat_debate_tag: "3 rondas, 6 dimensiones",
+    feat_memoryagent_title: "Agente de Memoria Dedicado",
+    feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. La inteligencia de tu agente se acumula autom\u00e1ticamente.",
+    feat_memoryagent_tag: "Extracci\u00f3n con LLM",
+    feat_routing_desc: "Se conecta a 6 proveedores de IA y elige el mejor para cada tarea autom\u00e1ticamente. IA local gratis para trabajo diario, IA de nube solo cuando se necesita. Si un proveedor se cae, cambia al instante.",
+    feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso y sigue 24/7. Volv\u00e9 y encontr\u00e1 el proyecto terminado.",
+    feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Empieza con IA local gratis, escala a IA de nube m\u00e1s inteligente si es necesario. Valida la correcci\u00f3n en cada paso antes de avanzar.",
+    feat_budget_desc: "Configur\u00e1 un presupuesto diario y ForgeGod lo respeta. Al acercarte al l\u00edmite, cambia a modelos m\u00e1s baratos. \u00bfLlegaste al l\u00edmite? Cambia a IA local gratis o se pausa. Corr\u00e9 100% gratis para siempre.",
+    feat_sica_desc: "Despu\u00e9s de cada tarea, analiza qu\u00e9 funcion\u00f3 y qu\u00e9 no, ajusta su enfoque para la pr\u00f3xima vez. Reescribe sus propias instrucciones. Seis capas de seguridad lo mantienen en curso.",
+    feat_terse_desc: "Reduce costos de IA un 50-75% sin perder calidad. Usa instrucciones m\u00e1s cortas internamente. Probado por 5 estudios independientes. Solo agreg\u00e1 --terse.",
+    feat_security_desc: "Cada archivo se escanea por inyecci\u00f3n de prompts. Tokens canary detectan extracci\u00f3n de instrucciones. Patrones de c\u00f3digo peligrosos se marcan antes de ejecutarse. Defensa en profundidad.",
+    feat_mcp_title: "Servidor MCP",
+    feat_mcp_desc: "Conect\u00e1 cualquier herramienta externa v\u00eda el Model Context Protocol. Bases de datos, APIs, Slack, GitHub \u2014 ForgeGod puede usarlos en medio de una tarea. Extend\u00e9 sus capacidades sin tocar el c\u00f3digo.",
+    feat_mcp_tag: "Infinitamente extensible",
+    feat_skills_title: "Skills Cargables",
+    feat_skills_desc: "Instrucciones pre-armadas para tareas comunes \u2014 Django, FastAPI, React, testing, deploy. Carg\u00e1 un skill y el agente sigue patrones probados en vez de improvisar.",
+    feat_skills_tag: "Experiencia reutilizable",
+    features_subtitle: "El 45% del c\u00f3digo generado por IA tiene fallas de seguridad. Todos los otros agentes programan con datos desactualizados. ForgeGod resuelve ambos problemas.",
+    title_moats: "POR QU\u00c9 FORGEGOD",
+    moats_subtitle: "Seis ventajas t\u00e9cnicas que ning\u00fan otro agente de c\u00f3digo tiene \u2014 gratis o pago.",
+    moat_1_title: "Googlea Primero",
+    moat_1_stat: "0 otros agentes investigan la web antes de programar",
+    moat_1_desc: "Antes de escribir una l\u00ednea, ForgeGod busca en la web librer\u00edas actuales, verifica CVEs, lee docs recientes. Claude Code, Cursor, Aider, Devin \u2014 ninguno hace esto. Tu c\u00f3digo usa herramientas 2026, no lo que el modelo aprendi\u00f3.",
+    moat_2_title: "Dos IAs Debaten Primero",
+    moat_2_stat: "90%+ de problemas detectables eliminados en 3 rondas",
+    moat_2_desc: "Una IA revisora hostil ataca tu plan antes de programar. Puntúa 6 dimensiones: SOTA, seguridad, arquitectura, completitud, dependencias y novedad. Solo Devin tiene cr\u00edtico \u2014 una ronda, no configurable.",
+    moat_3_title: "Loop Aut\u00f3nomo 24/7",
+    moat_3_stat: "Contexto fresco por tarea \u2014 cero degradaci\u00f3n",
+    moat_3_desc: "Dale un PRD con 10 stories. Andate. Cada story recibe un agente limpio \u2014 sin degradaci\u00f3n de contexto. Si una falla, reintenta con un modelo m\u00e1s inteligente. Ning\u00fan otro agente OSS tiene un loop aut\u00f3nomo de producci\u00f3n.",
+    moat_4_title: "Modo $0 Que Funciona",
+    moat_4_stat: "Claude Code cuesta $150-200/mes por desarrollador",
+    moat_4_desc: "Todos los competidores necesitan claves API o suscripciones. ForgeGod corre 100% gratis con Ollama. Qwen 3.5 9B entra en 8GB VRAM. Cuando necesit\u00e1s nube, escala autom\u00e1ticamente \u2014 y vuelve a gratis.",
+    moat_5_title: "Memoria Cognitiva de 5 Niveles",
+    moat_5_stat: "Cursor elimin\u00f3 su memoria. Aider no tiene.",
+    moat_5_desc: "No son archivos de texto. 5 niveles de inteligencia respaldados por SQLite: historial, lecciones, patrones de c\u00f3digo, grafo causal, soluciones de errores. Un MemoryAgent dedicado extrae aprendizajes despu\u00e9s de cada tarea. AutoDream limpia memorias d\u00e9biles.",
+    moat_6_title: "Presupuesto Sin Sorpresas",
+    moat_6_stat: "Usuarios de Cursor reportan l\u00edmites bajando de 50hrs a 6hrs",
+    moat_6_desc: "4 modos: Normal, Throttle, Solo-Local, Halt. Auto-baja al 80% de tu l\u00edmite diario. Usa modelos locales gratis para trabajo pesado, nube solo cuando es necesario. Tracking de costos en tiempo real por modelo, rol y tarea.",
     cmp_research: "Investiga la web antes de programar",
     cmp_debate: "Revisi\u00f3n adversarial del plan",
     cmp_sota: "Verificaci\u00f3n SOTA en tiempo real",
