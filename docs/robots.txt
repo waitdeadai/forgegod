@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /.git/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://forgegod.com/sitemap.xml
