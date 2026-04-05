@@ -10,7 +10,7 @@
 <link rel="canonical" href="https://forgegod.com">
 <meta property="og:title" content="ForgeGod — The Only Coding Agent That Researches Before It Codes">
 <meta property="og:description" content="Before it writes a line, it searches the web, checks for CVEs, and debates the plan. Then it codes 24/7 for $0. Open-source. Multi-model. 5-tier memory.">
-<meta property="og:image" content="https://forgegod.com/og-image.png">
+<meta property="og:image" content="https://forgegod.com/og-image.webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="ForgeGod autonomous coding agent — terminal-first, multi-model, 24/7">
@@ -22,9 +22,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="ForgeGod — The Only Coding Agent That Researches Before It Codes">
 <meta name="twitter:description" content="Real-time web research + adversarial plan debate + 5-tier memory + $0 local mode. No other agent Googles it first. Open-source, multi-model, 24/7.">
-<meta name="twitter:image" content="https://forgegod.com/og-image.png">
+<meta name="twitter:image" content="https://forgegod.com/og-image.webp">
 <meta name="twitter:image:alt" content="ForgeGod autonomous coding agent">
-<link rel="icon" type="image/png" href="mascot.png">
+<link rel="icon" type="image/webp" href="mascot-192.webp">
 <link rel="alternate" hreflang="en" href="https://forgegod.com/">
 <link rel="alternate" hreflang="es" href="https://forgegod.com/es/">
 <link rel="alternate" hreflang="x-default" href="https://forgegod.com/">
@@ -617,7 +617,7 @@ body::after {
 <nav>
   <div class="container">
     <a href="/" class="nav-logo">
-      <img src="mascot.png" alt="ForgeGod" width="28" height="28" loading="eager">
+      <picture><source srcset="mascot-192.webp" type="image/webp"><img src="mascot.png" alt="ForgeGod" width="28" height="28" loading="eager"></picture>
       FORGEGOD
     </a>
     <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
@@ -642,7 +642,10 @@ body::after {
 <!-- Hero -->
 <section class="hero">
   <div class="container">
-    <img src="mascot.png" alt="ForgeGod — open-source autonomous coding agent" class="hero-mascot" width="140" height="140" fetchpriority="high" loading="eager" decoding="async">
+    <picture>
+      <source srcset="mascot.webp" type="image/webp">
+      <img src="mascot.png" alt="ForgeGod — open-source autonomous coding agent" class="hero-mascot" width="140" height="140" fetchpriority="high" loading="eager" decoding="async">
+    </picture>
     <h1>FORGEGOD</h1>
     <p class="hero-tagline" data-i18n-html="hero_tagline">
       The only coding agent that <strong>researches the web</strong> before it codes. Multi-model. 24/7. <strong>$0</strong> local.
