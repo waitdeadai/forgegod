@@ -320,6 +320,31 @@ class ModelRouter:
         tools: list[dict] | None = None,
     ) -> tuple[str, dict]:
         messages = self._to_messages(prompt, system)
+
+        # Convert OpenAI-format tool messages to Ollama native format
+        for msg in messages:
+            if msg.get("role") == "assistant" and "tool_calls" in msg:
+                converted = []
+                for tc in msg["tool_calls"]:
+                    fn = tc.get("function", tc)
+                    args = fn.get("arguments", {})
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args)
+                        except (json.JSONDecodeError, TypeError):
+                            args = {}
+                    converted.append({
+                        "function": {
+                            "name": fn.get("name", ""),
+                            "arguments": args,
+                        }
+                    })
+                msg["tool_calls"] = converted
+                if msg.get("content") is None:
+                    msg["content"] = ""
+            elif msg.get("role") == "tool":
+                msg.pop("tool_call_id", None)
+
         body: dict[str, Any] = {
             "model": model,
             "messages": messages,
