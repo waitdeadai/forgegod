@@ -51,6 +51,7 @@ class ModelsConfig(BaseModel):
     reviewer: str = "openai:o4-mini"
     sentinel: str = "openai:gpt-4o"
     escalation: str = "openai:gpt-4o"
+    researcher: str = "gemini:gemini-2.5-flash"  # Recon: fast + cheap for search synthesis
 
 
 class BudgetConfig(BaseModel):
@@ -114,6 +115,21 @@ class GeminiConfig(BaseModel):
     timeout: float = 120.0
 
 
+class ReconConfig(BaseModel):
+    """Reconnaissance mode — web research before planning."""
+
+    enabled: bool = False
+    max_searches: int = 15
+    max_fetch_chars: int = 3000  # per-page content limit
+    search_provider: str = "searxng"  # searxng, brave, exa
+    searxng_url: str = "http://localhost:8888"
+    brave_api_key: str = ""
+    exa_api_key: str = ""
+    debate_rounds: int = 3
+    min_approval_score: float = 7.0  # 0-10, plan must score above this
+    cache_results: bool = True
+
+
 class ForgeGodConfig(BaseModel):
     """Root configuration — merges global + project + env."""
 
@@ -126,6 +142,7 @@ class ForgeGodConfig(BaseModel):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     terse: TerseConfig = Field(default_factory=TerseConfig)
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
+    recon: ReconConfig = Field(default_factory=ReconConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR

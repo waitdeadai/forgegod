@@ -127,6 +127,132 @@ TERSE_TOOL_DESCRIPTIONS: dict[str, str] = {
 }
 
 
+# ── Recon Prompts ──
+
+RECON_QUERY_PROMPT = """Generate targeted web search queries for this coding task.
+
+TASK: {task}
+
+Generate 5-15 queries across these categories (at least 1 from each):
+1. LIBRARIES: "best {{need}} library {{language}} {year}" — find current tools
+2. PATTERNS: "{{domain}} architecture best practices {year}" — proven patterns
+3. PRIOR_ART: "github {{task_type}} {{language}} stars:>100" — existing work
+4. SECURITY: "{{library}} CVE vulnerability {year}" — known risks
+5. VERSIONS: "{{library}} latest version changelog breaking changes" — freshness
+
+Output ONLY a JSON array:
+[{{"query":"...","category":"libraries|patterns|prior_art|security|versions","priority":1}}]
+
+Priority: 1=essential, 2=important, 3=nice-to-have. No markdown fences."""
+
+RECON_SYNTHESIS_PROMPT = """You are a senior architect doing technology due diligence.
+
+TASK: {task}
+SEARCH RESULTS:
+{results}
+
+Synthesize into a Research Brief. Be specific — include version numbers, dates, URLs.
+
+Output ONLY valid JSON:
+{{
+  "libraries": [
+    {{"name":"pkg","version":"1.2.3","why":"reason","alternatives":["alt1"],"caveats":"if any"}}
+  ],
+  "architecture_patterns": ["Pattern 1: description", "Pattern 2: description"],
+  "security_warnings": ["CVE-XXXX in pkg v1.0 — fixed in v1.1", "..."],
+  "best_practices": ["Use X for Y because Z", "..."],
+  "prior_art": ["github.com/user/repo — 5K stars, similar approach", "..."]
+}}
+
+Flag anything deprecated, abandoned (>1yr no release), or with known CVEs.
+No markdown fences."""
+
+RECON_PLANNER_PROMPT = """You are a senior software architect. Decompose the following task into
+ordered implementation stories. Use the Research Brief to make INFORMED decisions.
+
+## Task
+{task}
+
+## Research Brief (from web research)
+{research_context}
+
+## Output Format (JSON)
+{{
+  "project": "{project_name}",
+  "description": "Brief project description",
+  "stories": [
+    {{
+      "id": "S001",
+      "title": "Short title",
+      "description": "What to implement — reference specific libraries/versions from research",
+      "priority": 1,
+      "acceptance_criteria": ["Criterion 1", "Criterion 2"]
+    }}
+  ],
+  "guardrails": ["Rule 1", "Rule 2"]
+}}
+
+## Rules
+- Use SPECIFIC library versions from the Research Brief (exact pkg + version)
+- Order stories by dependency (earlier = prerequisites for later)
+- Keep stories small (1-3 files each)
+- Each story must have clear, testable acceptance criteria
+- Include guardrails from security warnings in research
+- Priority 1 = highest (do first), ascending numbers = lower priority
+- Maximum 20 stories. IDs: S001, S002, etc.
+
+Output ONLY valid JSON, no markdown fences, no explanations."""
+
+RECON_CRITIQUE_PROMPT = """You are a hostile architecture reviewer. Find EVERY flaw in this plan.
+
+## Plan (PRD)
+{prd_json}
+
+## Research Brief (web research findings)
+{brief_json}
+
+## Round {round_num} of {max_rounds}
+
+Score each dimension 0-10:
+1. SOTA: Are library choices the BEST available in {year}? Any better alternatives the plan missed?
+2. SECURITY: CVEs in chosen deps? Missing input validation? Insecure defaults? Auth gaps?
+3. ARCHITECTURE: Over-engineered? Under-engineered? Coupling issues? Scalability?
+4. COMPLETENESS: Missing stories? Gaps in acceptance criteria? Untested paths?
+5. DEPENDENCIES: Version conflicts? Abandoned packages (>1yr)? License issues?
+6. NOVELTY: Is this approach innovative or just copying outdated patterns?
+
+For EACH issue found, specify severity: critical (must fix), major (should fix), minor, suggestion.
+
+Output ONLY valid JSON:
+{{
+  "verdict": "approve|revise",
+  "overall_score": 7.5,
+  "sota_score": 8.0,
+  "security_score": 6.0,
+  "architecture_score": 7.0,
+  "completeness_score": 8.0,
+  "issues": ["[critical] CVE-2026-1234 in dep X v1.0", "[major] Missing auth in S003"],
+  "suggestions": ["Consider using Y instead of X for better performance"]
+}}
+
+VERDICT: "approve" ONLY if ALL dimension scores >= 7.0. Otherwise "revise".
+No markdown fences."""
+
+RECON_REVISION_PROMPT = """Revise this plan based on the critic's feedback.
+
+## Current Plan
+{prd_json}
+
+## Research Brief
+{brief_json}
+
+## Critique (Round {round_num})
+{critique_json}
+
+Fix ALL critical and major issues. Apply suggestions where sensible.
+Output the COMPLETE revised plan as JSON (same PRD format), no markdown fences."""
+
+
 def apply_terse_tool_defs(tool_defs: list[dict]) -> list[dict]:
     """Replace tool descriptions with terse versions in-place."""
     for td in tool_defs:

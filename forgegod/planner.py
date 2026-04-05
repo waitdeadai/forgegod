@@ -6,9 +6,9 @@ import json
 import logging
 
 from forgegod.config import ForgeGodConfig
-from forgegod.models import PRD, Story, StoryStatus
+from forgegod.models import PRD, DebateResult, ResearchBrief, Story, StoryStatus
 from forgegod.router import ModelRouter
-from forgegod.terse import TERSE_PLANNER_PROMPT
+from forgegod.terse import RECON_PLANNER_PROMPT, TERSE_PLANNER_PROMPT
 
 logger = logging.getLogger("forgegod.planner")
 
@@ -121,6 +121,91 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
             stories=stories,
             guardrails=data.get("guardrails", []),
         )
+
+    # ── Recon Pipeline ──
+
+    async def research_and_decompose(
+        self, task: str, project_name: str = "project",
+    ) -> tuple[PRD, ResearchBrief, DebateResult]:
+        """Full Recon pipeline: research → plan → debate → approved PRD."""
+        from forgegod.adversary import Adversary
+        from forgegod.researcher import Researcher
+
+        # Phase 1: RECON — web intelligence gathering
+        logger.info("Recon Phase 1: researching...")
+        researcher = Researcher(self.config, self.router)
+        brief = await researcher.research(task)
+
+        # Phase 2: ARCHITECT — research-grounded planning
+        logger.info("Recon Phase 2: planning with research context...")
+        prd = await self._decompose_with_research(task, project_name, brief)
+
+        # Phase 3: ADVERSARY — debate loop
+        logger.info("Recon Phase 3: adversarial debate...")
+        adversary = Adversary(self.config, self.router)
+        debate = await adversary.debate(prd, brief)
+
+        return prd, brief, debate
+
+    async def _decompose_with_research(
+        self, task: str, project_name: str, brief: ResearchBrief,
+    ) -> PRD:
+        """Generate PRD enriched with research findings."""
+        research_context = self._format_brief(brief)
+
+        prompt = RECON_PLANNER_PROMPT.format(
+            task=task,
+            project_name=project_name,
+            research_context=research_context,
+        )
+
+        response, _ = await self.router.call(
+            prompt=prompt,
+            role="planner",
+            json_mode=True,
+            max_tokens=4096,
+            temperature=0.3,
+        )
+
+        return self._parse_prd(response, project_name, task)
+
+    @staticmethod
+    def _format_brief(brief: ResearchBrief) -> str:
+        """Format ResearchBrief as readable text for prompt injection."""
+        sections = []
+
+        if brief.libraries:
+            lines = ["### Recommended Libraries"]
+            for lib in brief.libraries:
+                line = f"- **{lib.name}** v{lib.version}: {lib.why}"
+                if lib.alternatives:
+                    line += f" (alternatives: {', '.join(lib.alternatives)})"
+                if lib.caveats:
+                    line += f" ⚠ {lib.caveats}"
+                lines.append(line)
+            sections.append("\n".join(lines))
+
+        if brief.architecture_patterns:
+            sections.append("### Architecture Patterns\n" + "\n".join(
+                f"- {p}" for p in brief.architecture_patterns
+            ))
+
+        if brief.security_warnings:
+            sections.append("### Security Warnings\n" + "\n".join(
+                f"- ⚠ {w}" for w in brief.security_warnings
+            ))
+
+        if brief.best_practices:
+            sections.append("### Best Practices\n" + "\n".join(
+                f"- {bp}" for bp in brief.best_practices
+            ))
+
+        if brief.prior_art:
+            sections.append("### Prior Art\n" + "\n".join(
+                f"- {pa}" for pa in brief.prior_art
+            ))
+
+        return "\n\n".join(sections) if sections else "No research findings available."
 
     async def refine_story(self, story: Story, context: str = "") -> Story:
         """Add more detail to a story if needed."""

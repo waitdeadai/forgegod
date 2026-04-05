@@ -167,6 +167,78 @@ class PRD(BaseModel):
     )
 
 
+# ── Recon (Web Research + Adversarial Debate) ──
+
+
+class SearchQuery(BaseModel):
+    """A targeted web search query for the Recon pipeline."""
+
+    query: str
+    category: str = ""  # libraries, patterns, prior_art, security, compatibility
+    priority: int = 1  # 1=high, 3=low
+
+
+class SearchResult(BaseModel):
+    """A single result from a web search."""
+
+    query: str
+    url: str = ""
+    title: str = ""
+    snippet: str = ""
+    content: str = ""  # fetched full text (truncated)
+    source: str = ""  # searxng, brave, exa, pypi, github
+
+
+class LibraryRecommendation(BaseModel):
+    """A recommended library with alternatives and caveats."""
+
+    name: str
+    version: str = ""
+    why: str = ""
+    alternatives: list[str] = Field(default_factory=list)
+    caveats: str = ""
+
+
+class ResearchBrief(BaseModel):
+    """Synthesized research findings from the Recon phase."""
+
+    task: str
+    libraries: list[LibraryRecommendation] = Field(default_factory=list)
+    architecture_patterns: list[str] = Field(default_factory=list)
+    security_warnings: list[str] = Field(default_factory=list)
+    best_practices: list[str] = Field(default_factory=list)
+    prior_art: list[str] = Field(default_factory=list)
+    raw_results: list[SearchResult] = Field(default_factory=list)
+    search_count: int = 0
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
+
+class PlanCritique(BaseModel):
+    """Result of a single adversary critique round."""
+
+    round_num: int = 1
+    verdict: str = "revise"  # approve, revise
+    overall_score: float = 0.0  # 0-10
+    sota_score: float = 0.0
+    security_score: float = 0.0
+    architecture_score: float = 0.0
+    completeness_score: float = 0.0
+    issues: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    model_used: str = ""
+
+
+class DebateResult(BaseModel):
+    """Full result of the adversarial debate loop."""
+
+    rounds: int = 0
+    critiques: list[PlanCritique] = Field(default_factory=list)
+    converged: bool = False
+    final_score: float = 0.0
+
+
 # ── Review ──
 
 

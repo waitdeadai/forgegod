@@ -247,6 +247,22 @@ class Memory:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_errors_pattern ON error_solutions(error_pattern)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_errors_context ON error_solutions(error_context)")
 
+        # Tier 6: Research Cache (Recon pipeline)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS research_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT NOT NULL,
+                results TEXT NOT NULL,
+                provider TEXT DEFAULT '',
+                created_at TEXT DEFAULT '',
+                expires_at TEXT DEFAULT ''
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_research_query ON research_cache(query)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_research_expires ON research_cache(expires_at)")
+
+        conn.commit()
+
         # Add superseded_by column if missing (v0.2 migration)
         try:
             conn.execute("SELECT superseded_by FROM semantic LIMIT 1")

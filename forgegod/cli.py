@@ -302,6 +302,120 @@ def plan(
 
 
 @app.command()
+def recon(
+    task: str = typer.Argument(..., help="What to build"),
+    output: Path = typer.Option(
+        Path(".forgegod/prd.json"), "--output", "-o", help="Output PRD path"
+    ),
+    searches: int = typer.Option(15, "--searches", "-s", help="Max web searches"),
+    rounds: int = typer.Option(3, "--rounds", "-r", help="Max debate rounds"),
+    provider: str = typer.Option(
+        "searxng", "--provider", help="Search provider: searxng, brave, exa"
+    ),
+    min_score: float = typer.Option(7.0, "--min-score", help="Min approval score (0-10)"),
+):
+    """Research-grounded planning — web research + adversarial debate.
+
+    The only coding agent that researches before it codes.
+    Phase 1: RECON — searches the web for best libraries, CVEs, patterns.
+    Phase 2: ARCHITECT — generates PRD using research findings.
+    Phase 3: ADVERSARY — hostile critic debates the plan until score >= min_score.
+    """
+    from forgegod.config import load_config
+
+    config = load_config()
+    config.recon.enabled = True
+    config.recon.max_searches = searches
+    config.recon.debate_rounds = rounds
+    config.recon.search_provider = provider
+    config.recon.min_approval_score = min_score
+
+    async def _recon():
+        from forgegod.planner import Planner
+        from forgegod.router import ModelRouter
+
+        router = ModelRouter(config)
+        planner = Planner(config=config, router=router)
+
+        console.print(Panel(
+            "[cyan]RECON MODE[/cyan] — Research-grounded planning\n"
+            f"Task: {task[:80]}{'...' if len(task) > 80 else ''}\n"
+            f"Provider: {provider} | Searches: {searches} | Debate rounds: {rounds}",
+            title="[bold cyan]ForgeGod Recon[/bold cyan]",
+            border_style="cyan",
+        ))
+
+        prd, brief, debate = await planner.research_and_decompose(task)
+
+        # Save artifacts
+        output.parent.mkdir(parents=True, exist_ok=True)
+        recon_dir = output.parent / "recon"
+        recon_dir.mkdir(exist_ok=True)
+
+        output.write_text(json.dumps(prd.model_dump(), indent=2))
+        (recon_dir / "brief.json").write_text(json.dumps(brief.model_dump(), indent=2))
+        (recon_dir / "debate.json").write_text(json.dumps(debate.model_dump(), indent=2))
+
+        # Display results
+        console.print()
+
+        # Research Brief summary
+        if brief.libraries:
+            table = Table(title="Research: Recommended Libraries", border_style="cyan")
+            table.add_column("Library", style="green")
+            table.add_column("Version", style="cyan")
+            table.add_column("Why")
+            table.add_column("Alternatives", style="dim")
+            for lib in brief.libraries:
+                table.add_row(
+                    lib.name, lib.version, lib.why[:60],
+                    ", ".join(lib.alternatives[:3]) if lib.alternatives else "-",
+                )
+            console.print(table)
+
+        if brief.security_warnings:
+            console.print(Panel(
+                "\n".join(f"[red]![/red] {w}" for w in brief.security_warnings),
+                title="Security Warnings", border_style="red",
+            ))
+
+        # Debate summary
+        console.print()
+        verdict_color = "green" if debate.converged else "yellow"
+        console.print(Panel(
+            f"Rounds: {debate.rounds} | "
+            f"Converged: [{'green' if debate.converged else 'red'}]{debate.converged}[/] | "
+            f"Final Score: [{verdict_color}]{debate.final_score:.1f}/10[/]",
+            title="Adversarial Debate", border_style=verdict_color,
+        ))
+
+        if debate.critiques:
+            last = debate.critiques[-1]
+            scores = Table(title="Dimension Scores", border_style="dim")
+            scores.add_column("Dimension")
+            scores.add_column("Score", justify="right")
+            for name, val in [
+                ("SOTA", last.sota_score),
+                ("Security", last.security_score),
+                ("Architecture", last.architecture_score),
+                ("Completeness", last.completeness_score),
+            ]:
+                color = "green" if val >= 7 else "yellow" if val >= 5 else "red"
+                scores.add_row(name, f"[{color}]{val:.1f}[/]")
+            console.print(scores)
+
+        # PRD summary
+        console.print()
+        console.print(f"[green]PRD generated with {len(prd.stories)} stories -> {output}[/green]")
+        for story in prd.stories:
+            console.print(f"  [{story.id}] {story.title}")
+
+        console.print(f"\n[dim]Artifacts: {recon_dir}/[/dim]")
+
+    asyncio.run(_recon())
+
+
+@app.command()
 def review(
     path: str = typer.Argument(".", help="Path to review"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Override reviewer model"),

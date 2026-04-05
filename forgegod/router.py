@@ -56,6 +56,7 @@ FALLBACK_CHAINS: dict[str, list[str]] = {
     "reviewer": ["reviewer", "sentinel", "escalation"],
     "sentinel": ["sentinel", "escalation"],
     "escalation": ["escalation"],
+    "researcher": ["researcher", "planner", "coder"],
 }
 
 

@@ -54,3 +54,6 @@ async def execute_tool(name: str, arguments: dict[str, Any]) -> str:
 def load_all_tools():
     """Load all built-in tools into the registry."""
     from forgegod.tools import filesystem, git, mcp, shell, skills  # noqa: F401
+    from forgegod.tools.web import register_web_tools
+
+    register_web_tools()
