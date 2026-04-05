@@ -263,13 +263,29 @@ class RalphLoop:
             # Guard: if agent produced no work (0 tool calls, likely router failure),
             # don't mark as DONE — retry instead
             if result.tool_calls_count == 0 and not result.files_modified:
-                story.iterations += 1
-                story.status = StoryStatus.TODO
-                story.error_log.append("Agent produced no output (0 tool calls)")
-                logger.warning(
-                    f"Story [{story.id}] produced no work, will retry "
-                    f"(attempt {story.iterations}/{story.max_iterations})"
-                )
+                # Reclaim iteration — empty retries shouldn't burn budget
+                self.state.total_iterations -= 1
+                if story.iterations >= self.config.loop.story_max_retries:
+                    story.status = StoryStatus.BLOCKED
+                    story.error_log.append(
+                        f"Max retries ({self.config.loop.story_max_retries}) "
+                        f"exceeded with 0 tool calls"
+                    )
+                    self.state.stories_failed += 1
+                    logger.error(
+                        f"Story [{story.id}] BLOCKED after "
+                        f"{story.iterations} retries with no output"
+                    )
+                else:
+                    story.status = StoryStatus.TODO
+                    story.error_log.append(
+                        "Agent produced no output (0 tool calls)"
+                    )
+                    logger.warning(
+                        f"Story [{story.id}] produced no work, will retry "
+                        f"(attempt {story.iterations}"
+                        f"/{self.config.loop.story_max_retries})"
+                    )
                 self._save_prd()
                 return
 
@@ -277,9 +293,31 @@ class RalphLoop:
             story_idx = self.prd.stories.index(story)
             if self.reviewer.should_review(story_idx):
                 try:
+                    # Collect actual code diffs for review (not agent prose)
+                    review_code = result.output[:6000]
+                    try:
+                        diff_proc = await asyncio.create_subprocess_exec(
+                            "git", "diff", "HEAD",
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE,
+                        )
+                        diff_out, _ = await diff_proc.communicate()
+                        if not diff_out:
+                            diff_proc = await asyncio.create_subprocess_exec(
+                                "git", "log", "-1", "-p", "--stat",
+                                stdout=asyncio.subprocess.PIPE,
+                                stderr=asyncio.subprocess.PIPE,
+                            )
+                            diff_out, _ = await diff_proc.communicate()
+                        if diff_out:
+                            review_code = diff_out.decode(
+                                errors="replace"
+                            )[:6000]
+                    except Exception:
+                        pass  # Fall back to result.output
                     review = await self.reviewer.review(
                         task=story.title,
-                        code=result.output[:6000],
+                        code=review_code,
                         files_changed=result.files_modified,
                     )
                     if review.verdict == ReviewVerdict.REJECT:
