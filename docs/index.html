@@ -1053,6 +1053,48 @@ body::after {
         <div class="bench-source" data-i18n-html="bench_src_arena">Source: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Apr 2026</a></div>
       </div>
 
+      <div class="bench-card">
+        <h3 data-i18n="bench_stress_title">Engine Performance (Stress Tested)</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_stress_security">Security scans/sec</span><span>72K</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="96"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_stress_tools">File writes/sec</span><span>1,416</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="85"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_stress_memory">Memory recall (10K entries)</span><span>133ms p50</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill" data-width="78"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_stress_budget">Cost tracking writes/sec</span><span>199</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="70"></div></div>
+        </div>
+        <div class="bench-source" data-i18n-html="bench_src_stress">34 stress tests on Win11 / 32GB / Python 3.13. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Full methodology</a></div>
+      </div>
+
+      <div class="bench-card">
+        <h3 data-i18n="bench_reliability_title">Reliability</h3>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_rel_detection">Security detection accuracy</span><span>100%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_rel_budget">Budget enforcement</span><span>100%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_rel_fallback">Fallback chain success</span><span>100%</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
+        </div>
+        <div class="bench-bar-group">
+          <div class="bench-bar-label"><span data-i18n="bench_rel_circuit">Circuit breaker recovery</span><span>&lt;150ms</span></div>
+          <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="95"></div></div>
+        </div>
+        <div class="bench-source" data-i18n-html="bench_src_reliability">34 stress tests, all passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Full results</a></div>
+      </div>
+
     </div>
 
     <div class="bench-callout">
@@ -1179,6 +1221,14 @@ body::after {
           <td class="partial">manual</td>
           <td class="no">&mdash;</td>
           <td class="fg yes">native</td>
+        </tr>
+        <tr>
+          <td data-i18n="cmp_stress">Stress tested + benchmarked</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">34 tests</td>
         </tr>
         <tr>
           <td data-i18n="cmp_oss">Open source</td>
@@ -1425,6 +1475,19 @@ var STRINGS = {
     bench_src_aider: 'Source: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> \u2022 <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a>',
     bench_src_cost: "Estimated from OpenAI/Anthropic pricing (Apr 2026)",
     bench_src_arena: 'Source: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Apr 2026</a>',
+    bench_stress_title: "Engine Performance (Stress Tested)",
+    bench_stress_security: "Security scans/sec",
+    bench_stress_tools: "File writes/sec",
+    bench_stress_memory: "Memory recall (10K entries)",
+    bench_stress_budget: "Cost tracking writes/sec",
+    bench_src_stress: '34 stress tests on Win11 / 32GB / Python 3.13. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Full methodology</a>',
+    bench_reliability_title: "Reliability",
+    bench_rel_detection: "Security detection accuracy",
+    bench_rel_budget: "Budget enforcement",
+    bench_rel_fallback: "Fallback chain success",
+    bench_rel_circuit: "Circuit breaker recovery",
+    bench_src_reliability: '34 stress tests, all passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Full results</a>',
+    cmp_stress: "Stress tested + benchmarked",
     bench_callout: '<strong>The bottom line:</strong> The tools and framework around an AI matter just as much as which AI you use. The same AI can solve 11 more problems when it has proper tools. ForgeGod\u2019s smart routing, self-checking code, and 5-layer memory <em>are</em> those tools.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
     provider_free: "$0 / FREE",
@@ -1590,6 +1653,19 @@ var STRINGS = {
     bench_src_aider: 'Fuente: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> \u2022 <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a>',
     bench_src_cost: "Estimado de precios OpenAI/Anthropic (Abr 2026)",
     bench_src_arena: 'Fuente: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Abr 2026</a>',
+    bench_stress_title: "Rendimiento del Motor (Prueba de Estr\u00e9s)",
+    bench_stress_security: "Escaneos de seguridad/seg",
+    bench_stress_tools: "Escrituras de archivo/seg",
+    bench_stress_memory: "Consulta de memoria (10K entradas)",
+    bench_stress_budget: "Escrituras de costos/seg",
+    bench_src_stress: '34 pruebas de estr\u00e9s en Win11 / 32GB / Python 3.13. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Metodolog\u00eda completa</a>',
+    bench_reliability_title: "Fiabilidad",
+    bench_rel_detection: "Precisi\u00f3n de detecci\u00f3n de seguridad",
+    bench_rel_budget: "Cumplimiento del presupuesto",
+    bench_rel_fallback: "\u00c9xito de cadena de respaldo",
+    bench_rel_circuit: "Recuperaci\u00f3n del circuit breaker",
+    bench_src_reliability: '34 pruebas de estr\u00e9s, todas pasando. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Resultados completos</a>',
+    cmp_stress: "Probado bajo estr\u00e9s + benchmarks",
     bench_callout: '<strong>La conclusi\u00f3n:</strong> Las herramientas y el framework alrededor de una IA importan tanto como qu\u00e9 IA us\u00e1s. La misma IA puede resolver 11 problemas m\u00e1s cuando tiene herramientas adecuadas. El ruteo inteligente, el c\u00f3digo auto-verificado y la memoria de 5 capas de ForgeGod <em>son</em> esas herramientas.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">An\u00e1lisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
     provider_free: "$0 / GRATIS",

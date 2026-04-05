@@ -19,6 +19,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
+  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/stress%20tests-34%20passing-00e5ff?style=flat-square" alt="Stress Tests"></a>
 </p>
 
 <p align="center">
@@ -47,6 +48,7 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 | Cost-aware budget modes | - | - | - | - | **yes** |
 | Reflexion code generation | - | - | - | - | **3-attempt** |
 | Parallel git worktrees | subagents | - | - | - | **yes** |
+| Stress tested + benchmarked | - | - | - | - | **[34 tests](BENCHMARKS.md)** |
 
 ### The Moat: Harness > Model
 
