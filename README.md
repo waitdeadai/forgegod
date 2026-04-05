@@ -19,7 +19,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
-  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2034%20stress-00e5ff?style=flat-square" alt="Tests"></a>
+  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2084%20stress-00e5ff?style=flat-square" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -48,7 +48,7 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 | Cost-aware budget modes | - | - | - | - | **yes** |
 | Reflexion code generation | - | - | - | - | **3-attempt** |
 | Parallel git worktrees | subagents | - | - | - | **yes** |
-| Stress tested + benchmarked | - | - | - | - | **[355 + 34 stress](BENCHMARKS.md)** |
+| Stress tested + benchmarked | - | - | - | - | **[355 + 84 stress](BENCHMARKS.md)** |
 
 ### The Moat: Harness > Model
 
