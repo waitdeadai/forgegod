@@ -15,7 +15,7 @@ from pathlib import Path
 from forgegod.agent import Agent
 from forgegod.budget import BudgetTracker
 from forgegod.config import ForgeGodConfig
-from forgegod.models import AgentResult, Story, StoryStatus, WorkerStatus
+from forgegod.models import AgentResult, Story, WorkerStatus
 from forgegod.router import ModelRouter
 from forgegod.tools.git import _run_git
 

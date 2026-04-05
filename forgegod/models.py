@@ -62,6 +62,7 @@ class ModelUsage(BaseModel):
 
     input_tokens: int = 0
     output_tokens: int = 0
+    reasoning_tokens: int = 0  # Reasoning models (o3/o4) — billed at premium
     cost_usd: float = 0.0
     model: str = ""
     provider: str = ""
@@ -147,6 +148,7 @@ class Story(BaseModel):
     status: StoryStatus = StoryStatus.TODO
     priority: int = 1
     acceptance_criteria: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)  # Story IDs that must complete first
     files_touched: list[str] = Field(default_factory=list)
     iterations: int = 0
     max_iterations: int = 5
@@ -279,6 +281,8 @@ class BudgetStatus(BaseModel):
     spent_total_usd: float = 0.0
     remaining_today_usd: float = 5.0
     calls_today: int = 0
+    input_tokens_today: int = 0
+    output_tokens_today: int = 0
 
 
 # ── Memory / Learning ──

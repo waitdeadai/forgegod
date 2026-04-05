@@ -2,27 +2,67 @@
 
 Thanks for your interest in ForgeGod. Here's how to contribute.
 
-## Getting Started
+## Setup
 
 ```bash
 git clone https://github.com/waitdeadai/forgegod.git
 cd forgegod
 pip install -e ".[dev]"
-pytest
 ```
 
-## Ways to Contribute
+## Development
 
-- **Bug reports** — Open an issue with steps to reproduce, expected vs actual behavior, and your Python version + OS.
-- **Feature requests** — Open an issue describing the use case and proposed solution.
-- **Code** — Fork, branch, implement, test, PR. See guidelines below.
-- **Documentation** — README improvements, docstrings, examples.
+### Running Tests
+
+```bash
+pytest -x -v
+```
+
+Run a specific test file:
+
+```bash
+pytest tests/test_memory.py -v
+```
+
+### Linting
+
+```bash
+ruff check forgegod/ tests/
+```
+
+### Running the Loop
+
+```bash
+forgegod loop <path>
+```
+
+See `forgegod --help` for all CLI commands.
+
+## Adding a New Tool
+
+1. Create a new file in `forgegod/tools/` (e.g., `tools/mytool.py`)
+2. Define a tool with `tool_def` and `tool_impl` functions
+3. Register it in `forgegod/tools/_registry.py` via `register_tool()`
+4. Add tests in `tests/test_tools.py`
+5. Ensure `pytest` and `ruff` pass
+
+Example:
+
+```python
+# forgegod/tools/mytool.py
+from forgegod.tools import tool_def, tool_impl
+
+@tool_def(name="mytool", description="My custom tool")
+@tool_impl
+async def mytool():
+    return {"output": "Hello from mytool!"}
+```
 
 ## Pull Request Guidelines
 
 1. **Discuss first** — For large changes, open an issue before starting work.
 2. **One PR per change** — Keep PRs focused. Don't mix features with refactors.
-3. **Tests required** — New features need tests. Bug fixes need a regression test.
+3. **Tests required** — New features need tests. Bug fixes need regression tests.
 4. **Run the suite** — `pytest` must pass before submitting.
 5. **No secrets** — Never commit API keys, tokens, or credentials.
 
@@ -30,22 +70,9 @@ pytest
 
 - Python 3.11+
 - Type hints on public functions
-- `ruff check .` for linting
 - Pydantic v2 for data models
 - `async def` for I/O-bound operations
-
-## Development
-
-```bash
-# Run tests
-pytest -x -v
-
-# Run a specific test file
-pytest tests/test_memory.py -v
-
-# Lint
-ruff check .
-```
+- Line length: 100 chars max
 
 ## License
 

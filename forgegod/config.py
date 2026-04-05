@@ -68,6 +68,7 @@ class LoopConfig(BaseModel):
     parallel_workers: int = 1
     story_max_retries: int = 3
     cooldown_seconds: float = 2.0
+    story_timeout_s: float = 600.0  # Dead-man's switch per story (10 minutes)
 
 
 class OllamaConfig(BaseModel):

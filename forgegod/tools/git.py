@@ -61,7 +61,7 @@ async def git_commit(message: str, files: str = ".") -> str:
 
 async def git_log(count: int = 10) -> str:
     """Get recent git log."""
-    return await _run_git("log", f"--oneline", f"-{count}")
+    return await _run_git("log", "--oneline", f"-{count}")
 
 
 async def git_worktree_create(branch: str) -> str:
@@ -112,7 +112,11 @@ register_tool(
         "type": "object",
         "properties": {
             "message": {"type": "string", "description": "Commit message"},
-            "files": {"type": "string", "description": "Comma-separated file paths to stage", "default": "."},
+            "files": {
+                "type": "string",
+                "description": "Comma-separated file paths to stage",
+                "default": ".",
+            },
         },
         "required": ["message"],
     },

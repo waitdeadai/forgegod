@@ -19,7 +19,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
-  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/pruebas%20de%20estr%C3%A9s-34%20pasando-00e5ff?style=flat-square" alt="Pruebas de Estrés"></a>
+  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2034%20estr%C3%A9s-00e5ff?style=flat-square" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -71,7 +71,7 @@ Todos los demás CLIs de código usan **un modelo a la vez** y **se reinician a 
 | Modos de presupuesto | - | - | - | - | **sí** |
 | Generación Reflexión | - | - | - | - | **3 intentos** |
 | Worktrees git paralelos | subagentes | - | - | - | **sí** |
-| Probado bajo estrés + benchmarks | - | - | - | - | **[34 pruebas](BENCHMARKS.md)** |
+| Probado bajo estrés + benchmarks | - | - | - | - | **[355 + 34 estrés](BENCHMARKS.md)** |
 
 ### La Ventaja: Harness > Modelo
 

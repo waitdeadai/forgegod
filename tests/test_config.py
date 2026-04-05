@@ -1,6 +1,5 @@
 """Tests for ForgeGod configuration."""
 
-import os
 import tempfile
 from pathlib import Path
 

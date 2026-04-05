@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
-from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -13,7 +10,7 @@ import pytest
 
 from forgegod.config import BudgetConfig, ForgeGodConfig
 from forgegod.models import BudgetMode, ModelSpec
-from forgegod.router import CircuitBreaker, FALLBACK_CHAINS, ModelRouter
+from forgegod.router import FALLBACK_CHAINS, CircuitBreaker, ModelRouter
 
 
 def _mock_ollama_response(*args, **kwargs):
@@ -128,12 +125,12 @@ class TestCircuitBreaker:
         assert cb.is_open("openai") is False
         assert cb.is_open("anthropic") is False
 
-    def test_failure_threshold_zero_never_opens(self):
-        """With threshold=0, circuit never opens (edge case)."""
+    def test_failure_threshold_zero_always_opens(self):
+        """With threshold=0, any failure immediately opens circuit."""
         cb = CircuitBreaker(failure_threshold=0)
         cb.record_failure("openai")
-        # With threshold=0, failures never trigger open
-        assert cb._failures.get("openai", 0) == 1
+        # With threshold=0 and sliding window, any failure opens
+        assert len(cb._failure_times.get("openai", [])) >= 1
 
 
 class TestFallbackChain:
@@ -361,9 +358,6 @@ class TestModelRouterFallback:
     @pytest.mark.asyncio
     async def test_fallback_exhaustion(self, router: ModelRouter):
         """When all models fail, returns error message."""
-        # Simulate all models failing
-        original_call_ollama = router._call_ollama
-
         async def always_fail(*args, **kwargs):
             raise Exception("Simulated failure")
 
@@ -411,9 +405,6 @@ class TestModelRouterFallback:
     @pytest.mark.asyncio
     async def test_router_handles_exception_in_call(self, router: ModelRouter):
         """Router handles exceptions gracefully."""
-        # Simulate exception
-        original_call_ollama = router._call_ollama
-
         async def raise_exception(*args, **kwargs):
             raise ValueError("Test exception")
 

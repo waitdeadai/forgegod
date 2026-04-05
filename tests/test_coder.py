@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from forgegod.coder import ReflexionCoder
 
 
@@ -74,7 +72,12 @@ It has no fences and no code-like structure.
 Just plain text."""
         coder = ReflexionCoder.__new__(ReflexionCoder)
         code = coder._extract_code(response, "python")
-        assert code == "Here is some text that is not code at all.\nIt has no fences and no code-like structure.\nJust plain text."
+        expected = (
+            "Here is some text that is not code at all.\n"
+            "It has no fences and no code-like structure.\n"
+            "Just plain text."
+        )
+        assert code == expected
 
     def test_extract_code_empty_response(self) -> None:
         """Extract code from empty response."""

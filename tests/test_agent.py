@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from forgegod.config import ForgeGodConfig
-from forgegod.models import BudgetMode, ToolCall, ToolResult
+from forgegod.models import ToolCall, ToolResult
 
 
 @pytest.fixture
@@ -193,8 +193,9 @@ class TestSkills:
     @pytest.mark.asyncio
     async def test_list_skills_empty(self):
         """No skills dir → helpful message."""
-        from forgegod.tools.skills import list_skills
         import os
+
+        from forgegod.tools.skills import list_skills
         with tempfile.TemporaryDirectory() as tmpdir:
             old_cwd = os.getcwd()
             os.chdir(tmpdir)
@@ -207,8 +208,9 @@ class TestSkills:
     @pytest.mark.asyncio
     async def test_list_and_load_skill(self):
         """Create a skill and verify list + load."""
-        from forgegod.tools.skills import list_skills, load_skill
         import os
+
+        from forgegod.tools.skills import list_skills, load_skill
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir) / ".forgegod" / "skills" / "testing"
             skill_dir.mkdir(parents=True)
@@ -231,8 +233,9 @@ class TestSkills:
 
     @pytest.mark.asyncio
     async def test_load_nonexistent_skill(self):
-        from forgegod.tools.skills import load_skill
         import os
+
+        from forgegod.tools.skills import load_skill
         with tempfile.TemporaryDirectory() as tmpdir:
             old_cwd = os.getcwd()
             os.chdir(tmpdir)
@@ -244,8 +247,9 @@ class TestSkills:
 
     def test_skills_summary_empty(self):
         """No skills → empty string."""
-        from forgegod.tools.skills import get_skills_summary
         import os
+
+        from forgegod.tools.skills import get_skills_summary
         with tempfile.TemporaryDirectory() as tmpdir:
             old_cwd = os.getcwd()
             os.chdir(tmpdir)

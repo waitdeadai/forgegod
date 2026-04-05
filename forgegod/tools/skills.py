@@ -11,7 +11,6 @@ Skill directories live at .forgegod/skills/{skill_name}/SKILL.md
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from forgegod.tools import register_tool
@@ -130,7 +129,10 @@ register_tool(
 
 register_tool(
     name="load_skill",
-    description="Load the full instructions for a specific skill. Use list_skills first to see available skills.",
+    description=(
+        "Load the full instructions for a specific skill. "
+        "Use list_skills first to see available skills."
+    ),
     parameters={
         "type": "object",
         "properties": {

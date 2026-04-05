@@ -21,31 +21,61 @@ logger = logging.getLogger("forgegod.router")
 
 
 class CircuitBreaker:
-    """Per-provider circuit breaker — prevents hammering a down provider."""
+    """Per-provider circuit breaker with half-open state and sliding window.
 
-    def __init__(self, failure_threshold: int = 3, reset_timeout: float = 300):
+    States:
+    - CLOSED: Normal operation, requests flow through
+    - OPEN: All requests short-circuited (provider is down)
+    - HALF-OPEN: One probe request allowed to test recovery
+
+    Sliding window: only failures within the last 60s count toward threshold.
+    """
+
+    def __init__(
+        self, failure_threshold: int = 3, reset_timeout: float = 300,
+        window_s: float = 60.0,
+    ):
         self.failure_threshold = failure_threshold
         self.reset_timeout = reset_timeout
-        self._failures: dict[str, int] = {}
+        self.window_s = window_s
+        self._failure_times: dict[str, list[float]] = {}
         self._open_until: dict[str, float] = {}
+        self._half_open: set[str] = set()
 
     def is_open(self, provider: str) -> bool:
         if provider not in self._open_until:
             return False
         if time.time() > self._open_until[provider]:
-            self._failures[provider] = 0
+            # Transition to half-open: allow one probe request
+            self._half_open.add(provider)
             del self._open_until[provider]
             return False
         return True
 
     def record_failure(self, provider: str):
-        self._failures[provider] = self._failures.get(provider, 0) + 1
-        if self._failures[provider] >= self.failure_threshold:
-            self._open_until[provider] = time.time() + self.reset_timeout
+        now = time.time()
+        times = self._failure_times.setdefault(provider, [])
+        times.append(now)
+        # Sliding window: only count failures within window
+        self._failure_times[provider] = [
+            t for t in times if now - t < self.window_s
+        ]
+        # If probe failed in half-open, re-open immediately
+        if provider in self._half_open:
+            self._half_open.discard(provider)
+            self._open_until[provider] = now + self.reset_timeout
+            logger.warning(f"Circuit breaker RE-OPENED for {provider} (probe failed)")
+            return
+        if len(self._failure_times[provider]) >= self.failure_threshold:
+            self._open_until[provider] = now + self.reset_timeout
             logger.warning(f"Circuit breaker OPEN for {provider}")
 
     def record_success(self, provider: str):
-        self._failures[provider] = 0
+        if provider in self._half_open:
+            # Probe succeeded — fully close circuit
+            self._half_open.discard(provider)
+            logger.info(f"Circuit breaker CLOSED for {provider} (probe succeeded)")
+        self._failure_times.pop(provider, None)
         self._open_until.pop(provider, None)
 
 
@@ -68,6 +98,30 @@ class ModelRouter:
         self.circuit = CircuitBreaker()
         self._total_cost = 0.0
         self._call_log: list[dict] = []
+        self._clients: dict[str, httpx.AsyncClient] = {}
+
+    def _get_client(
+        self, provider: str, timeout: float = 120.0,
+    ) -> httpx.AsyncClient:
+        """Get or create a persistent httpx client for a provider.
+
+        Reuses connections across calls — eliminates per-call handshake overhead.
+        """
+        if provider not in self._clients or self._clients[provider].is_closed:
+            self._clients[provider] = httpx.AsyncClient(
+                timeout=timeout,
+                limits=httpx.Limits(
+                    max_connections=20, max_keepalive_connections=10,
+                ),
+                http2=True,
+            )
+        return self._clients[provider]
+
+    async def close(self):
+        """Close all persistent HTTP clients. Call on shutdown."""
+        for client in self._clients.values():
+            await client.aclose()
+        self._clients.clear()
 
     async def call(
         self,
@@ -191,8 +245,41 @@ class ModelRouter:
         )
         self._total_cost += cost
         self._call_log.append({"spec": str(spec), "usage": usage.model_dump()})
+        # Cap call log to prevent unbounded memory growth on long runs
+        if len(self._call_log) > 1000:
+            self._call_log = self._call_log[-1000:]
 
         return text, usage
+
+    # ── Task Complexity Classification ──
+
+    _COMPLEX_KEYWORDS = {
+        "refactor", "migrate", "redesign", "architect", "security",
+        "overhaul", "rewrite", "multi-file", "integrate", "pipeline",
+    }
+    _SIMPLE_KEYWORDS = {
+        "fix", "typo", "rename", "format", "lint", "bump", "remove",
+        "delete", "add", "change", "set", "tweak", "patch",
+    }
+
+    def _classify_complexity(self, prompt: str) -> str:
+        """Classify task as 'simple', 'medium', or 'complex'.
+
+        Used for cost-aware cascade routing: simple tasks start with
+        cheap models and only escalate on failure.
+        """
+        text = prompt if isinstance(prompt, str) else str(prompt)
+        words = set(text.lower().split())
+        tokens_est = len(words) * 1.3
+
+        has_complex = bool(words & self._COMPLEX_KEYWORDS)
+        has_simple = bool(words & self._SIMPLE_KEYWORDS)
+
+        if has_simple and not has_complex and tokens_est < 200:
+            return "simple"
+        if has_complex or tokens_est > 1000:
+            return "complex"
+        return "medium"
 
     # ── Provider Implementations ──
 
@@ -225,26 +312,26 @@ class ModelRouter:
                 })
             body["tools"] = ollama_tools
 
-        async with httpx.AsyncClient(timeout=self.config.ollama.timeout) as client:
-            try:
-                resp = await client.post(
-                    f"{self.config.ollama.host}/api/chat",
-                    json=body,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-            except httpx.ConnectError as e:
-                raise RuntimeError(
-                    f"error: Cannot connect to Ollama at {self.config.ollama.host}\n"
-                    f"  Ollama doesn't appear to be running.\n"
-                    f"  Fix: Start it with `ollama serve`, then retry."
-                ) from e
-            except httpx.TimeoutException as e:
-                raise RuntimeError(
-                    f"error: Ollama request timed out after {self.config.ollama.timeout}s\n"
-                    f"  The model may still be loading into memory.\n"
-                    f"  Fix: Wait a moment and retry, or increase timeout in .forgegod/config.toml"
-                ) from e
+        client = self._get_client("ollama", timeout=self.config.ollama.timeout)
+        try:
+            resp = await client.post(
+                f"{self.config.ollama.host}/api/chat",
+                json=body,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.ConnectError as e:
+            raise RuntimeError(
+                f"error: Cannot connect to Ollama at {self.config.ollama.host}\n"
+                f"  Ollama doesn't appear to be running.\n"
+                f"  Fix: Start it with `ollama serve`, then retry."
+            ) from e
+        except httpx.TimeoutException as e:
+            raise RuntimeError(
+                f"error: Ollama request timed out after {self.config.ollama.timeout}s\n"
+                f"  The model may still be loading into memory.\n"
+                f"  Fix: Wait a moment and retry, or increase timeout in .forgegod/config.toml"
+            ) from e
 
         msg = data.get("message", {})
         content = msg.get("content", "")
@@ -429,17 +516,17 @@ class ModelRouter:
         if tools:
             body["tools"] = tools
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=body,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = self._get_client("openrouter", timeout=120.0)
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=body,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         choice = data["choices"][0]
         msg = choice.get("message", {})
@@ -630,6 +717,12 @@ class ModelRouter:
         input_cost += (cache_read / 1_000_000) * input_price * 0.1
         input_cost += (cache_creation / 1_000_000) * input_price * 1.25
         output_cost = (output_tokens / 1_000_000) * output_price
+
+        # Reasoning models (o3/o4): reasoning tokens priced at ~3x output rate
+        reasoning_tokens = usage.get("reasoning_tokens", 0)
+        if reasoning_tokens > 0:
+            # Reasoning tokens are internal chain-of-thought, billed at premium
+            output_cost += (reasoning_tokens / 1_000_000) * output_price * 3.0
 
         return round(input_cost + output_cost, 6)
 

@@ -7,10 +7,11 @@ API keys from leaking into LLM context. Write operations validate paths.
 from __future__ import annotations
 
 import ast
-import fnmatch
 import os
 import re
 from pathlib import Path
+
+import aiofiles
 
 from forgegod.tools import register_tool
 
@@ -37,7 +38,7 @@ def _redact_file_secrets(content: str) -> str:
 
 
 async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
-    """Read file contents with optional line range."""
+    """Read file contents with optional line range. True async I/O."""
     p = Path(path)
     if not p.exists():
         return f"Error: File not found: {path}"
@@ -45,7 +46,8 @@ async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
         return f"Error: Not a file: {path}"
     try:
         warning = _check_sensitive_path(path)
-        raw = p.read_text(encoding="utf-8", errors="replace")
+        async with aiofiles.open(p, "r", encoding="utf-8", errors="replace") as f:
+            raw = await f.read()
         lines = raw.splitlines()
         total = len(lines)
         selected = lines[offset : offset + limit]
@@ -62,13 +64,20 @@ async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
 
 
 async def write_file(path: str, content: str) -> str:
-    """Write content to a file (creates parent dirs)."""
+    """Write content to a file (creates parent dirs). True async + atomic write."""
     p = Path(path)
+    tmp = p.with_suffix(p.suffix + ".forgegod.tmp")
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content, encoding="utf-8")
+        # Atomic write: async write to temp file, then rename
+        async with aiofiles.open(tmp, "w", encoding="utf-8") as f:
+            await f.write(content)
+        tmp.replace(p)
         return f"Written {len(content)} bytes to {path}"
     except Exception as e:
+        # Clean up temp file on error
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
         return f"Error writing {path}: {e}"
 
 
@@ -98,7 +107,6 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
         normalized_content = _normalize_whitespace(content)
         normalized_old = _normalize_whitespace(old_string)
         if normalized_old in normalized_content:
-            idx = normalized_content.index(normalized_old)
             # Find original span by matching line-by-line
             match_result = _find_fuzzy_span(content, old_string)
             if match_result:
@@ -108,8 +116,8 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 return f"Edited {path}: replaced 1 occurrence (fuzzy whitespace match)"
 
         # Pass 3: Strip trailing whitespace from both sides
-        stripped_lines = [l.rstrip() for l in content.splitlines()]
-        stripped_old = [l.rstrip() for l in old_string.splitlines()]
+        stripped_lines = [ln.rstrip() for ln in content.splitlines()]
+        stripped_old = [ln.rstrip() for ln in old_string.splitlines()]
         stripped_content = "\n".join(stripped_lines)
         stripped_old_str = "\n".join(stripped_old)
         if stripped_old_str in stripped_content:
@@ -121,8 +129,12 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 return f"Edited {path}: replaced 1 occurrence (fuzzy trailing-ws match)"
 
         file_lines = len(content.splitlines())
-        old_string_preview = old_string[:50] if len(old_string) > 50 else old_string
-        return f"Error: old_string not found in {path}. File has {file_lines} lines. Searching for: '{old_string_preview}...'. Hint: use read_file first to inspect the file contents."
+        preview = old_string[:50] if len(old_string) > 50 else old_string
+        return (
+            f"Error: old_string not found in {path}. "
+            f"File has {file_lines} lines. Searching for: '{preview}...'. "
+            f"Hint: use read_file first to inspect the file contents."
+        )
     except Exception as e:
         return f"Error editing {path}: {e}"
 
@@ -138,7 +150,7 @@ def _find_fuzzy_span(content: str, target: str) -> tuple[int, int] | None:
 
     Returns (start_idx, end_idx) or None.
     """
-    target_lines = [l.rstrip() for l in target.splitlines()]
+    target_lines = [ln.rstrip() for ln in target.splitlines()]
     content_lines = content.splitlines(keepends=True)
 
     if not target_lines:
@@ -159,13 +171,15 @@ def _find_fuzzy_span(content: str, target: str) -> tuple[int, int] | None:
     return None
 
 
-async def glob_files(pattern: str, path: str = ".") -> str:
+async def glob_files(
+    pattern: str, path: str = ".", max_results: int = 500,
+) -> str:
     """Find files matching a glob pattern."""
     base = Path(path)
     if not base.exists():
         return f"Error: Directory not found: {path}"
     try:
-        matches = sorted(str(p) for p in base.rglob(pattern))[:100]
+        matches = sorted(str(p) for p in base.rglob(pattern))[:max_results]
         if not matches:
             return f"No files matching '{pattern}' in {path}"
         return f"Found {len(matches)} files:\n" + "\n".join(matches)
@@ -173,7 +187,10 @@ async def glob_files(pattern: str, path: str = ".") -> str:
         return f"Error globbing: {e}"
 
 
-async def grep_files(pattern: str, path: str = ".", file_type: str = "") -> str:
+async def grep_files(
+    pattern: str, path: str = ".", file_type: str = "",
+    max_results: int = 100, offset: int = 0,
+) -> str:
     """Search file contents with regex pattern."""
     base = Path(path)
     if not base.exists():
@@ -181,6 +198,7 @@ async def grep_files(pattern: str, path: str = ".", file_type: str = "") -> str:
 
     ext_filter = f"*.{file_type}" if file_type else "*"
     results: list[str] = []
+    skipped = 0
     try:
         regex = re.compile(pattern)
     except re.error as e:
@@ -196,9 +214,13 @@ async def grep_files(pattern: str, path: str = ".", file_type: str = "") -> str:
                 content = filepath.read_text(encoding="utf-8", errors="replace")
                 for i, line in enumerate(content.splitlines(), 1):
                     if regex.search(line):
+                        if skipped < offset:
+                            skipped += 1
+                            continue
                         results.append(f"{filepath}:{i}: {line.rstrip()[:200]}")
-                        if len(results) >= 50:
-                            return f"Found {len(results)}+ matches (truncated):\n" + "\n".join(results)
+                        if len(results) >= max_results:
+                            header = f"Found {len(results)}+ matches (truncated):"
+                            return header + "\n" + "\n".join(results)
             except (OSError, UnicodeDecodeError):
                 continue
 
@@ -209,7 +231,7 @@ async def grep_files(pattern: str, path: str = ".", file_type: str = "") -> str:
         return f"Error grepping: {e}"
 
 
-async def repo_map(path: str = ".", max_files: int = 200) -> str:
+async def repo_map(path: str = ".", max_files: int = 500) -> str:
     """Generate a codebase map: file tree + Python class/function signatures.
 
     This is critical for agent orientation — gives a high-level view of
@@ -330,7 +352,7 @@ def _format_args(args: ast.arguments) -> str:
             continue
         annotation = f": {ast.unparse(arg.annotation)}" if arg.annotation else ""
         default_idx = i - defaults_offset
-        default = f" = ..." if default_idx >= 0 and default_idx < len(args.defaults) else ""
+        default = " = ..." if default_idx >= 0 and default_idx < len(args.defaults) else ""
         parts.append(f"{arg.arg}{annotation}{default}")
 
     if args.vararg:
@@ -383,7 +405,10 @@ register_tool(
         "type": "object",
         "properties": {
             "path": {"type": "string", "description": "File path to edit"},
-            "old_string": {"type": "string", "description": "Exact string to find (must be unique)"},
+            "old_string": {
+                "type": "string",
+                "description": "Exact string to find (must be unique)",
+            },
             "new_string": {"type": "string", "description": "Replacement string"},
         },
         "required": ["path", "old_string", "new_string"],
@@ -399,6 +424,10 @@ register_tool(
         "properties": {
             "pattern": {"type": "string", "description": "Glob pattern"},
             "path": {"type": "string", "description": "Directory to search", "default": "."},
+            "max_results": {
+                "type": "integer", "description": "Max files to return",
+                "default": 500,
+            },
         },
         "required": ["pattern"],
     },
@@ -413,7 +442,21 @@ register_tool(
         "properties": {
             "pattern": {"type": "string", "description": "Regex pattern to search"},
             "path": {"type": "string", "description": "Directory to search", "default": "."},
-            "file_type": {"type": "string", "description": "File extension filter (e.g., 'py')", "default": ""},
+            "file_type": {
+                "type": "string",
+                "description": "File extension filter (e.g., 'py')",
+                "default": "",
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Max matches to return",
+                "default": 100,
+            },
+            "offset": {
+                "type": "integer",
+                "description": "Skip first N matches (pagination)",
+                "default": 0,
+            },
         },
         "required": ["pattern"],
     },
@@ -422,7 +465,10 @@ register_tool(
 
 register_tool(
     name="repo_map",
-    description="Generate a codebase map: file tree + class/function signatures. Use this FIRST to orient yourself in a new codebase.",
+    description=(
+        "Generate a codebase map: file tree + class/function signatures. "
+        "Use this FIRST to orient yourself in a new codebase."
+    ),
     parameters={
         "type": "object",
         "properties": {

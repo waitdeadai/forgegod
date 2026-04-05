@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Any
 
 import httpx
 
@@ -234,7 +233,11 @@ register_tool(
         "type": "object",
         "properties": {
             "server_name": {"type": "string", "description": "Name for this server connection"},
-            "command": {"type": "string", "description": "Command to start stdio MCP server", "default": ""},
+            "command": {
+                "type": "string",
+                "description": "Command to start stdio MCP server",
+                "default": "",
+            },
             "url": {"type": "string", "description": "URL for SSE MCP server", "default": ""},
         },
         "required": ["server_name"],
@@ -250,7 +253,11 @@ register_tool(
         "properties": {
             "server": {"type": "string", "description": "MCP server name"},
             "tool": {"type": "string", "description": "Tool name to call"},
-            "arguments": {"type": "string", "description": "JSON string of tool arguments", "default": "{}"},
+            "arguments": {
+                "type": "string",
+                "description": "JSON string of tool arguments",
+                "default": "{}",
+            },
         },
         "required": ["server", "tool"],
     },
@@ -263,7 +270,11 @@ register_tool(
     parameters={
         "type": "object",
         "properties": {
-            "server": {"type": "string", "description": "Specific server to list (optional)", "default": ""},
+            "server": {
+                "type": "string",
+                "description": "Specific server to list (optional)",
+                "default": "",
+            },
         },
     },
     handler=mcp_list,

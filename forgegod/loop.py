@@ -137,9 +137,27 @@ class RalphLoop:
             f"max {self.max_iterations} iterations"
         )
 
+        workers = self.config.loop.parallel_workers
         try:
             while self._running:
-                await self._tick()
+                if workers > 1:
+                    # Parallel mode: run up to N stories concurrently
+                    ready = self._get_ready_stories(max_count=workers)
+                    if not ready:
+                        await self._tick()  # fallback single-tick (handles idle/kill/budget)
+                    else:
+                        sem = asyncio.Semaphore(workers)
+
+                        async def _guarded_tick(story: Story):
+                            async with sem:
+                                await self._tick(story)
+
+                        await asyncio.gather(
+                            *[_guarded_tick(s) for s in ready],
+                            return_exceptions=True,
+                        )
+                else:
+                    await self._tick()
 
                 # Check completion
                 if self._all_done():
@@ -169,8 +187,12 @@ class RalphLoop:
         """Stop the loop gracefully."""
         self._running = False
 
-    async def _tick(self) -> None:
-        """One tick of the Ralph loop."""
+    async def _tick(self, story: Story | None = None) -> None:
+        """One tick of the Ralph loop.
+
+        Args:
+            story: Pre-selected story (parallel mode). If None, picks next story.
+        """
         self.state.total_iterations += 1
         self.state.last_tick_at = datetime.now(timezone.utc).isoformat()
 
@@ -189,8 +211,9 @@ class RalphLoop:
             self._running = False
             return
 
-        # 3. Pick next story
-        story = self._next_story()
+        # 3. Pick next story (if not pre-selected by parallel dispatcher)
+        if story is None:
+            story = self._next_story()
         if not story:
             logger.info("No stories ready — loop idle")
             return
@@ -214,8 +237,25 @@ class RalphLoop:
             max_turns=100,
         )
 
-        # 6. Execute
-        result = await agent.run(task_prompt)
+        # 6. Execute (with dead-man's switch timeout)
+        timeout_s = self.config.loop.story_timeout_s or 600.0
+        try:
+            result = await asyncio.wait_for(
+                agent.run(task_prompt), timeout=timeout_s,
+            )
+        except asyncio.TimeoutError:
+            story.error_log.append(
+                f"Story timed out after {timeout_s}s (dead-man's switch)"
+            )
+            if story.iterations >= self.config.loop.story_max_retries:
+                story.status = StoryStatus.BLOCKED
+                self.state.stories_failed += 1
+                logger.warning(f"Story [{story.id}] BLOCKED (timeout)")
+            else:
+                story.status = StoryStatus.TODO
+                logger.warning(f"Story [{story.id}] timed out, will retry")
+            self._save_prd()
+            return
 
         # 7. Evaluate result
         if result.success:
@@ -306,12 +346,39 @@ class RalphLoop:
         self._save_state()
         self._save_prd()
 
+    def _get_ready_stories(self, max_count: int = 1) -> list[Story]:
+        """Get stories ready to execute (TODO + all dependencies satisfied).
+
+        Returns up to max_count stories sorted by priority, skipping any
+        whose depends_on list contains stories that aren't DONE yet.
+        """
+        done_ids = {s.id for s in self.prd.stories if s.status == StoryStatus.DONE}
+        in_progress_ids = {
+            s.id for s in self.prd.stories if s.status == StoryStatus.IN_PROGRESS
+        }
+        ready = []
+        for s in self.prd.stories:
+            if s.status != StoryStatus.TODO:
+                continue
+            # Check all dependencies are satisfied
+            if s.depends_on and not all(d in done_ids for d in s.depends_on):
+                continue
+            # Don't double-schedule files being touched by in-progress stories
+            if in_progress_ids and s.files_touched:
+                in_progress_files = set()
+                for ip in self.prd.stories:
+                    if ip.status == StoryStatus.IN_PROGRESS:
+                        in_progress_files.update(ip.files_touched)
+                if in_progress_files & set(s.files_touched):
+                    continue
+            ready.append(s)
+        ready.sort(key=lambda s: s.priority)
+        return ready[:max_count]
+
     def _next_story(self) -> Story | None:
         """Get the next story to work on (highest priority TODO)."""
-        todos = [s for s in self.prd.stories if s.status == StoryStatus.TODO]
-        if not todos:
-            return None
-        return min(todos, key=lambda s: s.priority)
+        ready = self._get_ready_stories(max_count=1)
+        return ready[0] if ready else None
 
     def _all_done(self) -> bool:
         """Check if all stories are done or blocked."""

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import datetime, timezone
-from pathlib import Path
 
 from forgegod.config import ForgeGodConfig
-from forgegod.models import BudgetMode, BudgetStatus, CostRecord, ModelUsage
+from forgegod.models import BudgetMode, BudgetStatus, ModelUsage
 
 
 class BudgetTracker:
@@ -73,7 +72,9 @@ class BudgetTracker:
         """
         conn = sqlite3.connect(str(self._db_path))
         conn.execute(
-            "INSERT INTO costs (timestamp, model, provider, role, input_tokens, output_tokens, cost_usd, task_id) "
+            "INSERT INTO costs "
+            "(timestamp, model, provider, role, "
+            "input_tokens, output_tokens, cost_usd, task_id) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 datetime.now(timezone.utc).isoformat(),
@@ -90,28 +91,24 @@ class BudgetTracker:
         conn.close()
 
     def get_status(self) -> BudgetStatus:
-        """Get the current budget status.
-
-        Retrieves the daily spend, total spend, budget mode, and remaining budget
-        for the current day from the SQLite database.
-
-        Args:
-            None
-
-        Returns:
-            BudgetStatus: A BudgetStatus object containing the current budget information.
-        """
+        """Get the current budget status including token counts."""
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         conn = sqlite3.connect(str(self._db_path))
 
         row = conn.execute(
-            "SELECT COALESCE(SUM(cost_usd), 0), COUNT(*) FROM costs WHERE timestamp LIKE ?",
-            (f"{today}%",),
+            "SELECT COALESCE(SUM(cost_usd), 0), COUNT(*), "
+            "COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0) "
+            "FROM costs WHERE date(timestamp) = ?",
+            (today,),
         ).fetchone()
         spent_today = row[0]
         calls_today = row[1]
+        input_tokens_today = row[2]
+        output_tokens_today = row[3]
 
-        total_row = conn.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM costs").fetchone()
+        total_row = conn.execute(
+            "SELECT COALESCE(SUM(cost_usd), 0) FROM costs"
+        ).fetchone()
         spent_total = total_row[0]
         conn.close()
 
@@ -123,6 +120,8 @@ class BudgetTracker:
             spent_total_usd=round(spent_total, 6),
             remaining_today_usd=round(max(0, limit - spent_today), 6),
             calls_today=calls_today,
+            input_tokens_today=input_tokens_today,
+            output_tokens_today=output_tokens_today,
         )
 
     def get_model_breakdown(self) -> dict[str, dict]:
@@ -141,11 +140,27 @@ class BudgetTracker:
         conn = sqlite3.connect(str(self._db_path))
         rows = conn.execute(
             "SELECT model, COUNT(*), COALESCE(SUM(cost_usd), 0) "
-            "FROM costs WHERE timestamp LIKE ? GROUP BY model",
-            (f"{today}%",),
+            "FROM costs WHERE date(timestamp) = ? GROUP BY model",
+            (today,),
         ).fetchall()
         conn.close()
         return {row[0]: {"calls": row[1], "cost": round(row[2], 6)} for row in rows}
+
+    def forecast_remaining(self, stories_remaining: int = 0) -> float:
+        """Estimate total remaining cost based on burn rate.
+
+        Uses average cost per call today and estimated remaining calls
+        to forecast how much more budget will be consumed.
+        """
+        status = self.get_status()
+        if status.calls_today == 0:
+            return 0.0
+        avg_cost = status.spent_today_usd / status.calls_today
+        # If caller provides stories count, estimate ~10 calls per story
+        if stories_remaining > 0:
+            return round(avg_cost * stories_remaining * 10, 4)
+        # Otherwise, estimate based on remaining budget capacity
+        return round(status.remaining_today_usd, 4)
 
     def check_budget(self) -> BudgetMode:
         """Check if we should change budget mode based on current spend.

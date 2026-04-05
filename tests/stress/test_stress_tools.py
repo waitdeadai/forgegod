@@ -95,7 +95,7 @@ class TestGlobAtScale:
     async def test_glob_py_files(self, large_codebase_dir, scale):
         """Glob **/*.py on N files — measure time.
 
-        Note: glob_files() caps output at 100 results by design.
+        Note: glob_files() caps output at 500 results by default.
         We measure how fast it scans the full directory, not how many it returns.
         """
         codebase = large_codebase_dir(scale)
@@ -103,7 +103,7 @@ class TestGlobAtScale:
         with timed() as t:
             result = await glob_files("*.py", codebase)
 
-        # glob_files returns "Found N files:\n..." with max 100 entries
+        # glob_files returns "Found N files:\n..." with max 500 entries
         rows = [r for r in result.strip().split("\n") if r.strip()]
         # First line is "Found N files:" header
         found = len(rows) - 1 if rows and rows[0].startswith("Found") else len(rows)
@@ -111,9 +111,9 @@ class TestGlobAtScale:
         record_metric("tools", f"glob_{scale}_ms", round(t.elapsed, 1))
         record_metric("tools", f"glob_{scale}_found", found)
 
-        # At 100+ files, glob caps at 100 — verify it returns the max
-        expected_min = min(scale, 100) * 0.9
-        assert found >= expected_min, f"Expected ~{min(scale, 100)} files, found {found}"
+        # At 500+ files, glob caps at 500 — verify it returns the max
+        expected_min = min(scale, 500) * 0.9
+        assert found >= expected_min, f"Expected ~{min(scale, 500)} files, found {found}"
 
 
 class TestGrepAtScale:

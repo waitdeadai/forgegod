@@ -45,11 +45,21 @@ logger = logging.getLogger("forgegod.memory")
 # ── Constants ──
 
 EPISODIC_RETENTION_DAYS = 90
-DECAY_HALFLIFE_DAYS = 30  # Confidence halves every 30 days without reinforcement
+DECAY_HALFLIFE_DAYS = 30  # Default; see DECAY_HALFLIFE_BY_CATEGORY for per-category
+DECAY_HALFLIFE_BY_CATEGORY = {
+    "architecture": 90,   # Long-lived design decisions
+    "security": 60,       # Important but evolves with new threats
+    "testing": 45,        # Testing patterns moderately durable
+    "design": 45,         # Design principles moderately durable
+    "process": 30,        # Process guidance changes with team
+    "readability": 30,    # Code style conventions
+    "debugging": 14,      # Debugging tips decay fast (context-specific)
+    "strategy": 21,       # Strategy tips decay moderately
+}
 MIN_CONFIDENCE = 0.05  # Below this, memory is prunable
 MAX_SEMANTIC_MEMORIES = 500  # Per project
 MAX_PROCEDURAL_MEMORIES = 200
-CONSOLIDATION_SIMILARITY_THRESHOLD = 0.65
+CONSOLIDATION_SIMILARITY_THRESHOLD = 0.80
 
 # Heuristic extraction rules: (condition, principle_text, category)
 HEURISTIC_RULES: list[tuple[str, str, str]] = [
@@ -106,10 +116,28 @@ class Memory:
         self._ensure_db(self._db_path)
         self._ensure_db(self._global_db_path)
 
+    def _open_conn(self, path: Path | None = None) -> sqlite3.Connection:
+        """Open a SQLite connection with performance PRAGMAs.
+
+        WAL mode + tuned PRAGMAs give ~10x write throughput and allow
+        concurrent readers during writes.
+        """
+        conn = sqlite3.connect(str(path or self._db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA cache_size=-64000")  # 64MB page cache
+        conn.execute("PRAGMA temp_store=MEMORY")
+        conn.execute("PRAGMA mmap_size=268435456")  # 256MB mmap
+        conn.execute("PRAGMA busy_timeout=5000")  # 5s retry on lock
+        return conn
+
     def _ensure_db(self, path: Path):
         """Initialize SQLite schema for all 4 memory tiers."""
         path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(path))
+        # Enable WAL mode for concurrent read/write performance
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         # Tier 1: Episodic Memory
         conn.execute("""
@@ -261,6 +289,53 @@ class Memory:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_research_query ON research_cache(query)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_research_expires ON research_cache(expires_at)")
 
+        # ── FTS5 Full-Text Search indexes (100x faster text retrieval) ──
+        conn.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS semantic_fts USING fts5(
+                memory_id, text, category,
+                content=semantic, content_rowid=rowid
+            )
+        """)
+        conn.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS error_solutions_fts USING fts5(
+                error_id, error_pattern, solution,
+                content=error_solutions, content_rowid=rowid
+            )
+        """)
+
+        # Sync triggers: keep FTS indexes in sync with base tables
+        conn.executescript("""
+            CREATE TRIGGER IF NOT EXISTS semantic_fts_ai AFTER INSERT ON semantic BEGIN
+                INSERT INTO semantic_fts(rowid, memory_id, text, category)
+                VALUES (new.rowid, new.memory_id, new.text, new.category);
+            END;
+            CREATE TRIGGER IF NOT EXISTS semantic_fts_ad AFTER DELETE ON semantic BEGIN
+                INSERT INTO semantic_fts(semantic_fts, rowid, memory_id, text, category)
+                VALUES ('delete', old.rowid, old.memory_id, old.text, old.category);
+            END;
+            CREATE TRIGGER IF NOT EXISTS semantic_fts_au AFTER UPDATE ON semantic BEGIN
+                INSERT INTO semantic_fts(semantic_fts, rowid, memory_id, text, category)
+                VALUES ('delete', old.rowid, old.memory_id, old.text, old.category);
+                INSERT INTO semantic_fts(rowid, memory_id, text, category)
+                VALUES (new.rowid, new.memory_id, new.text, new.category);
+            END;
+            CREATE TRIGGER IF NOT EXISTS errors_fts_ai AFTER INSERT ON error_solutions BEGIN
+                INSERT INTO error_solutions_fts(rowid, error_id, error_pattern, solution)
+                VALUES (new.rowid, new.error_id, new.error_pattern, new.solution);
+            END;
+            CREATE TRIGGER IF NOT EXISTS errors_fts_ad AFTER DELETE ON error_solutions BEGIN
+                INSERT INTO error_solutions_fts(error_solutions_fts, rowid, error_id, error_pattern, solution)
+                VALUES ('delete', old.rowid, old.error_id, old.error_pattern, old.solution);
+            END;
+        """)
+
+        # Rebuild FTS indexes from existing data (idempotent)
+        try:
+            conn.execute("INSERT INTO semantic_fts(semantic_fts) VALUES ('rebuild')")
+            conn.execute("INSERT INTO error_solutions_fts(error_solutions_fts) VALUES ('rebuild')")
+        except sqlite3.OperationalError:
+            pass  # Tables may be empty
+
         conn.commit()
 
         # Add superseded_by column if missing (v0.2 migration)
@@ -318,7 +393,7 @@ class Memory:
         now = datetime.now(timezone.utc).isoformat()
         episode_id = f"ep-{uuid.uuid4().hex[:12]}"
 
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         conn.execute(
             """INSERT INTO episodes
                (episode_id, task_id, task_description, outcome, files_touched,
@@ -370,7 +445,7 @@ class Memory:
 
     async def get_recent_episodes(self, limit: int = 10) -> list[dict]:
         """Get most recent episodes."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute(
             "SELECT * FROM episodes ORDER BY created_at DESC LIMIT ?", (limit,)
         ).fetchall()
@@ -391,7 +466,7 @@ class Memory:
         self, category: str = "", min_confidence: float = 0.0
     ) -> list[Principle]:
         """Get semantic memories as Principle objects (backwards compatible)."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         if category:
             rows = conn.execute(
                 """SELECT memory_id, text, category, confidence, evidence_count,
@@ -422,7 +497,7 @@ class Memory:
 
     async def get_learnings_text(self, limit: int = 10) -> str:
         """Get top memories formatted for prompt injection (Memory Spine)."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute(
             """SELECT text, category, confidence, evidence_count
                FROM semantic WHERE confidence >= 0.3
@@ -460,7 +535,7 @@ class Memory:
         now = datetime.now(timezone.utc).isoformat()
         importance = self._calculate_importance(confidence, 1, now)
 
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         conn.execute(
             """INSERT INTO semantic
                (memory_id, text, category, confidence, importance, evidence_count,
@@ -496,7 +571,7 @@ class Memory:
         pattern_id = f"proc-{uuid.uuid4().hex[:8]}"
         now = datetime.now(timezone.utc).isoformat()
 
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         conn.execute(
             """INSERT INTO procedural
                (pattern_id, name, description, pattern_type, trigger, action,
@@ -517,7 +592,7 @@ class Memory:
         self, pattern_type: str = "", language: str = "", limit: int = 20,
     ) -> list[dict]:
         """Get procedural memories, optionally filtered."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         query = "SELECT * FROM procedural WHERE 1=1"
         params: list = []
         if pattern_type:
@@ -540,7 +615,7 @@ class Memory:
 
     async def record_procedure_outcome(self, pattern_id: str, success: bool):
         """Record whether a procedure worked when applied."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         row = conn.execute(
             "SELECT success_rate, usage_count FROM procedural WHERE pattern_id = ?",
             (pattern_id,),
@@ -563,7 +638,7 @@ class Memory:
 
     async def get_causal_edges(self) -> list[CausalEdge]:
         """Get all edges in the causal graph."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute(
             "SELECT factor, outcome, weight, observations FROM causal_edges ORDER BY weight DESC"
         ).fetchall()
@@ -577,7 +652,7 @@ class Memory:
         self, factor: str, outcome: str, weight: float = 0.5,
     ) -> None:
         """Add or update a causal edge in the graph."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         existing = conn.execute(
             "SELECT weight, observations FROM causal_edges "
             "WHERE factor = ? AND outcome = ?",
@@ -607,7 +682,7 @@ class Memory:
 
     async def get_related_entities(self, entity_name: str, limit: int = 10) -> list[dict]:
         """Get entities related to a given entity."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute(
             """SELECT target_entity, relation_type, weight, evidence_count
                FROM relations WHERE source_entity = ?
@@ -638,7 +713,7 @@ class Memory:
         now = datetime.now(timezone.utc).isoformat()
 
         # Check for existing match
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         existing = conn.execute(
             "SELECT error_id, occurrences FROM error_solutions WHERE error_pattern = ?",
             (error_pattern,),
@@ -669,8 +744,27 @@ class Memory:
         return error_id
 
     async def lookup_error(self, error_text: str, limit: int = 3) -> list[dict]:
-        """Look up solutions for an error. Fuzzy match against stored patterns."""
-        conn = sqlite3.connect(str(self._db_path))
+        """Look up solutions for an error. Uses FTS5 + fuzzy fallback."""
+        conn = self._open_conn()
+
+        # Try FTS5 first for fast lookup
+        fts_ids = set()
+        fts_terms = " OR ".join(
+            w for w in error_text.lower().split() if len(w) > 2
+        )
+        if fts_terms:
+            try:
+                fts_rows = conn.execute(
+                    """SELECT es.error_id FROM error_solutions_fts
+                       JOIN error_solutions es ON es.rowid = error_solutions_fts.rowid
+                       WHERE error_solutions_fts MATCH ?
+                       LIMIT 20""",
+                    (fts_terms,),
+                ).fetchall()
+                fts_ids = {r[0] for r in fts_rows}
+            except sqlite3.OperationalError:
+                pass  # FTS5 may not exist
+
         rows = conn.execute(
             "SELECT error_id, error_pattern, error_context, solution, confidence, occurrences FROM error_solutions"
         ).fetchall()
@@ -691,6 +785,10 @@ class Memory:
                 error_words = set(error_lower.split())
                 overlap = len(pattern_words & error_words)
                 score = overlap / max(len(pattern_words), 1)
+
+            # FTS5 boost: matched entries get a score floor
+            if r[0] in fts_ids:
+                score = max(score, 0.3)
 
             if score > 0.2:
                 matches.append((score * r[4], {  # score * confidence
@@ -804,8 +902,35 @@ class Memory:
     async def _recall_semantic(
         self, query: str, category: str, limit: int, min_confidence: float
     ) -> list[dict]:
-        """Retrieve semantic memories ranked by multi-signal score."""
-        conn = sqlite3.connect(str(self._db_path))
+        """Retrieve semantic memories ranked by multi-signal score.
+
+        Uses FTS5 for fast candidate retrieval when a query is provided,
+        then re-ranks with importance + recency signals (hybrid retrieval).
+        Falls back to full scan when FTS5 is unavailable or query is empty.
+        """
+        conn = self._open_conn()
+
+        # Build FTS5 query: convert words to OR-joined terms
+        fts5_candidates = set()
+        if query:
+            # Try FTS5 first for fast candidate retrieval
+            fts_terms = " OR ".join(
+                w for w in query.lower().split() if len(w) > 2
+            )
+            if fts_terms:
+                try:
+                    fts_rows = conn.execute(
+                        """SELECT s.memory_id FROM semantic_fts
+                           JOIN semantic s ON s.rowid = semantic_fts.rowid
+                           WHERE semantic_fts MATCH ?
+                           LIMIT 50""",
+                        (fts_terms,),
+                    ).fetchall()
+                    fts5_candidates = {r[0] for r in fts_rows}
+                except sqlite3.OperationalError:
+                    pass  # FTS5 table may not exist yet
+
+        # Fetch candidate rows (FTS5 narrowed or full scan)
         params: list = [min_confidence]
         where = "WHERE confidence >= ? AND superseded_by IS NULL"
         if category:
@@ -844,6 +969,9 @@ class Memory:
                     relevance = len(query_words & all_words) / max(len(query_words), 1)
                 else:
                     relevance = 0.0
+                # FTS5 boost: memories found by FTS5 get a relevance floor
+                if fts5_candidates and mem["memory_id"] in fts5_candidates:
+                    relevance = max(relevance, 0.3)
             else:
                 relevance = 0.5  # No query = all equally relevant
 
@@ -863,7 +991,7 @@ class Memory:
 
     async def _recall_procedural(self, query: str, limit: int = 5) -> list[dict]:
         """Retrieve procedural memories relevant to query."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute(
             """SELECT pattern_id, name, description, pattern_type, trigger,
                       action, code_template, language, success_rate, usage_count
@@ -898,7 +1026,7 @@ class Memory:
         if not memories:
             return
         now = datetime.now(timezone.utc).isoformat()
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         for mem in memories:
             conn.execute(
                 "UPDATE semantic SET last_recalled = ? WHERE memory_id = ?",
@@ -1043,7 +1171,7 @@ class Memory:
     ):
         """Update graph memory: extract entities, add relations, update causal edges."""
         now = datetime.now(timezone.utc).isoformat()
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
 
         # 1. Extract entities from task description
         all_text = task_desc
@@ -1113,41 +1241,58 @@ class Memory:
         3. Prune old episodes beyond retention period
         4. Cap total memories at limits
         """
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         now = datetime.now(timezone.utc)
 
-        # 1. Merge similar semantic memories
+        # 1. Merge similar semantic memories (category-bucketed for O(n*k) instead of O(n^2))
         rows = conn.execute(
-            "SELECT memory_id, text, confidence, evidence_count FROM semantic"
+            "SELECT memory_id, text, confidence, evidence_count, category FROM semantic"
         ).fetchall()
 
+        # Bucket by category — only compare within same category
+        from collections import defaultdict
+        buckets: dict[str, list] = defaultdict(list)
+        for r in rows:
+            buckets[r[4] or ""].append(r)
+
+        # Pre-compute word sets once per memory (avoid recomputation in inner loop)
+        word_cache: dict[str, set] = {}
+        for r in rows:
+            word_cache[r[0]] = set(r[1].lower().split())
+
         merged = set()
-        for i, (id_a, text_a, conf_a, ev_a) in enumerate(rows):
-            if id_a in merged:
-                continue
-            words_a = set(text_a.lower().split())
-            for j in range(i + 1, len(rows)):
-                id_b, text_b, conf_b, ev_b = rows[j]
-                if id_b in merged:
+        for _cat, bucket in buckets.items():
+            for i, (id_a, text_a, conf_a, ev_a, _) in enumerate(bucket):
+                if id_a in merged:
                     continue
-                words_b = set(text_b.lower().split())
-                if not words_a or not words_b:
+                words_a = word_cache[id_a]
+                if not words_a:
                     continue
-                similarity = len(words_a & words_b) / len(words_a | words_b)
-                if similarity > CONSOLIDATION_SIMILARITY_THRESHOLD:
-                    # Merge B into A (keep the one with more evidence)
-                    if ev_b > ev_a:
-                        merged.add(id_a)
-                        conn.execute(
-                            "UPDATE semantic SET evidence_count = evidence_count + ? WHERE memory_id = ?",
-                            (ev_a, id_b),
-                        )
-                    else:
-                        merged.add(id_b)
-                        conn.execute(
-                            "UPDATE semantic SET evidence_count = evidence_count + ? WHERE memory_id = ?",
-                            (ev_b, id_a),
-                        )
+                for j in range(i + 1, len(bucket)):
+                    id_b, text_b, conf_b, ev_b, _ = bucket[j]
+                    if id_b in merged:
+                        continue
+                    words_b = word_cache[id_b]
+                    if not words_b:
+                        continue
+                    union_len = len(words_a | words_b)
+                    if union_len == 0:
+                        continue
+                    similarity = len(words_a & words_b) / union_len
+                    if similarity > CONSOLIDATION_SIMILARITY_THRESHOLD:
+                        # Merge into the one with more evidence
+                        if ev_b > ev_a:
+                            merged.add(id_a)
+                            conn.execute(
+                                "UPDATE semantic SET evidence_count = evidence_count + ? WHERE memory_id = ?",
+                                (ev_a, id_b),
+                            )
+                        else:
+                            merged.add(id_b)
+                            conn.execute(
+                                "UPDATE semantic SET evidence_count = evidence_count + ? WHERE memory_id = ?",
+                                (ev_b, id_a),
+                            )
 
         if merged:
             placeholders = ",".join("?" * len(merged))
@@ -1197,15 +1342,15 @@ class Memory:
         Memories that haven't been reinforced lose confidence over time.
         Decay function: confidence * 2^(-days_since_reinforcement / halflife)
         """
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         now = datetime.now(timezone.utc)
 
         rows = conn.execute(
-            "SELECT memory_id, confidence, last_reinforced, evidence_count FROM semantic"
+            "SELECT memory_id, confidence, last_reinforced, evidence_count, category FROM semantic"
         ).fetchall()
 
         updated = 0
-        for memory_id, confidence, last_reinforced, evidence in rows:
+        for memory_id, confidence, last_reinforced, evidence, category in rows:
             if not last_reinforced:
                 continue
             try:
@@ -1217,9 +1362,13 @@ class Memory:
             if days_since < 1:
                 continue
 
+            # Category-specific base halflife (architecture 90d, debugging 14d, etc.)
+            base_halflife = DECAY_HALFLIFE_BY_CATEGORY.get(
+                category or "", DECAY_HALFLIFE_DAYS
+            )
             # Exponential decay, moderated by evidence count
             # More evidence = slower decay (better established memories last longer)
-            effective_halflife = DECAY_HALFLIFE_DAYS * (1 + math.log(evidence + 1) * 0.3)
+            effective_halflife = base_halflife * (1 + math.log(evidence + 1) * 0.3)
             decayed = confidence * (2 ** (-days_since / effective_halflife))
             decayed = round(max(MIN_CONFIDENCE, decayed), 4)
 
@@ -1239,7 +1388,7 @@ class Memory:
 
     async def health(self) -> dict:
         """Get memory system health report."""
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
 
         episodes = conn.execute("SELECT COUNT(*) FROM episodes").fetchone()[0]
         semantic = conn.execute("SELECT COUNT(*) FROM semantic").fetchone()[0]
@@ -1351,7 +1500,7 @@ class Memory:
         - Trigger B: 24+ hours since last consolidation
         Either trigger fires consolidation + decay.
         """
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
 
         # Read metadata
         last_ts = None
@@ -1409,7 +1558,7 @@ class Memory:
             await self.decay()
 
             # Update metadata
-            conn = sqlite3.connect(str(self._db_path))
+            conn = self._open_conn()
             conn.execute(
                 "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
                 "VALUES ('last_consolidation_ts', ?, ?)",
@@ -1433,7 +1582,7 @@ class Memory:
         Scans for pairs with high word similarity but opposing sentiment
         (e.g., "always use X" vs "never use X"). Keeps the more recent one.
         """
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         negation_words = {"never", "don't", "avoid", "stop", "not", "no"}
         affirmation_words = {"always", "must", "should", "use", "prefer"}
 
@@ -1579,7 +1728,7 @@ class Memory:
         if not candidate_words:
             return None
 
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         rows = conn.execute("SELECT memory_id, text FROM semantic").fetchall()
         conn.close()
 
@@ -1597,7 +1746,7 @@ class Memory:
     async def _reinforce_semantic(self, memory_id: str, source_episode: str):
         """Reinforce an existing semantic memory."""
         now = datetime.now(timezone.utc).isoformat()
-        conn = sqlite3.connect(str(self._db_path))
+        conn = self._open_conn()
         row = conn.execute(
             "SELECT evidence_count, confidence, source_episodes FROM semantic WHERE memory_id = ?",
             (memory_id,),

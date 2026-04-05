@@ -3,13 +3,16 @@
 Provides:
 1. File content sanitization (flag injection patterns in code comments/docs)
 2. Generated code validation (block credential access, suspicious imports)
-3. Canary token system (detect if system prompt leaks into tool calls)
+3. AST-based code analysis (detect obfuscated dangerous calls)
+4. Supply chain validation (flag suspicious package imports)
+5. Canary token system (detect if system prompt leaks into tool calls)
 
 Based on 2026 OWASP LLM Top 10 and research on coding agent vulnerabilities.
 """
 
 from __future__ import annotations
 
+import ast
 import logging
 import re
 import secrets
@@ -66,14 +69,110 @@ def check_file_content(path: str, content: str) -> list[str]:
 def validate_generated_code(code: str) -> list[str]:
     """Validate AI-generated code before writing to disk.
 
+    Runs regex patterns + AST analysis + import validation.
     Returns list of warnings (empty = safe).
     """
     warnings = []
+    # Layer 1: Regex patterns (fast, catches literal dangerous code)
     for pattern in _DANGEROUS_CODE_PATTERNS:
         if pattern.search(code):
             warnings.append(
                 f"[SECURITY] Suspicious code pattern: {pattern.pattern[:50]}"
             )
+    # Layer 2: AST analysis (catches obfuscated dangerous calls)
+    warnings.extend(_ast_validate(code))
+    # Layer 3: Supply chain validation (catches suspicious imports)
+    warnings.extend(_validate_imports(code))
+    return warnings
+
+
+# ── AST-based code validation ───────────────────────────────────────────
+
+_DANGEROUS_METHODS = {"system", "popen", "exec", "eval", "execl", "execlp", "execve"}
+_SENSITIVE_PATHS = {".env", "id_rsa", "id_ed25519", ".pem", "credentials", "secrets"}
+
+# Known abandoned/malicious packages (supply chain defense)
+_SUSPICIOUS_PACKAGES = {
+    "python-jose",    # abandoned, use PyJWT
+    "python-jwt",     # abandoned, use PyJWT
+    "jeIlyfish",      # typosquat of jellyfish
+    "python3-dateutil",  # typosquat of python-dateutil
+    "colors",         # common typosquat target
+    "request",        # typosquat of requests
+}
+
+
+def _ast_validate(code: str) -> list[str]:
+    """Parse code AST to detect dangerous patterns regex can't catch.
+
+    Catches:
+    - getattr(os, 'system')('...') obfuscation
+    - Attribute calls to dangerous methods
+    - open() on sensitive file paths
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []  # Can't parse — fall back to regex only
+
+    warnings = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+
+        # Detect: os.system(), subprocess.popen(), etc.
+        if isinstance(func, ast.Attribute) and func.attr in _DANGEROUS_METHODS:
+            warnings.append(
+                f"[SECURITY] Dangerous call: .{func.attr}()"
+            )
+
+        # Detect: getattr(os, 'system') — obfuscated dangerous calls
+        if isinstance(func, ast.Name) and func.id == "getattr" and len(node.args) >= 2:
+            if isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str):
+                if node.args[1].value in _DANGEROUS_METHODS:
+                    val = node.args[1].value
+                    warnings.append(
+                        f"[SECURITY] Obfuscated dangerous call: "
+                        f"getattr(..., '{val}')"
+                    )
+
+        # Detect: open() on sensitive file paths
+        if isinstance(func, ast.Name) and func.id == "open" and node.args:
+            if isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                path = node.args[0].value
+                for sensitive in _SENSITIVE_PATHS:
+                    if sensitive in path:
+                        warnings.append(
+                            f"[SECURITY] Sensitive file access: open('{path}')"
+                        )
+                        break
+
+    return warnings
+
+
+def _validate_imports(code: str) -> list[str]:
+    """Check imported packages against known-suspicious list."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+
+    warnings = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                root = alias.name.split(".")[0]
+                if root in _SUSPICIOUS_PACKAGES:
+                    warnings.append(
+                        f"[SECURITY] Suspicious import: {root} (known abandoned/typosquat)"
+                    )
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            root = node.module.split(".")[0]
+            if root in _SUSPICIOUS_PACKAGES:
+                warnings.append(
+                    f"[SECURITY] Suspicious import: {root} (known abandoned/typosquat)"
+                )
     return warnings
 
 
@@ -102,3 +201,7 @@ class CanaryToken:
             logger.error("Canary token detected in output — possible prompt extraction attack")
             return True
         return False
+
+    def rotate(self):
+        """Rotate canary token — call between sessions to detect ongoing leaks."""
+        self._token = f"FGCANARY-{secrets.token_hex(8)}"

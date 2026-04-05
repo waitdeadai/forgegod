@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from rich.console import Console
 from rich.layout import Layout
-from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
 from forgegod.models import BudgetMode, BudgetStatus, LoopState, LoopStatus
-
 
 console = Console()
 
@@ -86,7 +84,10 @@ def render_cost_table(budget: BudgetStatus, breakdown: dict[str, dict]):
         table.add_column("Calls", justify="right")
         table.add_column("Cost", justify="right", style="green")
 
-        for model, data in sorted(breakdown.items(), key=lambda x: x[1].get("cost", 0), reverse=True):
+        sorted_models = sorted(
+            breakdown.items(), key=lambda x: x[1].get("cost", 0), reverse=True,
+        )
+        for model, data in sorted_models:
             table.add_row(model, str(data.get("calls", 0)), f"${data.get('cost', 0):.4f}")
 
         console.print(table)
@@ -129,7 +130,10 @@ def _budget_panel(budget: BudgetStatus) -> Panel:
         BudgetMode.HALT: "red",
     }.get(budget.mode, "white")
 
-    pct = (budget.spent_today_usd / budget.daily_limit_usd * 100) if budget.daily_limit_usd > 0 else 0
+    if budget.daily_limit_usd > 0:
+        pct = budget.spent_today_usd / budget.daily_limit_usd * 100
+    else:
+        pct = 0
     bar_width = 20
     filled = int(pct / 100 * bar_width)
     bar = f"[green]{'=' * filled}[/][dim]{'-' * (bar_width - filled)}[/]"

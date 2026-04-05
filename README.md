@@ -19,7 +19,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
-  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/stress%20tests-34%20passing-00e5ff?style=flat-square" alt="Stress Tests"></a>
+  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2034%20stress-00e5ff?style=flat-square" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -48,7 +48,7 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 | Cost-aware budget modes | - | - | - | - | **yes** |
 | Reflexion code generation | - | - | - | - | **3-attempt** |
 | Parallel git worktrees | subagents | - | - | - | **yes** |
-| Stress tested + benchmarked | - | - | - | - | **[34 tests](BENCHMARKS.md)** |
+| Stress tested + benchmarked | - | - | - | - | **[355 + 34 stress](BENCHMARKS.md)** |
 
 ### The Moat: Harness > Model
 
@@ -170,7 +170,7 @@ ForgeGod has the most advanced memory system of any open-source coding agent:
 | **Graph** | Entity relationships + causal edges | Auto-extracted from outcomes | Indefinite |
 | **Error-Solution** | Error pattern → fix mapping | Fuzzy match lookup | Indefinite |
 
-Memories **decay** without reinforcement (30-day half-life), **consolidate** automatically (merge similar, prune weak), and are **injected** into every prompt as a Memory Spine ranked by relevance + recency + importance.
+Memories **decay** with category-specific half-life (14d debugging → 90d architecture), **consolidate** via O(n*k) category-bucketed comparison, and are **recalled** via FTS5 + Jaccard hybrid retrieval (Reciprocal Rank Fusion). SQLite WAL mode for concurrent access.
 
 ```bash
 # Check memory health
@@ -292,15 +292,15 @@ Run your own: `forgegod benchmark`
 forgegod/
 ├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status, benchmark, doctor)
 ├── config.py       # TOML config + env vars + 3-level priority
-├── router.py       # Multi-provider LLM router + circuit breaker + Thompson sampling
+├── router.py       # Multi-provider LLM router + persistent pool + cascade routing + half-open circuit breaker
 ├── agent.py        # Core agent loop (tools + context compression + sub-agents)
 ├── coder.py        # Reflexion code generation (3 attempts, model escalation, GOAP)
-├── loop.py         # Ralph loop (24/7 autonomous coding from PRD)
+├── loop.py         # Ralph loop (24/7 autonomous coding, parallel workers, story timeout)
 ├── planner.py      # Task decomposition → PRD
 ├── reviewer.py     # Frontier model quality gate (sample-based)
 ├── sica.py         # Self-improving strategy modification (6 safety layers)
-├── memory.py       # 5-tier cognitive memory (episodic/semantic/procedural/graph/errors)
-├── budget.py       # SQLite cost tracking + auto budget modes
+├── memory.py       # 5-tier cognitive memory (FTS5 + RRF hybrid retrieval, WAL mode)
+├── budget.py       # SQLite cost + token tracking, forecasting, auto budget modes
 ├── worktree.py     # Parallel git worktree workers
 ├── tui.py          # Rich terminal dashboard
 ├── terse.py        # Caveman mode — terse prompts, tool compression, savings tracker
@@ -310,7 +310,7 @@ forgegod/
 ├── i18n.py         # Translation strings (English + Spanish es-419)
 ├── models.py       # Pydantic v2 data models
 └── tools/
-    ├── filesystem.py  # read, write, edit (fuzzy match), glob, grep, repo_map
+    ├── filesystem.py  # async read/write (aiofiles), atomic writes, fuzzy edit, glob, grep, repo_map
     ├── shell.py       # bash (command denylist + secret redaction)
     ├── git.py         # git status, diff, commit, worktrees
     ├── mcp.py         # MCP server client (5,800+ servers)
@@ -323,8 +323,11 @@ Defense-in-depth, not security theater:
 
 - **Command denylist** — 13 dangerous patterns blocked (`rm -rf /`, `curl | sh`, `sudo`, fork bombs)
 - **Secret redaction** — 11 patterns strip API keys from tool output before LLM context
-- **Prompt injection detection** — Rules files scanned for injection patterns before loading
-- **Budget limits** — Cost controls prevent runaway API spend
+- **Prompt injection detection** — 8 patterns scan for jailbreak/role-override attempts
+- **AST code validation** — Detects obfuscated dangerous calls (`getattr(os, 'system')`) that regex misses
+- **Supply chain defense** — Flags known-abandoned/typosquat packages (python-jose, jeIlyfish, etc.)
+- **Canary token system** — Detects if system prompt leaks into tool arguments, with per-session rotation
+- **Budget limits** — Cost controls with token tracking + burn-rate forecasting
 - **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
 - **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
 
