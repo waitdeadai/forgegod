@@ -7,10 +7,10 @@ all 5 memory tiers with high-quality, actionable learnings.
 
 from __future__ import annotations
 
-import json
 import logging
 
 from forgegod.config import ForgeGodConfig
+from forgegod.json_utils import extract_json
 from forgegod.memory import Memory
 from forgegod.models import AgentResult
 from forgegod.router import ModelRouter
@@ -220,15 +220,10 @@ class MemoryAgent:
     def _parse_extractions(self, response: str) -> dict:
         """Parse LLM extraction response."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            import re
-            match = re.search(r"\{.*\}", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                logger.warning("MemoryAgent: failed to parse extraction")
-                return {}
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("MemoryAgent: failed to parse extraction")
+            return {}
 
         return {
             "semantic": data.get("semantic", []),

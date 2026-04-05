@@ -12,6 +12,7 @@ import logging
 from datetime import datetime, timezone
 
 from forgegod.config import ForgeGodConfig
+from forgegod.json_utils import extract_json
 from forgegod.models import (
     LibraryRecommendation,
     ResearchBrief,
@@ -86,17 +87,10 @@ class Researcher:
     def _parse_queries(self, response: str) -> list[SearchQuery]:
         """Parse LLM response into SearchQuery list."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            # Try to extract JSON array from response
-            import re
-
-            match = re.search(r"\[.*\]", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                logger.warning("Failed to parse query response, using fallback queries")
-                return [SearchQuery(query="best practices " + response[:50], category="patterns")]
+            data = extract_json(response, expect_array=True)
+        except ValueError:
+            logger.warning("Failed to parse query response, using fallback queries")
+            return [SearchQuery(query="best practices " + response[:50], category="patterns")]
 
         if isinstance(data, dict) and "queries" in data:
             data = data["queries"]
@@ -255,7 +249,7 @@ class Researcher:
             prompt=prompt,
             role="researcher",
             json_mode=True,
-            max_tokens=2048,
+            max_tokens=4096,
             temperature=0.2,
         )
 
@@ -264,16 +258,10 @@ class Researcher:
     def _parse_brief(self, response: str, task: str) -> ResearchBrief:
         """Parse synthesis response into ResearchBrief."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            import re
-
-            match = re.search(r"\{.*\}", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                logger.warning("Failed to parse synthesis, returning empty brief")
-                return ResearchBrief(task=task)
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("Failed to parse synthesis, returning empty brief")
+            return ResearchBrief(task=task)
 
         libraries = []
         for lib in data.get("libraries", []):

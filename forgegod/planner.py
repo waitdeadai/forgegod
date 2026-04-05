@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import logging
 
 from forgegod.config import ForgeGodConfig
+from forgegod.json_utils import extract_json
 from forgegod.models import PRD, DebateResult, ResearchBrief, Story, StoryStatus
 from forgegod.router import ModelRouter
 from forgegod.terse import RECON_PLANNER_PROMPT, TERSE_PLANNER_PROMPT
@@ -69,7 +69,7 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
             prompt=prompt,
             role="planner",
             json_mode=True,
-            max_tokens=4096,
+            max_tokens=8192,
             temperature=0.3,
         )
 
@@ -78,29 +78,22 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
     def _parse_prd(self, response: str, project_name: str, task: str) -> PRD:
         """Parse LLM response into PRD model."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            # Try to extract JSON from response
-            import re
-            match = re.search(r"\{.*\}", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                # Fallback: create single-story PRD
-                logger.warning("Failed to parse planner output, creating single-story PRD")
-                return PRD(
-                    project=project_name,
-                    description=task,
-                    stories=[
-                        Story(
-                            id="S001",
-                            title="Implement task",
-                            description=task,
-                            priority=1,
-                            acceptance_criteria=["Task is complete"],
-                        )
-                    ],
-                )
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("Failed to parse planner output, creating single-story PRD")
+            return PRD(
+                project=project_name,
+                description=task,
+                stories=[
+                    Story(
+                        id="S001",
+                        title="Implement task",
+                        description=task,
+                        priority=1,
+                        acceptance_criteria=["Task is complete"],
+                    )
+                ],
+            )
 
         stories = []
         for s in data.get("stories", []):
@@ -182,7 +175,7 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
             prompt=prompt,
             role="planner",
             json_mode=True,
-            max_tokens=4096,
+            max_tokens=8192,
             temperature=0.3,
         )
 
@@ -254,12 +247,12 @@ Output ONLY valid JSON."""
         )
 
         try:
-            data = json.loads(response)
+            data = extract_json(response)
             story.description = data.get("description", story.description)
             story.acceptance_criteria = data.get(
                 "acceptance_criteria", story.acceptance_criteria
             )
-        except json.JSONDecodeError:
+        except (ValueError, AttributeError):
             pass
 
         return story

@@ -29,6 +29,7 @@ dependencies = [
     "gitpython>=3.1",
     "toml>=0.10",
     "aiofiles>=24.1",
+    "json-repair>=0.44",
 ]
 
 [project.optional-dependencies]

@@ -10,6 +10,7 @@ import json
 import logging
 
 from forgegod.config import ForgeGodConfig
+from forgegod.json_utils import extract_json
 from forgegod.models import (
     PRD,
     DebateResult,
@@ -120,7 +121,7 @@ class Adversary:
             prompt=prompt,
             role="reviewer",
             json_mode=True,
-            max_tokens=2048,
+            max_tokens=4096,
             temperature=0.3,
         )
 
@@ -129,22 +130,16 @@ class Adversary:
     def _parse_critique(self, response: str, round_num: int, model: str) -> PlanCritique:
         """Parse critique response into PlanCritique."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            import re
-
-            match = re.search(r"\{.*\}", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                logger.warning("Failed to parse critique, treating as revise")
-                return PlanCritique(
-                    round_num=round_num,
-                    verdict="revise",
-                    overall_score=5.0,
-                    issues=["Failed to parse critique response"],
-                    model_used=model,
-                )
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("Failed to parse critique, treating as revise")
+            return PlanCritique(
+                round_num=round_num,
+                verdict="revise",
+                overall_score=5.0,
+                issues=["Failed to parse critique response"],
+                model_used=model,
+            )
 
         return PlanCritique(
             round_num=round_num,
@@ -182,7 +177,7 @@ class Adversary:
             prompt=prompt,
             role="planner",
             json_mode=True,
-            max_tokens=4096,
+            max_tokens=8192,
             temperature=0.3,
         )
 
@@ -196,16 +191,10 @@ class Adversary:
     def _parse_revised_prd(self, response: str, original: PRD) -> PRD:
         """Parse revised PRD from response, falling back to original on failure."""
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError:
-            import re
-
-            match = re.search(r"\{.*\}", response, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
-            else:
-                logger.warning("Failed to parse revised PRD, keeping original")
-                return original
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("Failed to parse revised PRD, keeping original")
+            return original
 
         stories = []
         for s in data.get("stories", []):

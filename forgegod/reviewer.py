@@ -6,10 +6,10 @@ to single reviewer with configurable frontier model.
 
 from __future__ import annotations
 
-import json
 import logging
 
 from forgegod.config import ForgeGodConfig
+from forgegod.json_utils import extract_json
 from forgegod.models import ReviewResult, ReviewVerdict
 from forgegod.router import ModelRouter
 from forgegod.terse import TERSE_REVIEWER_PROMPT
@@ -94,7 +94,7 @@ Output ONLY valid JSON."""
             prompt=prompt,
             role="reviewer",
             json_mode=True,
-            max_tokens=2048,
+            max_tokens=4096,
             temperature=0.2,
         )
 
@@ -161,7 +161,7 @@ Output ONLY valid JSON."""
     def _parse_review(self, response: str, model: str) -> ReviewResult:
         """Parse LLM response into ReviewResult."""
         try:
-            data = json.loads(response)
+            data = extract_json(response)
             verdict_str = data.get("verdict", "approve").lower()
             verdict = {
                 "approve": ReviewVerdict.APPROVE,
@@ -177,7 +177,7 @@ Output ONLY valid JSON."""
                 suggestions=data.get("suggestions", []),
                 model_used=model,
             )
-        except (json.JSONDecodeError, KeyError):
+        except (ValueError, KeyError, AttributeError):
             logger.warning("Failed to parse review response, defaulting to APPROVE")
             return ReviewResult(
                 verdict=ReviewVerdict.APPROVE,

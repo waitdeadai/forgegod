@@ -231,6 +231,10 @@ class ModelRouter:
         else:
             raise ValueError(f"Unknown provider: {spec.provider}")
 
+        # Strip markdown code fences from JSON mode responses
+        if json_mode and text:
+            text = self._strip_code_fences(text)
+
         elapsed = time.time() - start
         self.circuit.record_success(spec.provider)
 
@@ -250,6 +254,28 @@ class ModelRouter:
             self._call_log = self._call_log[-1000:]
 
         return text, usage
+
+    @staticmethod
+    def _strip_code_fences(text: str) -> str:
+        """Strip markdown code fences from LLM JSON responses.
+
+        Models often wrap JSON in ```json ... ``` even with json_mode=True.
+        Also strips any text before the first { or [ to handle thinking prefixes.
+        """
+        import re
+
+        stripped = text.strip()
+        # Remove ```json ... ``` or ``` ... ``` wrapping
+        stripped = re.sub(r"^```(?:json|JSON)?\s*\n?", "", stripped)
+        stripped = re.sub(r"\n?```\s*$", "", stripped)
+        stripped = stripped.strip()
+        # If it still doesn't start with { or [, find the first one
+        if stripped and stripped[0] not in "{[":
+            for i, ch in enumerate(stripped):
+                if ch in "{[":
+                    stripped = stripped[i:]
+                    break
+        return stripped
 
     # ── Task Complexity Classification ──
 

@@ -97,11 +97,12 @@ class TestParseReview:
         assert result.confidence == 0.3
 
     def test_parse_partial_json(self, reviewer: Reviewer) -> None:
-        """Test parsing partial JSON (missing closing brace)."""
+        """Test parsing partial JSON (missing closing brace) — json_repair fixes it."""
         response = '{"verdict": "approve"'
         result = reviewer._parse_review(response, "ollama:qwen3-coder-next")
         assert result.verdict == ReviewVerdict.APPROVE
-        assert result.confidence == 0.3
+        # json_repair successfully closes the brace, so we get the default 0.5
+        assert result.confidence == 0.5
 
     def test_parse_json_with_extra_whitespace(self, reviewer: Reviewer) -> None:
         """Test parsing JSON with extra whitespace."""
@@ -127,14 +128,16 @@ class TestShouldReview:
     def reviewer_loop(self) -> Reviewer:
         """Create a reviewer for loop mode (sample every Nth)."""
         from forgegod.config import ReviewConfig
-        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=3, always_review_run=False))
+        rc = ReviewConfig(enabled=True, sample_rate=3, always_review_run=False)
+        config = ForgeGodConfig(review=rc)
         return Reviewer(config=config)
 
     @pytest.fixture
     def reviewer_run(self) -> Reviewer:
         """Create a reviewer for run mode (always review)."""
         from forgegod.config import ReviewConfig
-        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=1, always_review_run=True))
+        rc = ReviewConfig(enabled=True, sample_rate=1, always_review_run=True)
+        config = ForgeGodConfig(review=rc)
         return Reviewer(config=config)
 
     @pytest.fixture
@@ -175,8 +178,8 @@ class TestShouldReview:
     def test_should_review_loop_mode_sample_rate_5(self) -> None:
         """Test should_review with sample_rate=5."""
         from forgegod.config import ReviewConfig
-        config = ForgeGodConfig(review=ReviewConfig(enabled=True, sample_rate=5, always_review_run=False))
-        reviewer = Reviewer(config=config)
+        rc = ReviewConfig(enabled=True, sample_rate=5, always_review_run=False)
+        reviewer = Reviewer(config=ForgeGodConfig(review=rc))
         # Review stories 5, 10, 15, etc.
         for i in range(10):
             expected = (i + 1) % 5 == 0

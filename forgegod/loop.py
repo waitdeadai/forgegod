@@ -117,7 +117,8 @@ class RalphLoop:
                 console.print(f"  {i}. [{story.id}] {story.title}")
                 console.print(f"     Status: {status.value}")
                 if story.description:
-                    console.print(f"     Description: {story.description[:200]}...")
+                    from rich.markup import escape
+                    console.print(f"     Description: {escape(story.description[:200])}...")
                 if story.files_touched:
                     console.print(f"     Files: {', '.join(story.files_touched)}")
                 console.print()
@@ -226,7 +227,7 @@ class RalphLoop:
         self._save_prd()
 
         # 4. Build task prompt for agent
-        task_prompt = self._build_story_prompt(story)
+        task_prompt = await self._build_story_prompt(story)
 
         # 5. Spawn fresh agent (context rotation — each story gets clean context)
         agent = Agent(
@@ -293,7 +294,24 @@ class RalphLoop:
                 f"Story [{story.id}] DONE — {result.tool_calls_count} tool calls, "
                 f"${result.total_usage.cost_usd:.4f}"
             )
-            # Auto-push to remote after successful story
+            # Auto-commit and push after successful story
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "git", "add", ".",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await proc.communicate()
+                proc = await asyncio.create_subprocess_exec(
+                    "git", "commit", "-m", f"[{story.id}] {story.title}",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await proc.communicate()
+                if proc.returncode == 0:
+                    logger.info(f"Story [{story.id}] committed to git")
+            except Exception:
+                logger.debug("Auto-commit skipped")
             try:
                 proc = await asyncio.create_subprocess_exec(
                     "git", "push", "origin", "main",
@@ -336,7 +354,7 @@ class RalphLoop:
         # 9. Auto-consolidate memory (AutoDream pattern)
         if self.memory:
             try:
-                self.memory.maybe_consolidate()
+                await self.memory.maybe_consolidate()
             except Exception as e:
                 logger.debug(f"Memory consolidation skipped: {e}")
 
@@ -387,7 +405,7 @@ class RalphLoop:
             for s in self.prd.stories
         )
 
-    def _build_story_prompt(self, story: Story) -> str:
+    async def _build_story_prompt(self, story: Story) -> str:
         """Build the full task prompt for a story."""
         prompt = f"""## Project: {self.prd.project}
 {self.prd.description}
@@ -418,7 +436,7 @@ class RalphLoop:
         # Inject relevant memory for this story
         if self.memory:
             try:
-                mem_text = self.memory.smart_recall(story.title)
+                mem_text = await self.memory.smart_recall(story.title)
                 if mem_text:
                     prompt += f"\n## Memory (from previous tasks)\n{mem_text}\n"
             except Exception:
