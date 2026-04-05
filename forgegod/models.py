@@ -132,7 +132,6 @@ class CodeFile(BaseModel):
     content: str = ""
     ast_valid: bool = False
     imports_valid: bool = False
-    tests_pass: bool = False
     reflexion_attempts: list[ReflexionAttempt] = Field(default_factory=list)
 
 
