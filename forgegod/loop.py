@@ -79,6 +79,18 @@ class RalphLoop:
             self.memory = None
             logger.debug("Memory system unavailable in loop")
 
+        # Memory Agent — dedicated LLM-powered memory extraction
+        self._memory_agent = None
+        if self.memory:
+            try:
+                from forgegod.memory_agent import MemoryAgent
+
+                self._memory_agent = MemoryAgent(
+                    config=config, router=self.router, memory=self.memory,
+                )
+            except Exception:
+                logger.debug("MemoryAgent unavailable")
+
         # State
         self.state = LoopState()
         self._running = False
@@ -270,7 +282,18 @@ class RalphLoop:
                     f"will retry ({self.config.loop.story_max_retries - story.iterations} left)"
                 )
 
-        # 8. Auto-consolidate memory (AutoDream pattern)
+        # 8. Dedicated MemoryAgent — LLM-powered extraction
+        if self._memory_agent:
+            try:
+                await self._memory_agent.process_coding_task(
+                    task_description=story.description or story.title,
+                    result=result,
+                    task_id=story.id,
+                )
+            except Exception as e:
+                logger.debug(f"MemoryAgent extraction skipped: {e}")
+
+        # 9. Auto-consolidate memory (AutoDream pattern)
         if self.memory:
             try:
                 self.memory.maybe_consolidate()

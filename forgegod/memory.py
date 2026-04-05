@@ -573,6 +573,31 @@ class Memory:
             for r in rows
         ]
 
+    async def add_causal_edge(
+        self, factor: str, outcome: str, weight: float = 0.5,
+    ) -> None:
+        """Add or update a causal edge in the graph."""
+        conn = sqlite3.connect(str(self._db_path))
+        existing = conn.execute(
+            "SELECT weight, observations FROM causal_edges "
+            "WHERE factor = ? AND outcome = ?",
+            (factor, outcome),
+        ).fetchone()
+        if existing:
+            new_weight = (existing[0] * existing[1] + weight) / (existing[1] + 1)
+            conn.execute(
+                "UPDATE causal_edges SET weight = ?, observations = ? "
+                "WHERE factor = ? AND outcome = ?",
+                (new_weight, existing[1] + 1, factor, outcome),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO causal_edges VALUES (?, ?, ?, ?)",
+                (factor, outcome, weight, 1),
+            )
+        conn.commit()
+        conn.close()
+
     async def get_success_factors(self) -> list[str]:
         """Get factors most correlated with success."""
         edges = await self.get_causal_edges()

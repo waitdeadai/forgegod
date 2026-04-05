@@ -145,6 +145,25 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
         adversary = Adversary(self.config, self.router)
         debate = await adversary.debate(prd, brief)
 
+        # Phase 4: MEMORY — extract planning learnings
+        try:
+            from forgegod.memory import Memory
+            from forgegod.memory_agent import MemoryAgent
+
+            memory = Memory(self.config)
+            ma = MemoryAgent(self.config, self.router, memory)
+            await ma.process_planning_task(
+                task_description=task,
+                libraries=[lib.name for lib in brief.libraries],
+                patterns=brief.architecture_patterns[:5],
+                warnings=brief.security_warnings[:5],
+                score=debate.final_score,
+                converged=debate.converged,
+                rounds=debate.rounds,
+            )
+        except Exception as e:
+            logger.debug(f"Planning memory extraction skipped: {e}")
+
         return prd, brief, debate
 
     async def _decompose_with_research(
