@@ -38,6 +38,9 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     "gemini-2.5-flash": (0.15, 0.60),
     "gemini-3-flash": (0.075, 0.30),
     "gemini-3-pro": (1.25, 5.00),
+    # DeepSeek (OpenAI-compatible, 22x cheaper than GPT-4o)
+    "deepseek-chat": (0.28, 0.42),
+    "deepseek-reasoner": (0.55, 2.19),
     # OpenRouter (varies — user overrides)
 }
 

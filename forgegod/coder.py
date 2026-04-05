@@ -56,9 +56,15 @@ EXT_TO_LANG: dict[str, str] = {
 class ReflexionCoder:
     """Multi-attempt code generation with Reflexion and model escalation."""
 
-    def __init__(self, config: ForgeGodConfig, router: ModelRouter | None = None):
+    def __init__(
+        self,
+        config: ForgeGodConfig,
+        router: ModelRouter | None = None,
+        memory=None,
+    ):
         self.config = config
         self.router = router or ModelRouter(config)
+        self.memory = memory  # Optional Memory instance for error lookups
         self.max_attempts = MAX_ATTEMPTS
 
     async def generate(
@@ -140,11 +146,24 @@ class ReflexionCoder:
                 reflection = await self._generate_reflection(
                     code, ast_error, import_errors, lang
                 )
+                # Enrich reflection with memory-based error solutions
+                error_text = ast_error or "; ".join(import_errors)
+                if self.memory and error_text:
+                    try:
+                        solutions = self.memory.lookup_error(error_text)
+                        if solutions:
+                            best = solutions[0]
+                            reflection += (
+                                f"\n[Memory hint] Known fix: "
+                                f"{best.get('solution', '')[:300]}"
+                            )
+                    except Exception:
+                        pass
                 attempt.reflection = reflection
                 reflections.append(reflection)
                 logger.info(
                     f"Attempt {attempt_num} for {file_path}: FAIL — "
-                    f"{ast_error or '; '.join(import_errors)}"
+                    f"{error_text}"
                 )
 
             code_file.reflexion_attempts.append(attempt)

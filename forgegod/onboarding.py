@@ -58,7 +58,8 @@ class OnboardingWizard:
         console.print(f"  [cyan]3.[/cyan] {t('opt_anthropic')}")
         console.print(f"  [cyan]4.[/cyan] {t('opt_openrouter')}")
         console.print(f"  [cyan]5.[/cyan] {t('opt_gemini')}")
-        console.print(f"  [cyan]6.[/cyan] {t('opt_multi')}")
+        console.print(f"  [cyan]6.[/cyan] {t('opt_deepseek')}")
+        console.print(f"  [cyan]7.[/cyan] {t('opt_multi')}")
         console.print()
 
         choice = typer.prompt("Select", default="1")
@@ -74,11 +75,14 @@ class OnboardingWizard:
         elif choice == "5":
             self._setup_gemini_key()
         elif choice == "6":
+            self._setup_api_key("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys")
+        elif choice == "7":
             self._setup_ollama()
             for provider, env_var, url in [
                 ("openai", "OPENAI_API_KEY", "https://platform.openai.com/api-keys"),
                 ("anthropic", "ANTHROPIC_API_KEY", "https://console.anthropic.com/settings/keys"),
                 ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys"),
+                ("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys"),
             ]:
                 add = typer.confirm(f"  Add {provider}?", default=False)
                 if add:

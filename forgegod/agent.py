@@ -18,6 +18,7 @@ from pathlib import Path
 
 from forgegod.budget import BudgetTracker
 from forgegod.config import ForgeGodConfig
+from forgegod.memory import Memory
 from forgegod.models import AgentResult, BudgetMode, ModelUsage, ToolCall, ToolResult
 from forgegod.router import ModelRouter
 from forgegod.tools import execute_tool, get_tool_defs, load_all_tools
@@ -102,7 +103,7 @@ class Agent:
         self.max_turns = max_turns
         self.max_tool_calls = max_tool_calls
 
-        # Build system prompt with environment detection + project rules + skills
+        # Build system prompt — static content first for prompt caching
         if system_prompt:
             self.system_prompt = system_prompt
         else:
@@ -114,7 +115,15 @@ class Agent:
                 base = TERSE_SYSTEM_PROMPT.format(cwd=Path.cwd())
             else:
                 base = SYSTEM_PROMPT.format(cwd=Path.cwd())
-            self.system_prompt = base + env_info + rules + skills_summary
+            # Order: base + rules + skills (static, cacheable) then env (dynamic)
+            self.system_prompt = base + rules + skills_summary + env_info
+
+        # Memory — 5-tier cognitive system (episodic, semantic, procedural, graph, errors)
+        try:
+            self.memory = Memory(config)
+        except Exception:
+            self.memory = None
+            logger.debug("Memory system unavailable — running without persistence")
 
         # State
         self.messages: list[dict] = []
@@ -123,6 +132,7 @@ class Agent:
         self.files_modified: list[str] = []
         self._turn = 0
         self._gutter_tracker: dict[str, int] = {}  # action_hash → repeat count
+        self._error_solutions_used: list[str] = []  # avoid re-injecting same solution
 
         # Load tools
         load_all_tools()
@@ -145,11 +155,28 @@ class Agent:
         8. Repeat
         """
         start = time.time()
+        task_id = f"task-{int(start)}"
+
+        # Recall relevant memories before starting
+        memory_context = ""
+        if self.memory:
+            try:
+                memory_context = await self.memory.smart_recall(task)
+            except Exception as e:
+                logger.debug(f"Memory recall failed: {e}")
 
         # Initialize message chain
+        user_content = task
+        if memory_context:
+            user_content = (
+                f"{task}\n\n"
+                f"## Relevant Memory (from previous tasks)\n"
+                f"{memory_context}"
+            )
+
         self.messages = [
             {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": task},
+            {"role": "user", "content": user_content},
         ]
 
         try:
@@ -197,11 +224,13 @@ class Agent:
                         "tool_calls": self.tool_calls_count,
                         "files": self.files_modified,
                     })
-                    return self._build_result(
+                    result = self._build_result(
                         success=True,
                         output=response_text,
                         elapsed=time.time() - start,
                     )
+                    await self._record_episode(task_id, task, result)
+                    return result
 
                 # Add assistant message
                 self.messages.append({
@@ -229,6 +258,14 @@ class Agent:
                         "content": result.content,
                     })
 
+                    # Memory: inject known solutions for errors
+                    if result.error:
+                        hint = await self._lookup_error_solution(result.content)
+                        if hint:
+                            self.messages.append({
+                                "role": "user", "content": hint,
+                            })
+
                     # Gutter detection with forced structured reflection (SOTA pattern)
                     if self._detect_gutter(tc, result):
                         logger.warning(f"Gutter detected: {tc.name} repeated 3x with same args")
@@ -254,20 +291,76 @@ class Agent:
                 self._maybe_compress_context()
 
             # Max turns reached
-            return self._build_result(
+            result = self._build_result(
                 success=False,
                 output=f"[Max turns ({self.max_turns}) reached]",
                 elapsed=time.time() - start,
             )
+            self._record_episode(task_id, task, result)
+            return result
 
         except Exception as e:
             logger.exception(f"Agent error: {e}")
-            return self._build_result(
+            result = self._build_result(
                 success=False,
                 output="",
                 elapsed=time.time() - start,
                 error=str(e),
             )
+            self._record_episode(task_id, task, result)
+            return result
+
+    async def _record_episode(self, task_id: str, task: str, result: AgentResult):
+        """Record completed task as an episode in memory."""
+        if not self.memory:
+            return
+        try:
+            outcome = {
+                "score": 1.0 if result.success else 0.0,
+                "error": result.error or "",
+                "output_preview": (result.output or "")[:500],
+                "tool_calls": result.tool_calls_count,
+                "cost_usd": result.total_usage.cost_usd,
+            }
+            await self.memory.record_episode(
+                task_id=task_id,
+                task_description=task[:500],
+                outcome=outcome,
+                code_files=result.files_modified,
+                tools_used=[],
+            )
+            logger.debug(
+                f"Episode recorded: {task_id} "
+                f"(success={result.success}, files={len(result.files_modified)})"
+            )
+        except Exception as e:
+            logger.debug(f"Episode recording failed: {e}")
+
+    async def _lookup_error_solution(self, error_text: str) -> str:
+        """Look up known solutions for an error pattern."""
+        if not self.memory or not error_text:
+            return ""
+        try:
+            solutions = await self.memory.lookup_error(error_text[:500])
+            if not solutions:
+                return ""
+            # Filter out already-used solutions
+            new_solutions = [
+                s for s in solutions
+                if s.get("error_id", "") not in self._error_solutions_used
+            ]
+            if not new_solutions:
+                return ""
+            best = new_solutions[0]
+            self._error_solutions_used.append(best.get("error_id", ""))
+            return (
+                f"\n[MEMORY — Known solution for this error]\n"
+                f"Pattern: {best.get('error_pattern', '')[:200]}\n"
+                f"Solution: {best.get('solution', '')[:500]}\n"
+                f"Confidence: {best.get('confidence', 0):.0%}\n"
+            )
+        except Exception:
+            return ""
 
     def _parse_tool_calls(self, response: str) -> list[ToolCall]:
         """Parse tool calls from LLM response.

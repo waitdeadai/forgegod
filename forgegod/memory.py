@@ -34,7 +34,6 @@ import math
 import re
 import sqlite3
 import uuid
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -148,7 +147,8 @@ class Memory:
                 last_recalled TEXT DEFAULT '',
                 last_reinforced TEXT DEFAULT '',
                 created_at TEXT NOT NULL,
-                project TEXT DEFAULT ''
+                project TEXT DEFAULT '',
+                superseded_by TEXT DEFAULT NULL
             )
         """)
 
@@ -247,6 +247,18 @@ class Memory:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_errors_pattern ON error_solutions(error_pattern)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_errors_context ON error_solutions(error_context)")
 
+        # Add superseded_by column if missing (v0.2 migration)
+        try:
+            conn.execute("SELECT superseded_by FROM semantic LIMIT 1")
+        except sqlite3.OperationalError:
+            try:
+                conn.execute(
+                    "ALTER TABLE semantic ADD COLUMN superseded_by TEXT DEFAULT NULL"
+                )
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+
         # Migrate old 'principles' table if it exists
         tables = [r[0] for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
@@ -302,7 +314,10 @@ class Memory:
                 task_id,
                 task_description,
                 json.dumps(outcome),
-                json.dumps([f.get("path", "") for f in (code_files or [])]),
+                json.dumps([
+                    f.get("path", "") if isinstance(f, dict) else str(f)
+                    for f in (code_files or [])
+                ]),
                 json.dumps(tools_used or []),
                 1 if outcome.get("score", 0) >= 0.7 else 0,
                 outcome.get("reflexion_rounds", 0),
@@ -314,6 +329,18 @@ class Memory:
                 self._project_name(),
             ),
         )
+        # Track episodes since last consolidation (AutoDream trigger)
+        row = conn.execute(
+            "SELECT value FROM memory_meta "
+            "WHERE key = 'episodes_since_consolidation'"
+        ).fetchone()
+        count = int(row[0]) + 1 if row else 1
+        conn.execute(
+            "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
+            "VALUES ('episodes_since_consolidation', ?, ?)",
+            (str(count), now),
+        )
+
         conn.commit()
         conn.close()
 
@@ -354,6 +381,7 @@ class Memory:
                 """SELECT memory_id, text, category, confidence, evidence_count,
                           source_episodes, created_at
                    FROM semantic WHERE category = ? AND confidence >= ?
+                     AND superseded_by IS NULL
                    ORDER BY importance DESC, confidence DESC""",
                 (category, min_confidence),
             ).fetchall()
@@ -362,6 +390,7 @@ class Memory:
                 """SELECT memory_id, text, category, confidence, evidence_count,
                           source_episodes, created_at
                    FROM semantic WHERE confidence >= ?
+                     AND superseded_by IS NULL
                    ORDER BY importance DESC, confidence DESC""",
                 (min_confidence,),
             ).fetchall()
@@ -381,6 +410,7 @@ class Memory:
         rows = conn.execute(
             """SELECT text, category, confidence, evidence_count
                FROM semantic WHERE confidence >= 0.3
+                 AND superseded_by IS NULL
                ORDER BY importance DESC, confidence DESC
                LIMIT ?""",
             (limit,),
@@ -736,7 +766,7 @@ class Memory:
         """Retrieve semantic memories ranked by multi-signal score."""
         conn = sqlite3.connect(str(self._db_path))
         params: list = [min_confidence]
-        where = "WHERE confidence >= ?"
+        where = "WHERE confidence >= ? AND superseded_by IS NULL"
         if category:
             where += " AND category = ?"
             params.append(category)
@@ -860,6 +890,8 @@ class Memory:
         # 2. Code pattern extraction (Python AST analysis)
         if code_files:
             for f in code_files:
+                if isinstance(f, str):
+                    continue  # Path-only entries have no content to analyze
                 content = f.get("content", "")
                 if not content or not f.get("path", "").endswith(".py"):
                     continue
@@ -923,6 +955,8 @@ class Memory:
             return
 
         for f in code_files:
+            if isinstance(f, str):
+                continue  # Path-only entries have no content to analyze
             content = f.get("content", "")
             path = f.get("path", "")
             if not content:
@@ -973,7 +1007,10 @@ class Memory:
         # 1. Extract entities from task description
         all_text = task_desc
         if code_files:
-            all_text += " " + " ".join(f.get("path", "") for f in code_files)
+            all_text += " " + " ".join(
+                f.get("path", "") if isinstance(f, dict) else str(f)
+                for f in code_files
+            )
 
         entities_found: list[tuple[str, str]] = []  # (name, type)
         for entity_type, pattern in ENTITY_PATTERNS.items():
@@ -1201,6 +1238,216 @@ class Memory:
         }
 
     # ═══════════════════════════════════════════════════════════════════
+    # SMART RECALL — Adaptive depth based on task complexity
+    # ═══════════════════════════════════════════════════════════════════
+
+    # Complexity keywords for adaptive retrieval
+    _COMPLEX_KEYWORDS = {
+        "refactor", "across", "integrate", "migrate", "redesign",
+        "architecture", "rewrite", "overhaul", "multi-file",
+        "system", "pipeline", "framework", "infrastructure",
+    }
+    _SIMPLE_KEYWORDS = {
+        "fix", "typo", "rename", "update", "bump", "remove",
+        "delete", "add", "change", "set", "tweak", "patch",
+    }
+
+    async def smart_recall(
+        self, task: str, complexity_hint: str = "auto"
+    ) -> str:
+        """Adaptive memory recall — right amount of context per task.
+
+        Research (March 2026): Memory is pure overhead on simple tasks
+        (< 200 lines), but provides 22-32% efficiency gains on complex ones.
+
+        Args:
+            task: Task description to recall context for.
+            complexity_hint: "simple", "medium", "complex", or "auto" (detect).
+
+        Returns:
+            Formatted text ready for prompt injection.
+        """
+        if complexity_hint == "auto":
+            complexity_hint = self._detect_complexity(task)
+
+        if complexity_hint == "simple":
+            return await self.recall(
+                query=task, limit=3,
+                include_procedural=False, include_episodes=False,
+            )
+        elif complexity_hint == "complex":
+            return await self.recall(
+                query=task, limit=15,
+                include_procedural=True, include_episodes=True,
+            )
+        else:  # medium
+            return await self.recall(
+                query=task, limit=8,
+                include_procedural=True, include_episodes=False,
+            )
+
+    def _detect_complexity(self, task: str) -> str:
+        """Estimate task complexity from description keywords."""
+        words = set(task.lower().split())
+        complex_hits = len(words & self._COMPLEX_KEYWORDS)
+        simple_hits = len(words & self._SIMPLE_KEYWORDS)
+
+        if complex_hits >= 2 or len(task) > 200:
+            return "complex"
+        if simple_hits >= 1 and complex_hits == 0 and len(task) < 80:
+            return "simple"
+        return "medium"
+
+    # ═══════════════════════════════════════════════════════════════════
+    # AUTODREAM — Automatic consolidation triggers
+    # ═══════════════════════════════════════════════════════════════════
+
+    async def maybe_consolidate(self):
+        """Check triggers and run consolidation if needed.
+
+        Dual trigger (inspired by Claude Code's AutoDream):
+        - Trigger A: 10+ episodes since last consolidation
+        - Trigger B: 24+ hours since last consolidation
+        Either trigger fires consolidation + decay.
+        """
+        conn = sqlite3.connect(str(self._db_path))
+
+        # Read metadata
+        last_ts = None
+        episodes_since = 0
+        row = conn.execute(
+            "SELECT value FROM memory_meta WHERE key = 'last_consolidation_ts'"
+        ).fetchone()
+        if row:
+            try:
+                last_ts = datetime.fromisoformat(row[0].replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                pass
+
+        row = conn.execute(
+            "SELECT value FROM memory_meta WHERE key = 'episodes_since_consolidation'"
+        ).fetchone()
+        if row:
+            try:
+                episodes_since = int(row[0])
+            except (ValueError, TypeError):
+                pass
+
+        conn.close()
+
+        now = datetime.now(timezone.utc)
+        should_consolidate = False
+
+        # Trigger A: episode count
+        if episodes_since >= 10:
+            should_consolidate = True
+            logger.info(f"AutoDream: {episodes_since} episodes trigger")
+
+        # Trigger B: time-based (24h)
+        if last_ts and (now - last_ts).total_seconds() > 86400:
+            should_consolidate = True
+            logger.info("AutoDream: 24h time trigger")
+
+        # First ever consolidation
+        if not last_ts and episodes_since > 0:
+            should_consolidate = True
+
+        if not should_consolidate:
+            return
+
+        # Run consolidation + decay
+        lock_path = self._db_path.parent / ".consolidation.lock"
+        if lock_path.exists():
+            logger.debug("AutoDream: consolidation lock exists, skipping")
+            return
+
+        try:
+            lock_path.write_text(str(now.isoformat()))
+            await self.consolidate()
+            await self._detect_contradictions()
+            await self.decay()
+
+            # Update metadata
+            conn = sqlite3.connect(str(self._db_path))
+            conn.execute(
+                "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
+                "VALUES ('last_consolidation_ts', ?, ?)",
+                (now.isoformat(), now.isoformat()),
+            )
+            conn.execute(
+                "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
+                "VALUES ('episodes_since_consolidation', '0', ?)",
+                (now.isoformat(),),
+            )
+            conn.commit()
+            conn.close()
+            logger.info("AutoDream: consolidation complete")
+        finally:
+            if lock_path.exists():
+                lock_path.unlink()
+
+    async def _detect_contradictions(self):
+        """Detect and resolve contradictory memories.
+
+        Scans for pairs with high word similarity but opposing sentiment
+        (e.g., "always use X" vs "never use X"). Keeps the more recent one.
+        """
+        conn = sqlite3.connect(str(self._db_path))
+        negation_words = {"never", "don't", "avoid", "stop", "not", "no"}
+        affirmation_words = {"always", "must", "should", "use", "prefer"}
+
+        rows = conn.execute(
+            "SELECT memory_id, text, confidence, created_at, "
+            "superseded_by FROM semantic WHERE superseded_by IS NULL"
+        ).fetchall()
+
+        superseded = []
+        for i, (id_a, text_a, conf_a, created_a, _) in enumerate(rows):
+            words_a = set(text_a.lower().split())
+            has_neg_a = bool(words_a & negation_words)
+            has_aff_a = bool(words_a & affirmation_words)
+            if not (has_neg_a or has_aff_a):
+                continue
+
+            for j in range(i + 1, len(rows)):
+                id_b, text_b, conf_b, created_b, _ = rows[j]
+                words_b = set(text_b.lower().split())
+                has_neg_b = bool(words_b & negation_words)
+                has_aff_b = bool(words_b & affirmation_words)
+
+                # Check for opposing sentiment with similar topic
+                if not ((has_neg_a and has_aff_b) or (has_aff_a and has_neg_b)):
+                    continue
+
+                # Check topic similarity (words minus sentiment words)
+                topic_a = words_a - negation_words - affirmation_words
+                topic_b = words_b - negation_words - affirmation_words
+                if not topic_a or not topic_b:
+                    continue
+                overlap = len(topic_a & topic_b) / len(topic_a | topic_b)
+                if overlap < 0.4:
+                    continue
+
+                # Contradiction found — supersede the older one
+                if created_a < created_b:
+                    superseded.append((id_a, id_b))
+                else:
+                    superseded.append((id_b, id_a))
+
+        for old_id, new_id in superseded:
+            conn.execute(
+                "UPDATE semantic SET superseded_by = ? WHERE memory_id = ?",
+                (new_id, old_id),
+            )
+
+        if superseded:
+            conn.commit()
+            logger.info(
+                f"AutoDream: {len(superseded)} contradictions resolved"
+            )
+        conn.close()
+
+    # ═══════════════════════════════════════════════════════════════════
     # BACKWARDS COMPATIBILITY — Old API surface
     # ═══════════════════════════════════════════════════════════════════
 
@@ -1211,7 +1458,7 @@ class Memory:
 
         Wraps the new record_episode + extraction pipeline.
         """
-        episode_id = await self.record_episode(
+        await self.record_episode(
             task_id=task_id,
             task_description=outcome.get("description", task_id),
             outcome=outcome,
@@ -1348,6 +1595,8 @@ class Memory:
             factors.append("repo_map_first")
         if code_files:
             for f in code_files:
+                if isinstance(f, str):
+                    continue
                 content = f.get("content", "")
                 if "-> " in content or ": str" in content or ": int" in content:
                     factors.append("type_hints")

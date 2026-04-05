@@ -166,6 +166,7 @@ def _check_api_keys() -> HealthCheck:
         "OPENROUTER_API_KEY": "OpenRouter",
         "GOOGLE_API_KEY": "Gemini",
         "GEMINI_API_KEY": "Gemini",
+        "DEEPSEEK_API_KEY": "DeepSeek",
     }
 
     found = []

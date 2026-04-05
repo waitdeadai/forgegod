@@ -169,6 +169,10 @@ class ModelRouter:
             text, usage_dict = await self._call_gemini(
                 spec.model, prompt, system, json_mode, max_tokens, temperature, tools
             )
+        elif spec.provider == "deepseek":
+            text, usage_dict = await self._call_deepseek(
+                spec.model, prompt, system, json_mode, max_tokens, temperature, tools
+            )
         else:
             raise ValueError(f"Unknown provider: {spec.provider}")
 
@@ -266,7 +270,10 @@ class ModelRouter:
         }
 
     # Reasoning models that need special handling
-    _REASONING_MODELS = {"o3", "o3-mini", "o4-mini", "o1", "o1-mini", "o1-preview"}
+    _REASONING_MODELS = {
+        "o3", "o3-mini", "o4-mini", "o1", "o1-mini",
+        "o1-preview", "deepseek-reasoner",
+    }
 
     async def _call_openai(
         self, model: str, prompt: str | list[dict], system: str,
@@ -351,7 +358,10 @@ class ModelRouter:
             "temperature": temperature,
         }
         if system:
-            kwargs["system"] = system
+            # Prompt caching: mark system prompt as cacheable (90% discount on reads)
+            kwargs["system"] = [
+                {"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}
+            ]
 
         # Convert OpenAI tool format to Anthropic format
         if tools:
@@ -511,6 +521,82 @@ class ModelRouter:
         }
         return content, usage_data
 
+    async def _call_deepseek(
+        self, model: str, prompt: str | list[dict], system: str,
+        json_mode: bool, max_tokens: int, temperature: float,
+        tools: list[dict] | None,
+    ) -> tuple[str, dict]:
+        """Call DeepSeek via OpenAI-compatible API. 22x cheaper than GPT-4o."""
+        import os
+
+        import openai
+
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "error: No DeepSeek API key set.\n"
+                "  Fix: export DEEPSEEK_API_KEY=sk-...\n"
+                "  Get one at: https://platform.deepseek.com/api_keys"
+            )
+
+        is_reasoning = model in self._REASONING_MODELS
+
+        if is_reasoning:
+            messages = self._to_messages(prompt, "")
+            if system:
+                messages.insert(0, {"role": "user", "content": f"[System context]\n{system}"})
+            kwargs: dict[str, Any] = {
+                "model": model,
+                "messages": messages,
+                "max_completion_tokens": max_tokens,
+            }
+        else:
+            messages = self._to_messages(prompt, system)
+            kwargs = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+
+        if json_mode and not is_reasoning:
+            kwargs["response_format"] = {"type": "json_object"}
+        if tools:
+            kwargs["tools"] = tools
+
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com/v1",
+        )
+        resp = await client.chat.completions.create(**kwargs)
+
+        choice = resp.choices[0]
+        if choice.message.tool_calls:
+            tool_calls_json = []
+            for tc in choice.message.tool_calls:
+                tool_calls_json.append({
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                })
+            content = json.dumps({"tool_calls": tool_calls_json})
+        else:
+            content = choice.message.content or ""
+            # Strip thinking tags from deepseek-reasoner
+            if is_reasoning:
+                content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+
+        usage_data = {
+            "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+            "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
+        }
+        if is_reasoning and resp.usage and hasattr(resp.usage, "completion_tokens_details"):
+            details = resp.usage.completion_tokens_details
+            if details and hasattr(details, "reasoning_tokens"):
+                usage_data["reasoning_tokens"] = details.reasoning_tokens
+
+        return content, usage_data
+
     # ── Helpers ──
 
     def _to_messages(self, prompt: str | list[dict], system: str) -> list[dict]:
@@ -527,8 +613,23 @@ class ModelRouter:
 
     def _calculate_cost(self, model: str, usage: dict) -> float:
         costs = MODEL_COSTS.get(model, (0, 0))
-        input_cost = (usage.get("input_tokens", 0) / 1_000_000) * costs[0]
-        output_cost = (usage.get("output_tokens", 0) / 1_000_000) * costs[1]
+        input_price, output_price = costs
+
+        # Base input/output cost
+        input_tokens = usage.get("input_tokens", 0)
+        output_tokens = usage.get("output_tokens", 0)
+
+        # Anthropic prompt caching: cache reads at 10% price, creation at 125%
+        cache_read = usage.get("cache_read_tokens", 0)
+        cache_creation = usage.get("cache_creation_tokens", 0)
+        # Subtract cached tokens from base input (they're priced separately)
+        regular_input = max(0, input_tokens - cache_read - cache_creation)
+
+        input_cost = (regular_input / 1_000_000) * input_price
+        input_cost += (cache_read / 1_000_000) * input_price * 0.1
+        input_cost += (cache_creation / 1_000_000) * input_price * 1.25
+        output_cost = (output_tokens / 1_000_000) * output_price
+
         return round(input_cost + output_cost, 6)
 
     @property

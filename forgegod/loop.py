@@ -21,6 +21,7 @@ from rich.console import Console
 from forgegod.agent import Agent
 from forgegod.budget import BudgetTracker
 from forgegod.config import ForgeGodConfig
+from forgegod.memory import Memory
 from forgegod.models import (
     PRD,
     BudgetMode,
@@ -70,6 +71,13 @@ class RalphLoop:
 
         # Reviewer (SOTA: sample-based quality gate)
         self.reviewer = Reviewer(config=config, router=self.router)
+
+        # Memory system — shared across all story ticks
+        try:
+            self.memory = Memory(config)
+        except Exception:
+            self.memory = None
+            logger.debug("Memory system unavailable in loop")
 
         # State
         self.state = LoopState()
@@ -262,7 +270,14 @@ class RalphLoop:
                     f"will retry ({self.config.loop.story_max_retries - story.iterations} left)"
                 )
 
-        # 8. Context rotation tracking
+        # 8. Auto-consolidate memory (AutoDream pattern)
+        if self.memory:
+            try:
+                self.memory.maybe_consolidate()
+            except Exception as e:
+                logger.debug(f"Memory consolidation skipped: {e}")
+
+        # 9. Context rotation tracking
         self.state.context_rotations += 1
         self.state.current_story_id = ""
         self._save_state()
@@ -309,6 +324,15 @@ class RalphLoop:
             prompt += "\n## Previous attempt errors (FIX THESE)\n"
             for err in story.error_log[-2:]:
                 prompt += f"- {err[:500]}\n"
+
+        # Inject relevant memory for this story
+        if self.memory:
+            try:
+                mem_text = self.memory.smart_recall(story.title)
+                if mem_text:
+                    prompt += f"\n## Memory (from previous tasks)\n{mem_text}\n"
+            except Exception:
+                pass
 
         if self.config.terse.enabled:
             prompt += TERSE_STORY_INSTRUCTIONS

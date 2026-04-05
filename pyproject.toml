@@ -54,6 +54,9 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 
+[tool.ruff.lint.per-file-ignores]
+"forgegod/memory.py" = ["E501"]  # SQL strings + data tuples exceed 100 chars
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

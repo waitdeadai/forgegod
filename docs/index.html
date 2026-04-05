@@ -588,8 +588,8 @@ body::after {
 <!-- Stats -->
 <section class="stats">
   <div class="stat"><span class="stat-value">19</span><span data-i18n="stat_tools">Built-in Tools</span></div>
-  <div class="stat"><span class="stat-value">5</span><span data-i18n="stat_providers">LLM Providers</span></div>
-  <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Memory System</span></div>
+  <div class="stat"><span class="stat-value">6</span><span data-i18n="stat_providers">LLM Providers</span></div>
+  <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Cognitive Memory</span></div>
   <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
   <div class="stat"><span class="stat-value">$0</span><span data-i18n="stat_local">Local Mode</span></div>
 </section>
@@ -710,10 +710,11 @@ body::after {
   </div>
 </section>
 
-<!-- Memory Deep Dive -->
+<!-- Memory Deep Dive �� ForgeGod's #1 differentiator -->
 <section class="memory-section" id="memory">
   <div class="container">
     <h2 class="section-title" data-i18n="title_memory">5-TIER COGNITIVE MEMORY</h2>
+    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-bottom:1.5rem;max-width:700px;margin-left:auto;margin-right:auto;" data-i18n="mem_subtitle">The most advanced memory system of any coding agent — open-source or commercial. Cursor removed memory in v2.1. Aider has none. Claude Code uses flat files. ForgeGod has 5 tiers in SQLite with automatic consolidation.</p>
     <div class="memory-tiers">
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128218;</div>
@@ -740,6 +741,26 @@ body::after {
         <h4 data-i18n="mem_errors_title">Error-Solution</h4>
         <p data-i18n="mem_errors_desc">Error pattern &rarr; fix mapping. Fuzzy match lookup.</p>
       </div>
+    </div>
+    <!-- Memory flow visualization -->
+    <div style="margin-top:2rem;background:var(--surface);border:1px solid var(--surface-border);border-radius:12px;padding:1.5rem;font-family:var(--font-mono);font-size:0.7rem;color:var(--cyan);text-align:center;line-height:1.8;overflow-x:auto;">
+      <div data-i18n="mem_flow_label" style="color:var(--text-dim);font-family:var(--font-body);font-size:0.75rem;margin-bottom:0.75rem;">How memory works across tasks:</div>
+      <span style="color:var(--green)">Task</span> &rarr; Record Episode &rarr; Extract Patterns &rarr; <span style="color:var(--gold)">AutoDream Consolidation</span> &rarr; Adaptive Recall &rarr; <span style="color:var(--green)">Better Next Task</span>
+    </div>
+    <!-- Memory terminal demo -->
+    <div style="margin-top:1.5rem;background:#0d0d12;border:1px solid var(--surface-border);border-radius:12px;padding:1.25rem;font-family:var(--font-mono);font-size:0.65rem;line-height:1.6;color:var(--text-dim);overflow-x:auto;">
+<span style="color:var(--green)">$</span> <span style="color:var(--text)">forgegod memory</span>
+<br><span style="color:var(--cyan)">Memory Health: HEALTHY</span>
+<br>Episodic:&nbsp;&nbsp; 47 episodes (last 90 days)
+<br>Semantic:&nbsp;&nbsp; 128 principles (23 strong, 89 moderate, 16 tentative)
+<br>Procedural: 34 code patterns (avg 87% success rate)
+<br>Graph:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 256 entities, 89 causal edges
+<br>Errors:&nbsp;&nbsp;&nbsp;&nbsp; 19 solutions indexed
+<br>
+<br><span style="color:var(--gold)">Top learnings:</span>
+<br>&nbsp;[STRONG] Write tests before implementation (evidence: 12x)
+<br>&nbsp;[STRONG] Guard clauses prevent deep nesting (evidence: 8x)
+<br>&nbsp;[STRONG] Type hints reduce reflexion rounds by 40% (evidence: 6x)
     </div>
   </div>
 </section>
@@ -915,11 +936,19 @@ body::after {
         </tr>
         <tr>
           <td data-i18n="cmp_memory">Cross-session memory</td>
-          <td class="partial">basic</td>
+          <td class="partial">flat files</td>
+          <td class="partial">AGENTS.md</td>
+          <td class="no">&mdash;</td>
+          <td class="no">removed v2.1</td>
+          <td class="fg yes">5-tier SQLite</td>
+        </tr>
+        <tr>
+          <td data-i18n="cmp_consolidation">Auto-consolidation</td>
+          <td class="partial">AutoDream</td>
           <td class="no">&mdash;</td>
           <td class="no">&mdash;</td>
-          <td class="no">removed</td>
-          <td class="fg yes">5-tier</td>
+          <td class="no">&mdash;</td>
+          <td class="fg yes">AutoDream+</td>
         </tr>
         <tr>
           <td data-i18n="cmp_self">Self-improving</td>
@@ -999,6 +1028,11 @@ body::after {
         <div class="provider-icon">&#127760;</div>
         <span class="provider-name">OpenRouter</span>
       </div>
+      <div class="provider">
+        <div class="provider-icon">&#9889;</div>
+        <span class="provider-name">DeepSeek</span>
+        <div class="provider-free" style="color:var(--green);font-size:0.6rem;" data-i18n="provider_deepseek">22x cheaper</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1047,7 +1081,7 @@ var STRINGS = {
     copy_hint: "Click to copy",
     stat_tools: "Built-in Tools",
     stat_providers: "LLM Providers",
-    stat_memory: "Memory System",
+    stat_memory: "Cognitive Memory",
     stat_autonomous: "Autonomous",
     stat_local: "Local Mode",
     title_features: "WHAT MAKES IT DIFFERENT",
@@ -1058,7 +1092,7 @@ var STRINGS = {
     title_install: "GET STARTED IN 30 SECONDS",
     feat_routing_title: "Multi-Model Auto-Routing",
     feat_routing_desc: "Route tasks to the right model automatically. Local Ollama for bulk coding ($0), cloud for review, frontier for hard problems. Circuit breaker + fallback chains. Thompson sampling learns which model works best for what.",
-    feat_routing_tag: "OpenAI + Anthropic + Gemini + Ollama + OpenRouter",
+    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter",
     feat_loop_title: "Ralph Loop",
     feat_loop_desc: "24/7 autonomous coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot, ever.",
     feat_loop_tag: "Infinite loop",
@@ -1087,6 +1121,10 @@ var STRINGS = {
     mem_graph_desc: "Entity relationships + causal edges. Auto-extracted.",
     mem_errors_title: "Error-Solution",
     mem_errors_desc: "Error pattern \u2192 fix mapping. Fuzzy match lookup.",
+    mem_subtitle: "The most advanced memory system of any coding agent \u2014 open-source or commercial. Cursor removed memory in v2.1. Aider has none. Claude Code uses flat files. ForgeGod has 5 tiers in SQLite with automatic consolidation.",
+    mem_flow_label: "How memory works across tasks:",
+    provider_deepseek: "22x cheaper",
+    cmp_consolidation: "Auto-consolidation",
     how_plan_title: "Plan",
     how_plan_desc: "Describe your project. ForgeGod decomposes it into stories with acceptance criteria.",
     how_loop_title: "Loop",
@@ -1158,7 +1196,7 @@ var STRINGS = {
     copy_hint: "Click para copiar",
     stat_tools: "Herramientas",
     stat_providers: "Proveedores LLM",
-    stat_memory: "Sistema de Memoria",
+    stat_memory: "Memoria Cognitiva",
     stat_autonomous: "Autónomo",
     stat_local: "Modo Local",
     title_features: "QUÉ LO HACE DIFERENTE",
@@ -1169,7 +1207,7 @@ var STRINGS = {
     title_install: "EMPEZÁ EN 30 SEGUNDOS",
     feat_routing_title: "Ruteo Multi-Modelo Automático",
     feat_routing_desc: "Enruta tareas al modelo correcto automáticamente. Ollama local para código en bulk ($0), nube para revisión, frontier para problemas difíciles. Circuit breaker + cadenas de fallback. Thompson sampling aprende qué modelo funciona mejor para cada cosa.",
-    feat_routing_tag: "OpenAI + Anthropic + Gemini + Ollama + OpenRouter",
+    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter",
     feat_loop_title: "Ralph Loop",
     feat_loop_desc: "Código autónomo 24/7 desde un PRD. El progreso vive en git, no en contexto LLM. Agente fresco por historia. Sin degradación de contexto.",
     feat_loop_tag: "Loop infinito",
@@ -1198,6 +1236,10 @@ var STRINGS = {
     mem_graph_desc: "Relaciones entre entidades + aristas causales. Auto-extraído.",
     mem_errors_title: "Errores-Soluciones",
     mem_errors_desc: "Patrón de error \u2192 solución. Búsqueda fuzzy.",
+    mem_subtitle: "El sistema de memoria más avanzado de cualquier agente de código \u2014 open-source o comercial. Cursor eliminó la memoria en v2.1. Aider no tiene. Claude Code usa archivos planos. ForgeGod tiene 5 niveles en SQLite con consolidación automática.",
+    mem_flow_label: "Cómo funciona la memoria entre tareas:",
+    provider_deepseek: "22x más barato",
+    cmp_consolidation: "Auto-consolidación",
     how_plan_title: "Planificar",
     how_plan_desc: "Describí tu proyecto. ForgeGod lo descompone en historias con criterios de aceptación.",
     how_loop_title: "Loop",
