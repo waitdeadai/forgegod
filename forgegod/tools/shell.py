@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import asyncio
 import re
+from datetime import datetime, timezone
 
-from forgegod.tools import register_tool
+from forgegod.tools import get_project_dir, get_tool_config, get_workspace_root, register_tool
 
 # ── Dangerous command patterns (blocked by default) ──
 # These match commands that could destroy data, exfiltrate secrets, or cause DoS.
@@ -78,21 +79,31 @@ async def bash(command: str, timeout: int = 120) -> str:
     - Output is truncated to prevent context flooding
     - Timeout prevents runaway processes
     """
+    config = get_tool_config()
+    security = getattr(config, "security", None) if config else None
+    sandbox_mode = getattr(security, "sandbox_mode", "standard")
+    redact_output = getattr(security, "redact_secrets", True)
+    audit_commands = getattr(security, "audit_commands", False)
+
     # Layer 1: Command denylist
-    danger = check_dangerous(command)
-    if danger:
-        return (
-            f"BLOCKED: {danger}\n"
-            f"Command: {command}\n"
-            "This command was blocked by ForgeGod's safety guardrails.\n"
-            "If you need to run it, execute it directly in your terminal."
-        )
+    if sandbox_mode != "permissive":
+        danger = check_dangerous(command)
+        if danger:
+            return (
+                f"BLOCKED: {danger}\n"
+                f"Command: {command}\n"
+                "This command was blocked by ForgeGod's safety guardrails.\n"
+                "If you need to run it, execute it directly in your terminal."
+            )
 
     try:
+        workspace_root = get_workspace_root()
+        cwd = str(workspace_root) if config else None
         proc = await asyncio.create_subprocess_shell(
             command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            cwd=cwd,
         )
         stdout, stderr = await asyncio.wait_for(
             proc.communicate(), timeout=timeout
@@ -107,11 +118,22 @@ async def bash(command: str, timeout: int = 120) -> str:
         output = "\n".join(output_parts).strip()
 
         # Layer 2: Secret redaction
-        output = redact_secrets(output)
+        if redact_output:
+            output = redact_secrets(output)
 
         # Layer 3: Output truncation
         if len(output) > 10_000:
             output = output[:5_000] + "\n\n[... truncated ...]\n\n" + output[-2_000:]
+
+        if audit_commands and config:
+            log_dir = get_project_dir() / "logs"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            audit_line = (
+                f"{datetime.now(timezone.utc).isoformat()}\t"
+                f"{proc.returncode}\t{command}\n"
+            )
+            with open(log_dir / "commands.log", "a", encoding="utf-8") as audit_file:
+                audit_file.write(audit_line)
 
         exit_info = f"[exit code: {proc.returncode}]"
         return f"{output}\n{exit_info}" if output else exit_info

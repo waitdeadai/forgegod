@@ -13,10 +13,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from forgegod.tools import register_tool
+from forgegod.tools import get_tool_config, get_workspace_root, register_tool
 
 
-def _get_skills_dir() -> Path:
+def _get_skills_dir(base_dir: Path | None = None) -> Path:
+    if base_dir is not None:
+        return Path(base_dir) / ".forgegod" / "skills"
+    if get_tool_config():
+        return get_workspace_root() / ".forgegod" / "skills"
     return Path.cwd() / ".forgegod" / "skills"
 
 
@@ -82,13 +86,13 @@ async def load_skill(name: str) -> str:
         return f"Error loading skill '{name}': {e}"
 
 
-def get_skills_summary() -> str:
+def get_skills_summary(base_dir: Path | None = None) -> str:
     """Get a compact skills list for system prompt injection.
 
     Only names + one-line descriptions — NOT full content.
     The agent reads full content on-demand via load_skill().
     """
-    skills_dir = _get_skills_dir()
+    skills_dir = _get_skills_dir(base_dir)
     if not skills_dir.exists():
         return ""
 

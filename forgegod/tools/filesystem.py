@@ -13,7 +13,14 @@ from pathlib import Path
 
 import aiofiles
 
-from forgegod.tools import register_tool
+from forgegod.security import validate_generated_code
+from forgegod.tools import (
+    blocked_path_reason,
+    get_tool_config,
+    get_workspace_root,
+    register_tool,
+    resolve_tool_path,
+)
 
 # ── Sensitive file patterns (warn but don't block reads) ──
 SENSITIVE_PATTERNS = {
@@ -34,25 +41,73 @@ def _check_sensitive_path(path: str) -> str | None:
 def _redact_file_secrets(content: str) -> str:
     """Redact obvious secrets from file content before sending to LLM."""
     from forgegod.tools.shell import redact_secrets
+
+    config = get_tool_config()
+    security = getattr(config, "security", None) if config else None
+    if security and not getattr(security, "redact_secrets", True):
+        return content
     return redact_secrets(content)
+
+
+def _display_path(path: Path) -> str:
+    """Render a path relative to the active workspace when possible."""
+    config = get_tool_config()
+    if not config:
+        return str(path)
+
+    root = get_workspace_root().resolve()
+    try:
+        return str(path.resolve(strict=False).relative_to(root))
+    except ValueError:
+        return str(path)
+
+
+def _validate_write_target(
+    path: str, *, must_exist: bool = False
+) -> tuple[Path | None, str | None]:
+    """Resolve a file path and enforce workspace/blocked path rules."""
+    resolved, error = resolve_tool_path(path, must_exist=must_exist)
+    if error:
+        return None, error
+    assert resolved is not None
+
+    blocked = blocked_path_reason(resolved)
+    if blocked:
+        return None, f"Error: Path blocked by security policy: {blocked}"
+    return resolved, None
+
+
+def _security_write_notice(path: Path, content: str) -> str:
+    """Return a security notice for generated code, if any."""
+    if path.suffix not in {".py", ".js", ".jsx", ".ts", ".tsx", ".sh", ".rb", ".go", ".rs"}:
+        return ""
+
+    warnings = validate_generated_code(content)
+    if not warnings:
+        return ""
+
+    notice = "Warning: Security validation flagged generated code:\n"
+    return notice + "\n".join(f"- {warning}" for warning in warnings[:10]) + "\n"
 
 
 async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
     """Read file contents with optional line range. True async I/O."""
-    p = Path(path)
-    if not p.exists():
-        return f"Error: File not found: {path}"
+    p, error = _validate_write_target(path, must_exist=True)
+    if error:
+        return error
+    assert p is not None
     if not p.is_file():
         return f"Error: Not a file: {path}"
     try:
-        warning = _check_sensitive_path(path)
+        warning = _check_sensitive_path(str(p))
         async with aiofiles.open(p, "r", encoding="utf-8", errors="replace") as f:
             raw = await f.read()
         lines = raw.splitlines()
         total = len(lines)
         selected = lines[offset : offset + limit]
         numbered = [f"{i + offset + 1}\t{line}" for i, line in enumerate(selected)]
-        header = f"[{path}] Lines {offset + 1}-{min(offset + limit, total)} of {total}"
+        display = _display_path(p)
+        header = f"[{display}] Lines {offset + 1}-{min(offset + limit, total)} of {total}"
         result = header + "\n" + "\n".join(numbered)
         # Redact secrets from output before sending to LLM context
         result = _redact_file_secrets(result)
@@ -65,7 +120,10 @@ async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
 
 async def write_file(path: str, content: str) -> str:
     """Write content to a file (creates parent dirs). True async + atomic write."""
-    p = Path(path)
+    p, error = _validate_write_target(path)
+    if error:
+        return error
+    assert p is not None
     tmp = p.with_suffix(p.suffix + ".forgegod.tmp")
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -73,7 +131,9 @@ async def write_file(path: str, content: str) -> str:
         async with aiofiles.open(tmp, "w", encoding="utf-8") as f:
             await f.write(content)
         tmp.replace(p)
-        return f"Written {len(content)} bytes to {path}"
+        display = _display_path(p)
+        notice = _security_write_notice(p, content)
+        return f"{notice}Written {len(content)} bytes to {display}".strip()
     except Exception as e:
         # Clean up temp file on error
         if tmp.exists():
@@ -88,11 +148,13 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
     when exact match fails — LLM-generated edits are frequently imperfect
     due to whitespace, indentation, or minor formatting differences.
     """
-    p = Path(path)
-    if not p.exists():
-        return f"Error: File not found: {path}"
+    p, error = _validate_write_target(path, must_exist=True)
+    if error:
+        return error
+    assert p is not None
     try:
         content = p.read_text(encoding="utf-8")
+        display = _display_path(p)
 
         # Pass 1: Exact match (preferred)
         if old_string in content:
@@ -101,7 +163,8 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 return f"Error: old_string found {count} times in {path} — must be unique"
             updated = content.replace(old_string, new_string, 1)
             p.write_text(updated, encoding="utf-8")
-            return f"Edited {path}: replaced 1 occurrence"
+            notice = _security_write_notice(p, updated)
+            return f"{notice}Edited {display}: replaced 1 occurrence".strip()
 
         # Pass 2: Whitespace-normalized match
         normalized_content = _normalize_whitespace(content)
@@ -113,7 +176,11 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 start, end = match_result
                 updated = content[:start] + new_string + content[end:]
                 p.write_text(updated, encoding="utf-8")
-                return f"Edited {path}: replaced 1 occurrence (fuzzy whitespace match)"
+                notice = _security_write_notice(p, updated)
+                return (
+                    f"{notice}Edited {display}: replaced 1 occurrence "
+                    "(fuzzy whitespace match)"
+                ).strip()
 
         # Pass 3: Strip trailing whitespace from both sides
         stripped_lines = [ln.rstrip() for ln in content.splitlines()]
@@ -126,7 +193,11 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
                 start, end = match_result
                 updated = content[:start] + new_string + content[end:]
                 p.write_text(updated, encoding="utf-8")
-                return f"Edited {path}: replaced 1 occurrence (fuzzy trailing-ws match)"
+                notice = _security_write_notice(p, updated)
+                return (
+                    f"{notice}Edited {display}: replaced 1 occurrence "
+                    "(fuzzy trailing-ws match)"
+                ).strip()
 
         file_lines = len(content.splitlines())
         preview = old_string[:50] if len(old_string) > 50 else old_string
@@ -175,11 +246,14 @@ async def glob_files(
     pattern: str, path: str = ".", max_results: int = 500,
 ) -> str:
     """Find files matching a glob pattern."""
-    base = Path(path)
+    base, error = _validate_write_target(path, must_exist=True)
+    if error:
+        return error
+    assert base is not None
     if not base.exists():
         return f"Error: Directory not found: {path}"
     try:
-        matches = sorted(str(p) for p in base.rglob(pattern))[:max_results]
+        matches = sorted(_display_path(p) for p in base.rglob(pattern))[:max_results]
         if not matches:
             return f"No files matching '{pattern}' in {path}"
         return f"Found {len(matches)} files:\n" + "\n".join(matches)
@@ -192,7 +266,10 @@ async def grep_files(
     max_results: int = 100, offset: int = 0,
 ) -> str:
     """Search file contents with regex pattern."""
-    base = Path(path)
+    base, error = _validate_write_target(path, must_exist=True)
+    if error:
+        return error
+    assert base is not None
     if not base.exists():
         return f"Error: Directory not found: {path}"
 
@@ -217,7 +294,7 @@ async def grep_files(
                         if skipped < offset:
                             skipped += 1
                             continue
-                        results.append(f"{filepath}:{i}: {line.rstrip()[:200]}")
+                        results.append(f"{_display_path(filepath)}:{i}: {line.rstrip()[:200]}")
                         if len(results) >= max_results:
                             header = f"Found {len(results)}+ matches (truncated):"
                             return header + "\n" + "\n".join(results)
@@ -238,7 +315,10 @@ async def repo_map(path: str = ".", max_files: int = 500) -> str:
     the codebase structure so the agent knows where to look. Inspired by
     Aider's repo map (one of the biggest SWE-bench score drivers).
     """
-    base = Path(path)
+    base, error = _validate_write_target(path, must_exist=True)
+    if error:
+        return error
+    assert base is not None
     if not base.exists():
         return f"Error: Directory not found: {path}"
 

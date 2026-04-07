@@ -19,20 +19,22 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
-  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2084%20stress-00e5ff?style=flat-square" alt="Tests"></a>
+  <a href="docs/AUDIT_2026-04-07.md"><img src="https://img.shields.io/badge/audit-2026.04.07-00e5ff?style=flat-square" alt="Audit"></a>
 </p>
 
 <p align="center">
-  <code>19 built-in tools</code> &bull; <code>5 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
+  <code>23 built-in tools</code> &bull; <code>6 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
 </p>
 
 ---
 
-ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
+ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
 
 ```bash
 pip install forgegod
 ```
+
+> Audit note (2026-04-07): the current verified repo baseline is `23` registered tools, `6` provider code paths, `407` collected tests, a green core suite (`323 passed, 84 deselected`), a green full suite (`407 passed`), green lint, and a passing budget stress spot-check. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -47,8 +49,8 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 | Self-improving strategy | - | - | - | - | **yes (SICA)** |
 | Cost-aware budget modes | - | - | - | - | **yes** |
 | Reflexion code generation | - | - | - | - | **3-attempt** |
-| Parallel git worktrees | subagents | - | - | - | **yes** |
-| Stress tested + benchmarked | - | - | - | - | **[355 + 84 stress](BENCHMARKS.md)** |
+| Parallel git worktrees | subagents | - | - | - | **experimental** |
+| Stress tested + benchmarked | - | - | - | - | **[audited baseline](docs/AUDIT_2026-04-07.md)** |
 
 ### The Moat: Harness > Model
 
@@ -56,7 +58,7 @@ Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) —
 
 - **Ralph Loop** — 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
 - **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
-- **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). AST validation at every step.
+- **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
 - **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. 6 safety layers prevent drift.
 - **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
 
@@ -99,6 +101,7 @@ forgegod run "Add a /health endpoint to server.py with uptime and version info"
 forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
 # 24/7 autonomous loop from PRD
+# Loop defaults: no auto-commit or auto-push unless you explicitly enable those flags
 forgegod loop --prd .forgegod/prd.json
 
 # Caveman mode — 50-75% token savings with ultra-terse prompts
@@ -153,9 +156,9 @@ No manual setup required. Just run `forgegod init` and go.
 
 1. **Read PRD** — Pick highest-priority TODO story
 2. **Spawn agent** — Fresh context (progress is in git, not memory)
-3. **Execute** — Agent uses 19 tools to implement the story
+3. **Execute** — Agent uses 23 tools to implement the story
 4. **Validate** — Tests, lint, syntax, frontier review
-5. **Commit or retry** — Pass: commit + mark done. Fail: retry up to 3x with model escalation
+5. **Finalize or retry** — Pass: review diff + mark done. Fail: retry up to 3x with model escalation
 6. **Rotate** — Next story. Context is always fresh.
 
 ## 5-Tier Memory System
@@ -262,6 +265,7 @@ export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."     # Optional
 export OPENROUTER_API_KEY="sk-or-..."     # Optional
 export GOOGLE_API_KEY="AIza..."           # Optional (Gemini)
+export DEEPSEEK_API_KEY="sk-..."          # Optional
 export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 ```
 
@@ -273,6 +277,7 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 | OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
+| DeepSeek | deepseek-chat, deepseek-reasoner | $ | `DEEPSEEK_API_KEY` |
 | OpenRouter | 200+ models | varies | `OPENROUTER_API_KEY` |
 
 ## Model Leaderboard
@@ -331,7 +336,14 @@ Defense-in-depth, not security theater:
 - **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
 - **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
 
-> **Warning**: ForgeGod executes shell commands and modifies files. Review changes before committing. Start autonomous mode with `--max 5` to verify behavior.
+> **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-07 baseline, loop mode no longer auto-commits or auto-pushes by default, but shell execution is still a guardrailed denylist model rather than a true sandbox. Review changes on a disposable branch or worktree before using autonomous mode.
+
+## Operational Docs
+
+- [AGENTS.md](AGENTS.md) — repo-local instructions for coding agents
+- [docs/OPERATIONS.md](docs/OPERATIONS.md) — current system of record and verified commands
+- [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) — detailed code audit and remediation order
+- [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) — external guidance used to shape the repo docs
 
 See [SECURITY.md](SECURITY.md) for the full policy and vulnerability reporting.
 

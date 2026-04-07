@@ -68,7 +68,11 @@ class TestSemanticMemory:
 
     @pytest.mark.asyncio
     async def test_learnings_text(self, memory):
-        await memory.add_semantic("Guard clauses prevent nesting", category="design", confidence=0.6)
+        await memory.add_semantic(
+            "Guard clauses prevent nesting",
+            category="design",
+            confidence=0.6,
+        )
         text = await memory.get_learnings_text(limit=5)
         assert "Guard clauses" in text
         assert "design" in text

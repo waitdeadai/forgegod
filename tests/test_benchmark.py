@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from forgegod.benchmark import (
     BENCHMARK_TASKS,
     BenchmarkResult,
     BenchmarkRunner,
-    BenchmarkTask,
 )
 from forgegod.config import BudgetConfig, ForgeGodConfig
 from forgegod.models import BudgetMode
@@ -245,3 +246,14 @@ class TestLeaderboardFormatting:
         """Leaderboard should tell users how to run."""
         md = runner.format_leaderboard_markdown()
         assert "forgegod benchmark" in md
+
+
+class TestBenchmarkRunnerInternals:
+    def test_validate_handles_quoted_args(self, tmp_path: Path):
+        config = ForgeGodConfig(budget=BudgetConfig(mode=BudgetMode.LOCAL_ONLY))
+        runner = BenchmarkRunner(config, models=["test:model"])
+        script = tmp_path / "say.py"
+        script.write_text("print('hello bench')\n", encoding="utf-8")
+
+        assert runner._validate(tmp_path, 'python -c "print(1)"') is True
+        assert "hello bench" in runner._get_test_errors(tmp_path, "python say.py")

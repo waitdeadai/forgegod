@@ -43,8 +43,8 @@ forgegod = "forgegod.cli:app"
 fg = "forgegod.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/forgegod-ai/forgegod"
-Repository = "https://github.com/forgegod-ai/forgegod"
+Homepage = "https://github.com/waitdeadai/forgegod"
+Repository = "https://github.com/waitdeadai/forgegod"
 
 [tool.setuptools.packages.find]
 include = ["forgegod*"]

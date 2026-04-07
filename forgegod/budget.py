@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import datetime, timezone
+from threading import Lock
 
 from forgegod.config import ForgeGodConfig
 from forgegod.models import BudgetMode, BudgetStatus, ModelUsage
@@ -23,6 +24,14 @@ class BudgetTracker:
         """
         self.config = config
         self._db_path = config.project_dir / "costs.db"
+        self._lock = Lock()
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = sqlite3.connect(
+            str(self._db_path),
+            timeout=30.0,
+            isolation_level=None,
+            check_same_thread=False,
+        )
         self._ensure_db()
 
     def _ensure_db(self) -> None:
@@ -37,9 +46,11 @@ class BudgetTracker:
         Returns:
             None
         """
-        self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(self._db_path))
-        conn.execute("""
+        with self._lock:
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA synchronous=NORMAL")
+            self._conn.execute("PRAGMA temp_store=MEMORY")
+            self._conn.execute("""
             CREATE TABLE IF NOT EXISTS costs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT NOT NULL,
@@ -52,12 +63,10 @@ class BudgetTracker:
                 task_id TEXT DEFAULT ''
             )
         """)
-        conn.execute("""
+            self._conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_costs_date
             ON costs (timestamp)
         """)
-        conn.commit()
-        conn.close()
 
     def record(self, usage: ModelUsage, role: str = "", task_id: str = "") -> None:
         """Record a cost event to the database.
@@ -70,47 +79,44 @@ class BudgetTracker:
         Returns:
             None
         """
-        conn = sqlite3.connect(str(self._db_path))
-        conn.execute(
-            "INSERT INTO costs "
-            "(timestamp, model, provider, role, "
-            "input_tokens, output_tokens, cost_usd, task_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                datetime.now(timezone.utc).isoformat(),
-                usage.model,
-                usage.provider,
-                role,
-                usage.input_tokens,
-                usage.output_tokens,
-                usage.cost_usd,
-                task_id,
-            ),
-        )
-        conn.commit()
-        conn.close()
+        with self._lock:
+            self._conn.execute(
+                "INSERT INTO costs "
+                "(timestamp, model, provider, role, "
+                "input_tokens, output_tokens, cost_usd, task_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    datetime.now(timezone.utc).isoformat(),
+                    usage.model,
+                    usage.provider,
+                    role,
+                    usage.input_tokens,
+                    usage.output_tokens,
+                    usage.cost_usd,
+                    task_id,
+                ),
+            )
 
     def get_status(self) -> BudgetStatus:
         """Get the current budget status including token counts."""
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        conn = sqlite3.connect(str(self._db_path))
-
-        row = conn.execute(
-            "SELECT COALESCE(SUM(cost_usd), 0), COUNT(*), "
-            "COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0) "
-            "FROM costs WHERE date(timestamp) = ?",
-            (today,),
-        ).fetchone()
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT COALESCE(SUM(cost_usd), 0), COUNT(*), "
+                "COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0) "
+                "FROM costs WHERE date(timestamp) = ?",
+                (today,),
+            ).fetchone()
         spent_today = row[0]
         calls_today = row[1]
         input_tokens_today = row[2]
         output_tokens_today = row[3]
 
-        total_row = conn.execute(
-            "SELECT COALESCE(SUM(cost_usd), 0) FROM costs"
-        ).fetchone()
+        with self._lock:
+            total_row = self._conn.execute(
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM costs"
+            ).fetchone()
         spent_total = total_row[0]
-        conn.close()
 
         limit = self.config.budget.daily_limit_usd
         return BudgetStatus(
@@ -137,13 +143,12 @@ class BudgetTracker:
                 containing 'calls' (int) and 'cost' (float) for each model.
         """
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        conn = sqlite3.connect(str(self._db_path))
-        rows = conn.execute(
-            "SELECT model, COUNT(*), COALESCE(SUM(cost_usd), 0) "
-            "FROM costs WHERE date(timestamp) = ? GROUP BY model",
-            (today,),
-        ).fetchall()
-        conn.close()
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT model, COUNT(*), COALESCE(SUM(cost_usd), 0) "
+                "FROM costs WHERE date(timestamp) = ? GROUP BY model",
+                (today,),
+            ).fetchall()
         return {row[0]: {"calls": row[1], "cost": round(row[2], 6)} for row in rows}
 
     def forecast_remaining(self, stories_remaining: int = 0) -> float:
@@ -194,3 +199,14 @@ class BudgetTracker:
                 return BudgetMode.THROTTLE
 
         return self.config.budget.mode
+
+    def close(self) -> None:
+        """Close the SQLite connection."""
+        with self._lock:
+            self._conn.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass

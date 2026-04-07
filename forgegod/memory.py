@@ -1795,4 +1795,4 @@ class Memory:
 
     def _project_name(self) -> str:
         """Get current project name from directory."""
-        return Path.cwd().name
+        return self.config.project_dir.parent.name

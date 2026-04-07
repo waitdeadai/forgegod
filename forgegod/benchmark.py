@@ -10,9 +10,9 @@ Design based on SOTA research (2026):
 from __future__ import annotations
 
 import ast
-import asyncio
-import json
 import logging
+import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -23,12 +23,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 
 from forgegod.config import ForgeGodConfig
 from forgegod.i18n import t
-from forgegod.models import ModelSpec
 
 logger = logging.getLogger("forgegod.benchmark")
 console = Console()
@@ -100,7 +98,8 @@ BENCHMARK_TASKS: list[BenchmarkTask] = [
         prompt=(
             "Create a file `fizzbuzz.py` with a function `fizzbuzz(n: int) -> list[str]` that "
             "returns a list of strings from 1 to n where multiples of 3 are 'Fizz', multiples "
-            "of 5 are 'Buzz', multiples of both are 'FizzBuzz', and others are the number as a string. "
+            "of 5 are 'Buzz', multiples of both are 'FizzBuzz', "
+            "and others are the number as a string. "
             "Then create `tests/test_fizzbuzz.py` with tests for n=15, n=1, n=0, and n=100."
         ),
         tier=1,
@@ -154,7 +153,8 @@ BENCHMARK_TASKS: list[BenchmarkTask] = [
             "Add input validation to the `process_data` function in `utils.py`: "
             "raise `TypeError` if `data` is not a list, raise `ValueError` if `mode` is not "
             "one of 'filter', 'transform', 'aggregate', 'validate'. "
-            "Add tests in `tests/test_validation.py` that verify the correct exceptions are raised. "
+            "Add tests in `tests/test_validation.py` that verify "
+            "the correct exceptions are raised. "
             "Existing tests in `tests/test_utils.py` must still pass."
         ),
         tier=2,
@@ -197,7 +197,8 @@ BENCHMARK_TASKS: list[BenchmarkTask] = [
         prompt=(
             "Add a simple in-memory CRUD API to `server.py` for 'items' (id, name, price). "
             "Endpoints: POST /items (create), GET /items (list all), GET /items/{id} (get one), "
-            "PUT /items/{id} (update), DELETE /items/{id} (delete). Use a module-level dict as storage. "
+            "PUT /items/{id} (update), DELETE /items/{id} (delete). "
+            "Use a module-level dict as storage. "
             "Return 404 for missing items. Add comprehensive tests in `tests/test_crud.py` "
             "covering all endpoints, 404 cases, and validation."
         ),
@@ -245,7 +246,8 @@ BENCHMARK_TASKS: list[BenchmarkTask] = [
             "2. Add a simple in-memory cache decorator `@cache_response(ttl=60)` that caches "
             "GET endpoint responses by path for `ttl` seconds.\n"
             "3. Apply rate limiting to all endpoints. Apply caching to GET /items.\n"
-            "4. Add tests in `tests/test_middleware.py` for: rate limit triggers after 10 requests, "
+            "4. Add tests in `tests/test_middleware.py` for: "
+            "rate limit triggers after 10 requests, "
             "cache returns same response within TTL, cache expires after TTL."
         ),
         tier=4,
@@ -257,8 +259,10 @@ BENCHMARK_TASKS: list[BenchmarkTask] = [
         name="Multi-file refactor preserving tests",
         prompt=(
             "Perform a major refactor of the project:\n"
-            "1. Split `server.py` into `server.py` (app + routes) and `models.py` (Pydantic models)\n"
-            "2. Add a `config.py` with a `Settings` class (APP_NAME, VERSION, DEBUG) using environment "
+            "1. Split `server.py` into `server.py` (app + routes) "
+            "and `models.py` (Pydantic models)\n"
+            "2. Add a `config.py` with a `Settings` class "
+            "(APP_NAME, VERSION, DEBUG) using environment "
             "variables with defaults\n"
             "3. Update server.py to use Settings for the app title and version\n"
             "4. Add a `/version` endpoint returning `{\"version\": Settings.VERSION}`\n"
@@ -300,8 +304,14 @@ class BenchmarkRunner:
             for task in tasks:
                 for run_idx in range(runs_per_task):
                     current += 1
+                    task_label = t(
+                        "bench_task",
+                        n=str(current),
+                        total=str(total),
+                        name=task.name,
+                    )
                     console.print(
-                        f"  [{current}/{total}] {t('bench_task', n=str(current), total=str(total), name=task.name)}"
+                        f"  [{current}/{total}] {task_label}"
                     )
                     result = await self.run_task(task, model_str)
                     self._results.append(result)
@@ -358,7 +368,8 @@ class BenchmarkRunner:
             # Quality scoring
             result.quality_score = self._score_quality(workdir, task)
 
-            status = "[green]PASS[/green]" if (result.attempt_1_pass or result.attempt_2_pass) else "[red]FAIL[/red]"
+            passed = result.attempt_1_pass or result.attempt_2_pass
+            status = "[green]PASS[/green]" if passed else "[red]FAIL[/red]"
             repair = ""
             if not result.attempt_1_pass and result.attempt_2_pass:
                 repair = " [yellow](self-repaired)[/yellow]"
@@ -405,9 +416,16 @@ class BenchmarkRunner:
         )
         subprocess.run(
             ["git", "commit", "-m", "scaffold"],
-            cwd=workdir, capture_output=True, check=False,
-            env={**__import__("os").environ, "GIT_AUTHOR_NAME": "bench", "GIT_COMMITTER_NAME": "bench",
-                 "GIT_AUTHOR_EMAIL": "b@b", "GIT_COMMITTER_EMAIL": "b@b"},
+            cwd=workdir,
+            capture_output=True,
+            check=False,
+            env={
+                **__import__("os").environ,
+                "GIT_AUTHOR_NAME": "bench",
+                "GIT_COMMITTER_NAME": "bench",
+                "GIT_AUTHOR_EMAIL": "b@b",
+                "GIT_COMMITTER_EMAIL": "b@b",
+            },
         )
 
     async def _run_agent(
@@ -421,33 +439,39 @@ class BenchmarkRunner:
         # Build config pointing at workdir
         bench_config = self.config.model_copy(deep=True)
         bench_config.project_dir = workdir / ".forgegod"
+        bench_config.project_dir.mkdir(parents=True, exist_ok=True)
         bench_config.models.coder = model_str
 
         router = ModelRouter(bench_config)
         budget = BudgetTracker(bench_config)
-        agent = Agent(
-            config=bench_config,
-            router=router,
-            budget=budget,
-            role="coder",
-            max_turns=50,
-            project_dir=workdir,
-        )
-
-        result = await agent.run(prompt)
-        return {
-            "tokens": result.total_usage.input_tokens + result.total_usage.output_tokens,
-            "cost": result.total_usage.cost_usd,
-            "tool_calls": result.tool_calls_count,
-            "success": result.success,
-            "output": result.output,
-        }
+        try:
+            agent = Agent(
+                config=bench_config,
+                router=router,
+                budget=budget,
+                role="coder",
+                max_turns=50,
+            )
+            result = await agent.run(prompt)
+            return {
+                "tokens": (
+                    result.total_usage.input_tokens
+                    + result.total_usage.output_tokens
+                ),
+                "cost": result.total_usage.cost_usd,
+                "tool_calls": result.tool_calls_count,
+                "success": result.success,
+                "output": result.output,
+            }
+        finally:
+            await router.close()
+            budget.close()
 
     def _validate(self, workdir: Path, cmd: str) -> bool:
         """Run validation command in workdir. Returns True if exit code 0."""
         try:
             proc = subprocess.run(
-                cmd.split(),
+                shlex.split(cmd, posix=(os.name != "nt")),
                 cwd=workdir,
                 capture_output=True,
                 timeout=60,
@@ -461,7 +485,7 @@ class BenchmarkRunner:
         """Run validation and return error output."""
         try:
             proc = subprocess.run(
-                cmd.split(),
+                shlex.split(cmd, posix=(os.name != "nt")),
                 cwd=workdir,
                 capture_output=True,
                 timeout=60,
@@ -560,7 +584,12 @@ class BenchmarkRunner:
 
             # Cost (10%) — inverse of cost
             max_cost = max(r.cost_usd for r in results) or 0.01
-            cost_score = sum(1 - (r.cost_usd / max_cost) for r in results) / n * 10 if max_cost > 0 else 10
+            if max_cost > 0:
+                cost_score = (
+                    sum(1 - (r.cost_usd / max_cost) for r in results) / n * 10
+                )
+            else:
+                cost_score = 10
 
             # Self-repair (5%)
             failed_first = [r for r in results if not r.attempt_1_pass]

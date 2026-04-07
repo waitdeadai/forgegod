@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
-from forgegod.tools import register_tool
+from forgegod.tools import get_tool_config, get_workspace_root, register_tool
 
 
-async def _run_git(*args: str) -> str:
+async def _run_git(*args: str, cwd: Path | None = None) -> str:
     """Run a git command and return output."""
+    active_cwd = cwd
+    if active_cwd is None and get_tool_config():
+        active_cwd = get_workspace_root()
     proc = await asyncio.create_subprocess_exec(
         "git", *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        cwd=str(active_cwd) if active_cwd else None,
     )
     stdout, stderr = await proc.communicate()
     out = stdout.decode("utf-8", errors="replace").strip()

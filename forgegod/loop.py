@@ -98,6 +98,7 @@ class RalphLoop:
         self._prd_path = config.project_dir / "prd.json"
         self._killswitch_path = config.project_dir / "KILLSWITCH"
         self._learnings_path = config.project_dir / "progress.txt"
+        self._workspace_root = config.project_dir.parent
 
     async def run(self, dry_run: bool = False) -> LoopState:
         """Run the Ralph loop until complete or killed.
@@ -260,9 +261,10 @@ class RalphLoop:
 
         # 7. Evaluate result
         if result.success:
-            # Guard: if agent produced no work (0 tool calls, likely router failure),
-            # don't mark as DONE — retry instead
-            if result.tool_calls_count == 0 and not result.files_modified:
+            # Guard: if agent produced no file changes, don't mark as DONE.
+            # This catches models that call read-only tools (repo_map, git_status)
+            # but never use write_file/edit_file to produce actual code.
+            if not result.files_modified:
                 # Reclaim iteration — empty retries shouldn't burn budget
                 self.state.total_iterations -= 1
                 if story.iterations >= self.config.loop.story_max_retries:
@@ -300,6 +302,7 @@ class RalphLoop:
                             "git", "diff", "HEAD",
                             stdout=asyncio.subprocess.PIPE,
                             stderr=asyncio.subprocess.PIPE,
+                            cwd=str(self._workspace_root),
                         )
                         diff_out, _ = await diff_proc.communicate()
                         if not diff_out:
@@ -307,6 +310,7 @@ class RalphLoop:
                                 "git", "log", "-1", "-p", "--stat",
                                 stdout=asyncio.subprocess.PIPE,
                                 stderr=asyncio.subprocess.PIPE,
+                                cwd=str(self._workspace_root),
                             )
                             diff_out, _ = await diff_proc.communicate()
                         if diff_out:
@@ -345,35 +349,39 @@ class RalphLoop:
                 f"Story [{story.id}] DONE — {result.tool_calls_count} tool calls, "
                 f"${result.total_usage.cost_usd:.4f}"
             )
-            # Auto-commit and push after successful story
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    "git", "add", ".",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-                proc = await asyncio.create_subprocess_exec(
-                    "git", "commit", "-m", f"[{story.id}] {story.title}",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-                if proc.returncode == 0:
-                    logger.info(f"Story [{story.id}] committed to git")
-            except Exception:
-                logger.debug("Auto-commit skipped")
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    "git", "push", "origin", "main",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-                if proc.returncode == 0:
-                    logger.info(f"Story [{story.id}] pushed to origin/main")
-            except Exception:
-                logger.debug("Auto-push skipped")
+            if self.config.loop.auto_commit_success:
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "git", "add", ".",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(self._workspace_root),
+                    )
+                    await proc.communicate()
+                    proc = await asyncio.create_subprocess_exec(
+                        "git", "commit", "-m", f"[{story.id}] {story.title}",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(self._workspace_root),
+                    )
+                    await proc.communicate()
+                    if proc.returncode == 0:
+                        logger.info(f"Story [{story.id}] committed to git")
+                except Exception:
+                    logger.debug("Auto-commit skipped")
+            if self.config.loop.auto_push_success:
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "git", "push", "origin", "main",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(self._workspace_root),
+                    )
+                    await proc.communicate()
+                    if proc.returncode == 0:
+                        logger.info(f"Story [{story.id}] pushed to origin/main")
+                except Exception:
+                    logger.debug("Auto-push skipped")
         else:
             # Check retry limit
             if story.iterations >= self.config.loop.story_max_retries:
@@ -502,12 +510,13 @@ class RalphLoop:
 2. Call `read_file` on the specific files relevant to this story
 3. Call `write_file` or `edit_file` to CREATE/MODIFY actual files — you MUST produce file changes
 4. Call `bash` to run `python -m pytest tests/ -x -v` (or relevant tests) to verify
-5. Call `bash` to run `git add . && git commit -m "story_id: description"` to commit
+5. Call `git_diff` to review the final patch before finishing
 
 CRITICAL: You MUST use `write_file` or `edit_file` tools to make actual code changes.
 Do NOT just describe what you would do — actually DO it by calling the tools.
 If the story says "add tests", CREATE the test file with `write_file`.
 If the story says "add type hints", EDIT the file with `edit_file`.
+Do NOT commit or push unless the user explicitly asked for it.
 """
         return prompt
 

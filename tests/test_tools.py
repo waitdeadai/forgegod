@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from forgegod.tools import execute_tool, get_tool_defs, load_all_tools
+from forgegod.config import ForgeGodConfig
+from forgegod.tools import (
+    execute_tool,
+    get_tool_defs,
+    load_all_tools,
+    reset_tool_context,
+    set_tool_context,
+)
 from forgegod.tools.filesystem import edit_file, glob_files, grep_files, read_file, write_file
 
 
@@ -117,7 +124,11 @@ async def test_edit_file_fuzzy_whitespace():
         f.write("def hello():  \n    return 'world'\n")
         f.flush()
         # LLM sends without trailing spaces — fuzzy match should find it
-        result = await edit_file(f.name, "def hello():\n    return 'world'", "def hello():\n    return 'earth'")
+        result = await edit_file(
+            f.name,
+            "def hello():\n    return 'world'",
+            "def hello():\n    return 'earth'",
+        )
         assert "Edited" in result or "fuzzy" in result
         content = Path(f.name).read_text()
         assert "earth" in content
@@ -143,3 +154,27 @@ async def test_execute_unknown_tool():
     result = await execute_tool("nonexistent_tool", {})
     assert "Error" in result
     assert "Unknown" in result
+
+
+@pytest.mark.asyncio
+async def test_read_file_blocks_workspace_escape_when_scoped():
+    with tempfile.TemporaryDirectory() as workspace, tempfile.TemporaryDirectory() as outside:
+        workspace_path = Path(workspace)
+        config = ForgeGodConfig()
+        config.project_dir = workspace_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        inside_file = workspace_path / "inside.txt"
+        outside_file = Path(outside) / "outside.txt"
+        inside_file.write_text("inside")
+        outside_file.write_text("outside")
+
+        token = set_tool_context(config)
+        try:
+            inside = await read_file(str(inside_file))
+            blocked = await read_file(str(outside_file))
+        finally:
+            reset_tool_context(token)
+
+        assert "inside" in inside
+        assert "escapes workspace root" in blocked

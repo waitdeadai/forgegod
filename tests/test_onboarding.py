@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 
-import pytest
-
 from forgegod.doctor import HealthCheck, _check_git, _check_python, run_doctor
-from forgegod.i18n import STRINGS, detect_lang, get_lang, set_lang, t
+from forgegod.i18n import STRINGS, get_lang, set_lang, t
 
 
 class TestI18n:

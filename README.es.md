@@ -19,20 +19,22 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11+-00e5ff?style=flat-square" alt="Python 3.11+"></a>
   <a href="https://github.com/waitdeadai/forgegod/actions"><img src="https://img.shields.io/github/actions/workflow/status/waitdeadai/forgegod/ci.yml?style=flat-square&color=00e5ff" alt="CI"></a>
   <a href="https://forgegod.com"><img src="https://img.shields.io/badge/site-forgegod.com-00e5ff?style=flat-square" alt="Website"></a>
-  <a href="BENCHMARKS.md"><img src="https://img.shields.io/badge/tests-355%20%2B%2084%20estr%C3%A9s-00e5ff?style=flat-square" alt="Tests"></a>
+  <a href="docs/AUDIT_2026-04-07.md"><img src="https://img.shields.io/badge/auditoria-2026.04.07-00e5ff?style=flat-square" alt="Auditoria"></a>
 </p>
 
 <p align="center">
-  <code>19 herramientas</code> &bull; <code>5 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>23 herramientas</code> &bull; <code>6 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
 
-ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
 
 ```bash
 pip install forgegod
 ```
+
+> Nota de auditoria (2026-04-07): la linea base verificada hoy es `23` herramientas registradas, `6` proveedores, `407` tests recolectados, suite core en verde (`323 passed, 84 deselected`), suite completa en verde (`407 passed`), lint en verde y una prueba puntual de estres de presupuesto pasando. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ## Inicio Rápido (Sin Saber Programar)
 
@@ -70,8 +72,8 @@ Todos los demás CLIs de código usan **un modelo a la vez** y **se reinician a 
 | Estrategia auto-mejorable | - | - | - | - | **sí (SICA)** |
 | Modos de presupuesto | - | - | - | - | **sí** |
 | Generación Reflexión | - | - | - | - | **3 intentos** |
-| Worktrees git paralelos | subagentes | - | - | - | **sí** |
-| Probado bajo estrés + benchmarks | - | - | - | - | **[355 + 84 estrés](BENCHMARKS.md)** |
+| Worktrees git paralelos | subagentes | - | - | - | **experimental** |
+| Probado bajo estrés + benchmarks | - | - | - | - | **[linea base auditada](docs/AUDIT_2026-04-07.md)** |
 
 ### La Ventaja: Harness > Modelo
 
@@ -79,7 +81,7 @@ El scaffolding agrega [~11 puntos en SWE-bench](https://arxiv.org/abs/2410.06992
 
 - **Ralph Loop** — Código 24/7 desde un PRD. El progreso vive en git, no en el contexto del LLM. Agente fresco por historia. Sin degradación de contexto.
 - **Memoria de 5 Niveles** — Episódica (qué pasó) + Semántica (qué sé) + Procedimental (cómo lo hago) + Grafo (cómo se conectan las cosas) + Errores-Soluciones (qué arregla qué). Las memorias decaen, se consolidan y se refuerzan automáticamente.
-- **Coder Reflexión** — 3 intentos de generación de código con modelos escalonados: local (gratis) → nube (barato) → frontier (cuando importa). Validación AST en cada paso.
+- **Coder Reflexión** — 3 intentos de generación de código con modelos escalonados: local (gratis) → nube (barato) → frontier (cuando importa). El repo ya conecta scoping de workspace, auditoría de comandos, rutas bloqueadas y advertencias de código generado en runtime, mientras la auditoría sigue marcando los gaps de hardening que quedan.
 - **SICA** — Agente de Código Auto-Mejorable. Modifica sus propios prompts, ruteo de modelos y estrategia basado en resultados. 6 capas de seguridad previenen la desviación.
 - **Modos de Presupuesto** — `normal` → `throttle` → `local-only` → `halt`. Activados automáticamente por gasto. Corre para siempre en Ollama por $0.
 
@@ -99,6 +101,7 @@ forgegod run "Agregá un endpoint /health a server.py con uptime e info de versi
 forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y tests"
 
 # Loop autónomo 24/7 desde PRD
+# Valores por defecto del loop: sin auto-commit ni auto-push salvo que lo actives explícitamente
 forgegod loop --prd .forgegod/prd.json
 
 # Modo cavernícola — 50-75% ahorro de tokens con prompts ultra-concisos
@@ -141,9 +144,9 @@ forgegod doctor
 
 1. **Leer PRD** — Elegir la historia TODO de mayor prioridad
 2. **Crear agente** — Contexto fresco (el progreso está en git, no en memoria)
-3. **Ejecutar** — El agente usa 19 herramientas para implementar la historia
+3. **Ejecutar** — El agente usa 23 herramientas para implementar la historia
 4. **Validar** — Tests, lint, sintaxis, revisión frontier
-5. **Commit o retry** — Pasa: commit + marcar hecho. Falla: reintentar hasta 3x con escalamiento de modelo
+5. **Finalizar o retry** — Pasa: revisar diff + marcar hecho. Falla: reintentar hasta 3x con escalamiento de modelo
 6. **Rotar** — Siguiente historia. El contexto siempre es fresco.
 
 ## Sistema de Memoria de 5 Niveles
@@ -228,6 +231,7 @@ export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."     # Opcional
 export OPENROUTER_API_KEY="sk-or-..."     # Opcional
 export GOOGLE_API_KEY="AIza..."           # Opcional (Gemini)
+export DEEPSEEK_API_KEY="sk-..."          # Opcional
 ```
 
 O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
@@ -240,6 +244,7 @@ O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
 | OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
+| DeepSeek | deepseek-chat, deepseek-reasoner | $ | `DEEPSEEK_API_KEY` |
 | OpenRouter | 200+ modelos | varía | `OPENROUTER_API_KEY` |
 
 ## Seguridad
@@ -253,7 +258,14 @@ Defensa en profundidad, no teatro de seguridad:
 - **Killswitch** — Creá `.forgegod/KILLSWITCH` para detener inmediatamente los loops autónomos
 - **Protección de archivos sensibles** — `.env`, archivos de credenciales reciben advertencias + redacción automática
 
-> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Revisá los cambios antes de hacer commit. Iniciá el modo autónomo con `--max 5` para verificar el comportamiento.
+> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Segun la linea base verificada del 2026-04-07, el loop ya no hace auto-commit ni auto-push por defecto, pero la ejecución shell sigue siendo un modelo con denylist y guardrails, no un sandbox real. Revisá los cambios en una branch o worktree descartable antes de usar modo autonomo.
+
+## Documentacion Operativa
+
+- [AGENTS.md](AGENTS.md) — instrucciones locales para agentes de codigo
+- [docs/OPERATIONS.md](docs/OPERATIONS.md) — sistema de registro actual y comandos verificados
+- [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) — auditoria detallada y orden de remediacion
+- [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) — investigacion externa usada para estructurar la documentacion
 
 ## Contribuir
 

@@ -281,12 +281,22 @@ class TestToolValidation:
         assert "Missing required" in result.content
 
     @pytest.mark.asyncio
-    async def test_valid_tool_call_executes(self, agent):
+    async def test_valid_tool_call_executes(self):
         """Valid tool call should execute normally."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write("test content\n")
-            f.flush()
-            tc = ToolCall(name="read_file", arguments={"path": f.name})
+        from forgegod.agent import Agent
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workspace = Path(tmpdir)
+            config = ForgeGodConfig()
+            config.project_dir = workspace / ".forgegod"
+            config.project_dir.mkdir()
+            agent = Agent(config=config, system_prompt="You are a test agent.")
+
+            target = workspace / "test.txt"
+            target.write_text("test content\n")
+
+            tc = ToolCall(name="read_file", arguments={"path": str(target)})
             result = await agent._execute_tool_call(tc)
+            agent.budget.close()
             assert result.error is False
             assert "test content" in result.content

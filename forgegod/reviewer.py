@@ -108,10 +108,13 @@ Output ONLY valid JSON."""
         """
         from pathlib import Path as P
 
+        workspace_root = self.config.project_dir.parent
         target = P(path)
+        if not target.is_absolute():
+            target = workspace_root / target
         if target.is_file():
             code = target.read_text(encoding="utf-8", errors="replace")
-            task = f"Review the code in {path}"
+            task = f"Review the code in {target}"
         else:
             # Use git diff for directories
             import asyncio
@@ -119,6 +122,7 @@ Output ONLY valid JSON."""
                 "git", "diff", "HEAD", "--", path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                cwd=str(workspace_root),
             )
             stdout, _ = await proc.communicate()
             code = stdout.decode("utf-8", errors="replace")
@@ -128,6 +132,7 @@ Output ONLY valid JSON."""
                     "git", "diff", "HEAD~1", "--", path,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    cwd=str(workspace_root),
                 )
                 stdout2, _ = await proc2.communicate()
                 code = stdout2.decode("utf-8", errors="replace")

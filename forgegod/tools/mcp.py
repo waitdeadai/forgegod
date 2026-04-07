@@ -5,10 +5,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import shlex
+from pathlib import Path
 
 import httpx
 
-from forgegod.tools import register_tool
+from forgegod.tools import get_tool_config, get_workspace_root, register_tool
 
 logger = logging.getLogger("forgegod.mcp")
 
@@ -19,7 +22,13 @@ _MCP_SERVERS: dict[str, "MCPConnection"] = {}
 class MCPConnection:
     """Lightweight MCP client over stdio or SSE transport."""
 
-    def __init__(self, name: str, command: list[str] | None = None, url: str | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        command: list[str] | None = None,
+        url: str | None = None,
+        cwd: Path | None = None,
+    ) -> None:
         """Initialize an MCP connection.
 
         Args:
@@ -30,6 +39,7 @@ class MCPConnection:
         self.name = name
         self.command = command  # stdio transport
         self.url = url  # SSE transport
+        self.cwd = cwd
         self._process: asyncio.subprocess.Process | None = None
         self._request_id = 0
         self._tools: list[dict] = []
@@ -58,6 +68,7 @@ class MCPConnection:
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                cwd=str(self.cwd) if self.cwd else None,
             )
             # Initialize
             init_result = await self._send_jsonrpc("initialize", {
@@ -179,8 +190,9 @@ async def mcp_connect(server_name: str, command: str = "", url: str = "") -> str
     if not command and not url:
         return "Error: Provide either 'command' (stdio) or 'url' (SSE)"
 
-    cmd_list = command.split() if command else None
-    conn = MCPConnection(server_name, command=cmd_list, url=url or None)
+    cmd_list = shlex.split(command, posix=(os.name != "nt")) if command else None
+    cwd = get_workspace_root() if get_tool_config() else None
+    conn = MCPConnection(server_name, command=cmd_list, url=url or None, cwd=cwd)
     result = await conn.connect()
     if not result.startswith("Error"):
         _MCP_SERVERS[server_name] = conn

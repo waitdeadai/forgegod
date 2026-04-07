@@ -23,7 +23,13 @@ from forgegod.memory import Memory
 from forgegod.models import AgentResult, BudgetMode, ModelUsage, ToolCall, ToolResult
 from forgegod.router import ModelRouter
 from forgegod.security import CanaryToken, check_file_content
-from forgegod.tools import execute_tool, get_tool_defs, load_all_tools
+from forgegod.tools import (
+    execute_tool,
+    get_tool_defs,
+    load_all_tools,
+    reset_tool_context,
+    set_tool_context,
+)
 
 logger = logging.getLogger("forgegod.agent")
 
@@ -43,10 +49,10 @@ that solves software engineering tasks.
 4. **PLAN** — Think through your approach. Consider edge cases. Check for existing tests.
 5. **IMPLEMENT** — Make changes using `edit_file` (prefer over `write_file`). Small, focused edits.
 6. **VERIFY** — Run tests with `bash`. Check syntax/types. Run `git_diff` to review changes.
-7. **COMMIT** — Once verified, commit with a clear message describing the change.
+7. **FINALIZE** — Summarize the verified patch. Only commit if the user explicitly asked for it.
 
 Gate rule: Do NOT advance to IMPLEMENT until PLAN is solid. \
-Do NOT advance to COMMIT until VERIFY passes.
+Do NOT advance to FINALIZE until VERIFY passes.
 
 ## Tools
 - `repo_map(path)` — Codebase overview (file tree + signatures). **Use FIRST.**
@@ -57,6 +63,7 @@ Do NOT advance to COMMIT until VERIFY passes.
 - `grep(pattern)` — Search file contents with regex
 - `bash(command)` — Shell commands (tests, build, lint)
 - `git_status()`, `git_diff()`, `git_commit(message)` — Git operations
+  (commit only when explicitly asked)
 - `mcp_connect/mcp_call` — External MCP tool servers
 - `list_skills()`, `load_skill(name)` — Load task-specific skill instructions
 
@@ -117,14 +124,18 @@ class Agent:
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-            env_info = self._detect_environment()
-            rules = self._load_project_rules()
-            skills_summary = self._load_skills_summary()
+            workspace_root = self._workspace_root()
+            env_info = self._detect_environment(workspace_root)
+            rules = self._load_project_rules(
+                workspace_root,
+                max_chars=self.config.security.max_rules_file_chars,
+            )
+            skills_summary = self._load_skills_summary(workspace_root)
             if config.terse.enabled:
                 from forgegod.terse import TERSE_SYSTEM_PROMPT
-                base = TERSE_SYSTEM_PROMPT.format(cwd=Path.cwd())
+                base = TERSE_SYSTEM_PROMPT.format(cwd=workspace_root)
             else:
-                base = SYSTEM_PROMPT.format(cwd=Path.cwd())
+                base = SYSTEM_PROMPT.format(cwd=workspace_root)
             # Order: base + rules + skills (static, cacheable) then env (dynamic)
             self.system_prompt = base + rules + skills_summary + env_info
 
@@ -154,6 +165,10 @@ class Agent:
         if config.terse.enabled:
             from forgegod.terse import apply_terse_tool_defs
             apply_terse_tool_defs(self._tool_defs)
+
+    def _workspace_root(self) -> Path:
+        """Get the workspace root for this agent instance."""
+        return self.config.project_dir.parent.resolve()
 
     async def run(self, task: str) -> AgentResult:
         """Execute a task through the agent loop.
@@ -228,7 +243,38 @@ class Agent:
                 tool_calls = self._parse_tool_calls(response_text)
 
                 if not tool_calls:
-                    # No tool calls → agent is done
+                    # No tool calls — but is the agent actually done?
+                    # Small models often describe what they'd do instead
+                    # of calling tools. If no files modified yet and we're
+                    # early in the loop, nudge the agent to use tools.
+                    if (
+                        not self.files_modified
+                        and self._turn <= 5
+                        and self.tool_calls_count > 0
+                    ):
+                        logger.warning(
+                            "Agent responded without tool calls but "
+                            "hasn't modified any files — nudging to continue"
+                        )
+                        self.messages.append({
+                            "role": "assistant",
+                            "content": response_text,
+                        })
+                        self.messages.append({
+                            "role": "user",
+                            "content": (
+                                "[CONTINUATION REQUIRED] You described what to "
+                                "do but didn't use any file modification tools. "
+                                "Your task requires actual code changes.\n\n"
+                                "Use `write_file` to create new files or "
+                                "`edit_file` to modify existing files. "
+                                "DO NOT describe changes — execute them with "
+                                "tools NOW. Call the tool directly."
+                            ),
+                        })
+                        continue
+
+                    # Genuine completion
                     logger.info(
                         "Agent done after %d turns, %d tool calls",
                         self._turn, self.tool_calls_count,
@@ -347,7 +393,7 @@ class Agent:
                 output=f"[Max turns ({self.max_turns}) reached]",
                 elapsed=time.time() - start,
             )
-            self._record_episode(task_id, task, result)
+            await self._record_episode(task_id, task, result)
             return result
 
         except Exception as e:
@@ -358,7 +404,7 @@ class Agent:
                 elapsed=time.time() - start,
                 error=str(e),
             )
-            self._record_episode(task_id, task, result)
+            await self._record_episode(task_id, task, result)
             return result
 
     async def _record_episode(self, task_id: str, task: str, result: AgentResult):
@@ -486,7 +532,8 @@ class Agent:
     # Read-only tools safe for parallel execution
     _READONLY_TOOLS = {
         "read_file", "glob", "grep", "repo_map", "git_status",
-        "git_diff", "git_log", "mcp_list",
+        "git_diff", "git_log", "mcp_list", "list_skills", "load_skill",
+        "web_search", "web_fetch", "pypi_info", "github_search",
     }
 
     async def _execute_tool_batch(self, tool_calls: list[ToolCall]) -> list[ToolResult]:
@@ -560,7 +607,11 @@ class Agent:
 
         # Stage 2: Execute
         try:
-            result = await execute_tool(tc.name, tc.arguments)
+            token = set_tool_context(self.config)
+            try:
+                result = await execute_tool(tc.name, tc.arguments)
+            finally:
+                reset_tool_context(token)
             is_error = result.startswith("Error")
             return ToolResult(
                 tool_call_id=tc.id,
@@ -644,7 +695,7 @@ class Agent:
 
         Events: pre_tool, post_tool, pre_turn, post_turn, on_error, on_complete
         """
-        hook_dir = Path.cwd() / ".forgegod" / "hooks"
+        hook_dir = self.config.project_dir / "hooks"
         hook_file = hook_dir / f"{event}.sh"
         if not hook_file.exists():
             return
@@ -659,6 +710,7 @@ class Agent:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env={**__import__("os").environ, **env_vars},
+                cwd=str(self._workspace_root()),
             )
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(), timeout=30
@@ -769,9 +821,9 @@ class Agent:
         return sum(len(m.get("content") or "") for m in self.messages) // 4
 
     @staticmethod
-    def _detect_environment() -> str:
+    def _detect_environment(cwd: Path | None = None) -> str:
         """Detect project environment: language, test framework, package manager."""
-        cwd = Path.cwd()
+        cwd = (cwd or Path.cwd()).resolve()
         info: list[str] = ["\n## Detected Environment"]
 
         # Python
@@ -820,7 +872,7 @@ class Agent:
         return "\n".join(info) if len(info) > 1 else ""
 
     @staticmethod
-    def _load_skills_summary() -> str:
+    def _load_skills_summary(cwd: Path | None = None) -> str:
         """Load compact skills list for system prompt (OpenClaw pattern).
 
         Only injects name + one-line description. Full content is loaded
@@ -828,12 +880,12 @@ class Agent:
         """
         try:
             from forgegod.tools.skills import get_skills_summary
-            return get_skills_summary()
+            return get_skills_summary(cwd)
         except ImportError:
             return ""
 
     @staticmethod
-    def _load_project_rules(max_chars: int = 10_000) -> str:
+    def _load_project_rules(cwd: Path | None = None, max_chars: int = 10_000) -> str:
         """Load project-specific rules from .forgegod/rules.md.
 
         Security: Rules files are injected into the system prompt, making them
@@ -842,7 +894,7 @@ class Agent:
         2. Strip obvious injection patterns
         3. Wrap in clear boundary markers so the model knows it's user content
         """
-        cwd = Path.cwd()
+        cwd = (cwd or Path.cwd()).resolve()
         rules_paths = [
             cwd / ".forgegod" / "rules.md",
             cwd / ".forgegod" / "RULES.md",

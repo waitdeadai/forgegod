@@ -1,9 +1,12 @@
 # ForgeGod Stress Test & Benchmark Results
 
+> Historical snapshot: do not treat this file as the current CI or release status.
+> Verified audit on 2026-04-07: `407` tests collected, `python -m pytest -m "not stress" -q` passed `323` tests with `84` deselected, `python -m pytest tests -q` passed all `407` tests, lint passes, build passes, and the budget rapid-write stress spot-check now passes. This file is still historical because the published benchmark leaderboard has not yet been regenerated from the repaired benchmark runner path. See [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md).
+
 **Date:** 2026-04-05 (v2 — Beyond SOTA update)  
 **Version:** 0.1.0  
 **System:** Windows 11 / Python 3.13.5 / 8 cores / 32GB RAM  
-**Status:** 84 stress tests (34 perf + 50 production) + 355 unit tests = 439 total, all passing
+**Status:** historical benchmark snapshot; runtime baseline is now green again, but benchmark claims here still need regeneration
 
 ## Methodology
 

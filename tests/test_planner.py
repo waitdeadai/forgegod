@@ -42,7 +42,11 @@ def SAMPLE_PRD_RESPONSE() -> str:
       "title": "Setup project structure",
       "description": "Create the basic project files and directories",
       "priority": 1,
-      "acceptance_criteria": ["Project directory exists", "config.toml is created", "README.md is created"]
+      "acceptance_criteria": [
+        "Project directory exists",
+        "config.toml is created",
+        "README.md is created"
+      ]
     },
     {
       "id": "S002",
@@ -102,7 +106,9 @@ def SAMPLE_PRD_RESPONSE_WITH_EXTRA_JSON() -> str:
 
 
 @pytest.mark.asyncio
-async def test_parse_prd_response_valid_json(mock_router: ModelRouter, config: ForgeGodConfig):
+async def test_parse_prd_response_valid_json(
+    mock_router: ModelRouter, config: ForgeGodConfig
+):
     """Test parsing a valid JSON PRD response."""
     planner = Planner(config=config, router=mock_router)
 
@@ -122,7 +128,11 @@ async def test_parse_prd_response_valid_json(mock_router: ModelRouter, config: F
     assert prd.stories[0].id == "S001"
     assert prd.stories[0].title == "Setup project structure"
     assert prd.stories[0].priority == 1
-    assert prd.stories[0].acceptance_criteria == ["Project directory exists", "config.toml is created", "README.md is created"]
+    assert prd.stories[0].acceptance_criteria == [
+        "Project directory exists",
+        "config.toml is created",
+        "README.md is created",
+    ]
 
     assert prd.stories[1].id == "S002"
     assert prd.stories[1].priority == 2
@@ -132,7 +142,9 @@ async def test_parse_prd_response_valid_json(mock_router: ModelRouter, config: F
 
 
 @pytest.mark.asyncio
-async def test_parse_prd_response_with_markdown_fences(mock_router: ModelRouter, config: ForgeGodConfig):
+async def test_parse_prd_response_with_markdown_fences(
+    mock_router: ModelRouter, config: ForgeGodConfig
+):
     """Test parsing JSON wrapped in markdown fences."""
     planner = Planner(config=config, router=mock_router)
 
@@ -149,7 +161,9 @@ async def test_parse_prd_response_with_markdown_fences(mock_router: ModelRouter,
 
 
 @pytest.mark.asyncio
-async def test_parse_prd_response_invalid_json_fallback(mock_router: ModelRouter, config: ForgeGodConfig):
+async def test_parse_prd_response_invalid_json_fallback(
+    mock_router: ModelRouter, config: ForgeGodConfig
+):
     """Test fallback behavior when JSON parsing fails."""
     planner = Planner(config=config, router=mock_router)
 
@@ -168,7 +182,9 @@ async def test_parse_prd_response_invalid_json_fallback(mock_router: ModelRouter
 
 
 @pytest.mark.asyncio
-async def test_story_priority_ordering(mock_router: ModelRouter, config: ForgeGodConfig):
+async def test_story_priority_ordering(
+    mock_router: ModelRouter, config: ForgeGodConfig
+):
     """Test that stories are ordered by priority (dependency order)."""
     planner = Planner(config=config, router=mock_router)
 
@@ -190,7 +206,9 @@ async def test_story_priority_ordering(mock_router: ModelRouter, config: ForgeGo
 
 
 @pytest.mark.asyncio
-async def test_prd_json_serialization_roundtrip(mock_router: ModelRouter, config: ForgeGodConfig):
+async def test_prd_json_serialization_roundtrip(
+    mock_router: ModelRouter, config: ForgeGodConfig
+):
     """Test that PRD can be serialized to JSON and deserialized correctly."""
     planner = Planner(config=config, router=mock_router)
 

@@ -22,6 +22,8 @@ def test_default_config():
     assert config.budget.daily_limit_usd == 5.0
     assert config.budget.mode == BudgetMode.NORMAL
     assert config.loop.max_iterations == 100
+    assert config.loop.auto_commit_success is False
+    assert config.loop.auto_push_success is False
 
 
 def test_deep_merge():

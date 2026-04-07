@@ -143,11 +143,16 @@ class WorktreePool:
 
         prompt += f"\nWorking in worktree: {worker.worktree_path}\n"
         prompt += f"Branch: {worker.branch}\n"
-        prompt += "\nImplement the story, run tests, and commit when done.\n"
+        prompt += (
+            "\nImplement the story, run tests, review the diff, "
+            "and stop without committing.\n"
+        )
 
         # Create agent scoped to worktree
+        worker_config = self.config.model_copy(deep=True)
+        worker_config.project_dir = Path(worker.worktree_path) / ".forgegod"
         agent = Agent(
-            config=self.config,
+            config=worker_config,
             router=self.router,
             budget=self.budget,
             role="coder",
@@ -178,8 +183,14 @@ class WorktreePool:
                 continue
 
             # Merge branch
-            merge_result = await _run_git("merge", worker.branch, "--no-ff", "-m",
-                                          f"Merge {story.id}: {story.title}")
+            merge_result = await _run_git(
+                "merge",
+                worker.branch,
+                "--no-ff",
+                "-m",
+                f"Merge {story.id}: {story.title}",
+                cwd=self.config.project_dir.parent,
+            )
             if merge_result.startswith("Error"):
                 logger.warning(f"Merge failed for {worker.branch}: {merge_result}")
             else:
@@ -193,8 +204,14 @@ class WorktreePool:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
 
         # Create branch from HEAD
-        await _run_git("branch", branch, "HEAD")
-        result = await _run_git("worktree", "add", path, branch)
+        await _run_git("branch", branch, "HEAD", cwd=self.config.project_dir.parent)
+        result = await _run_git(
+            "worktree",
+            "add",
+            path,
+            branch,
+            cwd=self.config.project_dir.parent,
+        )
         if result.startswith("Error"):
             logger.error(f"Worktree creation failed: {result}")
             return False
@@ -204,8 +221,19 @@ class WorktreePool:
         """Remove all worktrees created by this pool."""
         for worker in self._workers:
             try:
-                await _run_git("worktree", "remove", "--force", worker.worktree_path)
-                await _run_git("branch", "-D", worker.branch)
+                await _run_git(
+                    "worktree",
+                    "remove",
+                    "--force",
+                    worker.worktree_path,
+                    cwd=self.config.project_dir.parent,
+                )
+                await _run_git(
+                    "branch",
+                    "-D",
+                    worker.branch,
+                    cwd=self.config.project_dir.parent,
+                )
             except Exception as e:
                 logger.debug(f"Cleanup error for {worker.worker_id}: {e}")
         self._workers.clear()

@@ -137,9 +137,13 @@ class SICA:
             mod.score = test_score
             self._update_status(mod.target, "promoted", test_score)
             self._active_overrides[mod.target] = mod.new_value or ""
+            improvement_pct = (
+                (test_score - baseline) / max(baseline, 0.01) * 100
+            )
             logger.info(
                 f"SICA promoted: {mod.target} — "
-                f"score {baseline:.2f} → {test_score:.2f} (+{(test_score-baseline)/max(baseline,0.01)*100:.1f}%)"
+                f"score {baseline:.2f} → {test_score:.2f} "
+                f"(+{improvement_pct:.1f}%)"
             )
             return True
         else:
@@ -197,7 +201,10 @@ class SICA:
             ))
 
         # Reflexion notes in reflection text
-        if "too many attempts" in reflection_lower or "reflexion" in reflection_lower and "slow" in reflection_lower:
+        if (
+            "too many attempts" in reflection_lower
+            or "reflexion" in reflection_lower and "slow" in reflection_lower
+        ):
             modifications.append(SICAModification(
                 target="strategy:reflexion_config",
                 action="reduce_max_attempts",
@@ -246,7 +253,9 @@ class SICA:
     def _update_status(self, target: str, status: str, score: float):
         conn = sqlite3.connect(str(self._db_path))
         conn.execute(
-            "UPDATE modifications SET status = ?, score = ?, resolved_at = ? WHERE target = ? AND status IN ('proposed', 'testing')",
+            "UPDATE modifications "
+            "SET status = ?, score = ?, resolved_at = ? "
+            "WHERE target = ? AND status IN ('proposed', 'testing')",
             (status, score, datetime.now(timezone.utc).isoformat(), target),
         )
         conn.commit()

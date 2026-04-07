@@ -69,6 +69,8 @@ class LoopConfig(BaseModel):
     story_max_retries: int = 3
     cooldown_seconds: float = 2.0
     story_timeout_s: float = 600.0  # Dead-man's switch per story (10 minutes)
+    auto_commit_success: bool = False
+    auto_push_success: bool = False
 
 
 class OllamaConfig(BaseModel):
