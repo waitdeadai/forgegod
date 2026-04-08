@@ -105,6 +105,12 @@ def init(
     if os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"):
         providers.append("gemini")
         console.print("  [green]+[/green] Google Gemini API key detected")
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        providers.append("deepseek")
+        console.print("  [green]+[/green] DeepSeek API key detected")
+    if os.environ.get("MOONSHOT_API_KEY"):
+        providers.append("kimi")
+        console.print("  [green]+[/green] Moonshot / Kimi API key detected")
 
     ollama_available = False
     try:
@@ -126,6 +132,7 @@ def init(
         console.print("Set at least one:")
         console.print("  export OPENAI_API_KEY=sk-...")
         console.print("  export ANTHROPIC_API_KEY=sk-ant-...")
+        console.print("  export MOONSHOT_API_KEY=sk-...")
         console.print("  or: ollama serve  (for free local mode)")
         console.print()
 

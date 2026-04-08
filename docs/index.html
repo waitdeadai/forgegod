@@ -761,7 +761,7 @@ body::after {
 <!-- Stats -->
 <section class="stats">
   <div class="stat"><span class="stat-value">23</span><span data-i18n="stat_tools">Built-in Tools</span></div>
-  <div class="stat"><span class="stat-value">6</span><span data-i18n="stat_providers">LLM Providers</span></div>
+  <div class="stat"><span class="stat-value">7</span><span data-i18n="stat_providers">LLM Providers</span></div>
   <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Cognitive Memory</span></div>
   <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
   <div class="stat"><span class="stat-value">$0</span><span data-i18n="stat_local">Local Mode</span></div>
@@ -826,8 +826,8 @@ body::after {
       <div class="feature">
         <div class="feature-icon">&#9881;</div>
         <h3 data-i18n="feat_routing_title">Picks the Best AI for Each Job</h3>
-        <p data-i18n="feat_routing_desc">Connects to 6 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.</p>
-        <span class="feature-tag" data-i18n="feat_routing_tag">OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter</span>
+        <p data-i18n="feat_routing_desc">Connects to 7 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.</p>
+        <span class="feature-tag" data-i18n="feat_routing_tag">OpenAI + Anthropic + Gemini + DeepSeek + Kimi + Ollama + OpenRouter</span>
       </div>
 
       <div class="feature">
@@ -1175,7 +1175,7 @@ body::after {
           <div class="bench-bar-label"><span data-i18n="bench_stress_budget">Cost tracking + forecasting</span><span>199 w/sec</span></div>
           <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="70"></div></div>
         </div>
-        <div class="bench-source" data-i18n-html="bench_src_stress">Historical snapshot from 2026-04-05. Current audited baseline: 407 collected tests, full suite passing, lint passing, build passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Historical methodology</a> &bull; <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit</a></div>
+        <div class="bench-source" data-i18n-html="bench_src_stress">Historical snapshot from 2026-04-05. Current audited baseline: 415 collected tests, full suite passing, lint passing, build passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Historical methodology</a> &bull; <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit</a></div>
       </div>
 
       <div class="bench-card">
@@ -1390,6 +1390,11 @@ body::after {
         <span class="provider-name">DeepSeek</span>
         <div class="provider-free" style="color:var(--green);font-size:0.6rem;" data-i18n="provider_deepseek">22x cheaper</div>
       </div>
+      <div class="provider">
+        <div class="provider-icon">&#9651;</div>
+        <span class="provider-name">Kimi</span>
+        <div class="provider-free" style="font-size:0.6rem;" data-i18n="provider_kimi">Moonshot direct</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1450,8 +1455,8 @@ var STRINGS = {
     title_providers: "SUPPORTED PROVIDERS",
     title_install: "GET STARTED IN 30 SECONDS",
     feat_routing_title: "Picks the Best AI for Each Job",
-    feat_routing_desc: "ForgeGod connects to 6 different AI providers and automatically picks the right one for each task. Use a free local AI for everyday work, and only call the expensive cloud AI when the task is hard. If one provider goes down, it switches to the next one instantly. Over time, it learns which AI performs best for which type of work.",
-    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter",
+    feat_routing_desc: "ForgeGod connects to 7 different AI providers and automatically picks the right one for each task. Use a free local AI for everyday work, and only call the expensive cloud AI when the task is hard. If one provider goes down, it switches to the next one instantly. Over time, it learns which AI performs best for which type of work.",
+    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Kimi + Ollama + OpenRouter",
     feat_loop_title: "Works While You Sleep",
     feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back in the morning to a finished project with a clean history of every change.",
     feat_loop_tag: "Runs 24/7",
@@ -1482,7 +1487,7 @@ var STRINGS = {
     feat_memoryagent_title: "Dedicated Memory Agent",
     feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent\u2019s intelligence compounds automatically.",
     feat_memoryagent_tag: "LLM-powered extraction",
-    feat_routing_desc: "Connects to 6 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.",
+    feat_routing_desc: "Connects to 7 AI providers and automatically picks the right one for each task. Free local AI for everyday work, cloud AI only when needed. If one provider goes down, it switches instantly.",
     feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back to a finished project.",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.",
     feat_budget_desc: "Set a daily budget and ForgeGod respects it. As you approach your limit, it shifts to cheaper models. Hit the limit? It switches to free local AI or pauses. Run 100% free forever.",
@@ -1532,6 +1537,7 @@ var STRINGS = {
     mem_subtitle: "The most advanced memory of any coding AI \u2014 free or paid. Cursor removed their memory feature entirely. Aider has none. Claude Code stores notes in simple text files. ForgeGod has 5 layers of structured memory that automatically clean up, merge, and get stronger over time.",
     mem_flow_label: "The learning cycle \u2014 every task makes ForgeGod smarter:",
     provider_deepseek: "22x cheaper",
+    provider_kimi: "Moonshot direct",
     cmp_consolidation: "Auto memory cleanup",
     how_plan_title: "Describe",
     how_plan_desc: "Tell ForgeGod what you want to build. It can research current tools, gather docs, and refine the plan before coding when freshness matters.",
@@ -1591,7 +1597,7 @@ var STRINGS = {
     bench_stress_tools: "File I/O (async + atomic)",
     bench_stress_memory: "Memory recall (FTS5 + RRF)",
     bench_stress_budget: "Cost tracking + forecasting",
-    bench_src_stress: 'Historical snapshot from 2026-04-05. Current audited baseline: 407 collected tests, full suite passing, lint passing, build passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Historical methodology</a> \u2022 <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit</a>',
+    bench_src_stress: 'Historical snapshot from 2026-04-05. Current audited baseline: 415 collected tests, full suite passing, lint passing, build passing. <a href="https://github.com/waitdeadai/forgegod/blob/main/BENCHMARKS.md" target="_blank" rel="noopener">Historical methodology</a> \u2022 <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit</a>',
     bench_reliability_title: "Reliability",
     bench_rel_detection: "Security detection (regex + AST)",
     bench_rel_budget: "Budget enforcement + forecasting",
@@ -1631,8 +1637,8 @@ var STRINGS = {
     title_providers: "PROVEEDORES SOPORTADOS",
     title_install: "EMPEZÁ EN 30 SEGUNDOS",
     feat_routing_title: "Elige la Mejor IA para Cada Tarea",
-    feat_routing_desc: "ForgeGod se conecta a 6 proveedores de IA distintos y elige el mejor para cada tarea automáticamente. Usa una IA local gratuita para el trabajo diario, y solo llama a la IA de nube costosa cuando la tarea es difícil. Si un proveedor se cae, cambia al siguiente al instante. Con el tiempo, aprende qué IA funciona mejor para cada tipo de trabajo.",
-    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Ollama + OpenRouter",
+    feat_routing_desc: "ForgeGod se conecta a 7 proveedores de IA distintos y elige el mejor para cada tarea automáticamente. Usa una IA local gratuita para el trabajo diario, y solo llama a la IA de nube costosa cuando la tarea es difícil. Si un proveedor se cae, cambia al siguiente al instante. Con el tiempo, aprende qué IA funciona mejor para cada tipo de trabajo.",
+    feat_routing_tag: "OpenAI + Anthropic + Gemini + DeepSeek + Kimi + Ollama + OpenRouter",
     feat_loop_title: "Trabaja Mientras Dorm\u00eds",
     feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso despu\u00e9s de cada una, y sigue 24/7. Volv\u00e9 a la ma\u00f1ana y encontr\u00e1 el proyecto terminado con un historial limpio de cada cambio.",
     feat_loop_tag: "Funciona 24/7",
@@ -1663,7 +1669,7 @@ var STRINGS = {
     feat_memoryagent_title: "Agente de Memoria Dedicado",
     feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. La inteligencia de tu agente se acumula autom\u00e1ticamente.",
     feat_memoryagent_tag: "Extracci\u00f3n con LLM",
-    feat_routing_desc: "Se conecta a 6 proveedores de IA y elige el mejor para cada tarea autom\u00e1ticamente. IA local gratis para trabajo diario, IA de nube solo cuando se necesita. Si un proveedor se cae, cambia al instante.",
+    feat_routing_desc: "Se conecta a 7 proveedores de IA y elige el mejor para cada tarea autom\u00e1ticamente. IA local gratis para trabajo diario, IA de nube solo cuando se necesita. Si un proveedor se cae, cambia al instante.",
     feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso y sigue 24/7. Volv\u00e9 y encontr\u00e1 el proyecto terminado.",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Empieza con IA local gratis, escala a IA de nube m\u00e1s inteligente si es necesario. Valida la correcci\u00f3n en cada paso antes de avanzar.",
     feat_budget_desc: "Configur\u00e1 un presupuesto diario y ForgeGod lo respeta. Al acercarte al l\u00edmite, cambia a modelos m\u00e1s baratos. \u00bfLlegaste al l\u00edmite? Cambia a IA local gratis o se pausa. Corr\u00e9 100% gratis para siempre.",
@@ -1713,6 +1719,7 @@ var STRINGS = {
     mem_subtitle: "La memoria m\u00e1s avanzada de cualquier IA de programaci\u00f3n \u2014 gratuita o paga. Cursor elimin\u00f3 su funci\u00f3n de memoria completamente. Aider no tiene ninguna. Claude Code guarda notas en archivos de texto simples. ForgeGod tiene 5 capas de memoria estructurada que se limpian, fusionan y fortalecen autom\u00e1ticamente.",
     mem_flow_label: "El ciclo de aprendizaje \u2014 cada tarea hace a ForgeGod m\u00e1s inteligente:",
     provider_deepseek: "22x más barato",
+    provider_kimi: "Moonshot directo",
     cmp_consolidation: "Limpieza autom\u00e1tica de memoria",
     how_plan_title: "Describ\u00ed",
     how_plan_desc: "Decile a ForgeGod qu\u00e9 quer\u00e9s construir. Puede investigar herramientas actuales, reunir documentaci\u00f3n y refinar el plan antes de programar cuando la vigencia importa.",

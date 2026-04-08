@@ -233,6 +233,10 @@ class ModelRouter:
             text, usage_dict = await self._call_deepseek(
                 spec.model, prompt, system, json_mode, max_tokens, temperature, tools
             )
+        elif spec.provider == "kimi":
+            text, usage_dict = await self._call_kimi(
+                spec.model, prompt, system, json_mode, max_tokens, temperature, tools
+            )
         else:
             raise ValueError(f"Unknown provider: {spec.provider}")
 
@@ -739,6 +743,62 @@ class ModelRouter:
             if details and hasattr(details, "reasoning_tokens"):
                 usage_data["reasoning_tokens"] = details.reasoning_tokens
 
+        return content, usage_data
+
+    async def _call_kimi(
+        self, model: str, prompt: str | list[dict], system: str,
+        json_mode: bool, max_tokens: int, temperature: float,
+        tools: list[dict] | None,
+    ) -> tuple[str, dict]:
+        """Call Kimi via Moonshot's official OpenAI-compatible API."""
+        import os
+
+        import openai
+
+        api_key = os.environ.get("MOONSHOT_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "error: No Moonshot API key set.\n"
+                "  Fix: export MOONSHOT_API_KEY=sk-...\n"
+                "  Get one at: https://platform.moonshot.ai/console/api-keys"
+            )
+
+        messages = self._to_messages(prompt, system)
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+        if tools:
+            kwargs["tools"] = tools
+
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=self.config.kimi.base_url,
+            timeout=self.config.kimi.timeout,
+        )
+        resp = await client.chat.completions.create(**kwargs)
+
+        choice = resp.choices[0]
+        if choice.message.tool_calls:
+            tool_calls_json = []
+            for tc in choice.message.tool_calls:
+                tool_calls_json.append({
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                })
+            content = json.dumps({"tool_calls": tool_calls_json})
+        else:
+            content = choice.message.content or ""
+
+        usage_data = {
+            "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+            "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
+        }
         return content, usage_data
 
     # ── Helpers ──

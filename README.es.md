@@ -23,18 +23,18 @@
 </p>
 
 <p align="center">
-  <code>23 herramientas</code> &bull; <code>6 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>23 herramientas</code> &bull; <code>7 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
 
-ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek y Kimi via Moonshot) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
 
 ```bash
 pip install forgegod
 ```
 
-> Nota de auditoria (2026-04-07): la linea base verificada hoy es `23` herramientas registradas, `6` proveedores, `407` tests recolectados, suite core en verde (`323 passed, 84 deselected`), suite completa en verde (`407 passed`), lint en verde y una prueba puntual de estres de presupuesto pasando. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (2026-04-07): la baseline verificada incluye `23` herramientas registradas, `7` proveedores, suites core/completa en verde, lint en verde y una prueba puntual de estres de presupuesto pasando. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ## Inicio Rápido (Sin Saber Programar)
 
@@ -232,6 +232,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."     # Opcional
 export OPENROUTER_API_KEY="sk-or-..."     # Opcional
 export GOOGLE_API_KEY="AIza..."           # Opcional (Gemini)
 export DEEPSEEK_API_KEY="sk-..."          # Opcional
+export MOONSHOT_API_KEY="sk-..."          # Opcional (Kimi / Moonshot)
 ```
 
 O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
@@ -245,7 +246,10 @@ O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
 | DeepSeek | deepseek-chat, deepseek-reasoner | $ | `DEEPSEEK_API_KEY` |
+| Kimi (Moonshot directo) | kimi-k2.5, kimi-k2-thinking | $$ | `MOONSHOT_API_KEY` |
 | OpenRouter | 200+ modelos | varía | `OPENROUTER_API_KEY` |
+
+El soporte de Kimi usa la API OpenAI-compatible oficial de Moonshot y hoy es experimental dentro de ForgeGod. Correlalo con tus benchmarks antes de convertirlo en modelo por defecto.
 
 ## Seguridad
 

@@ -63,6 +63,38 @@ That directly supports the choice to document ForgeGod's real filesystem and she
 5. Document unsafe defaults honestly until sandboxing, path boundaries, and tool annotations are actually enforced.
 6. Use the repo docs as the maintainers' system of record, then update marketing pages second.
 
+## Provider Research Addendum - Kimi / Moonshot
+
+Verified on `2026-04-07` before adding a new provider path:
+
+- Moonshot publishes direct guidance for agentic coding/tooling and recommends
+  official-provider configuration rather than assuming vendor parity:
+  - https://platform.moonshot.ai/docs/guide/agent-support.en-US
+- Moonshot documents Kimi thinking-mode constraints such as
+  `reasoning_content`, streaming, and high token budgets. That means a simple
+  OpenAI-compatible integration can work, but it will not automatically unlock
+  the full thinking-mode workflow:
+  - https://platform.moonshot.ai/docs/guide/use-kimi-k2-thinking-model
+- Moonshot documents JSON-mode compatibility, which matters for ForgeGod's
+  structured outputs and tool-call handling:
+  - https://platform.moonshot.ai/docs/guide/use-json-mode-feature-of-kimi-api
+- Official model materials position Kimi K2.5 as strong for coding and agents,
+  but not obviously dominant across coding benchmarks versus frontier peers:
+  - https://www.kimi.com/ai-models/kimi-k2-5
+  - https://github.com/MoonshotAI/Kimi-K2.5
+- Moonshot's K2 Vendor Verifier explicitly documents that tool-call fidelity
+  varies across vendors, which supports preferring the direct Moonshot API over
+  a third-party aggregation route for serious evaluation:
+  - https://github.com/MoonshotAI/K2-Vendor-Verifier
+- Official Moonshot pricing was used for the cost table entries added to
+  ForgeGod's config:
+  - https://platform.moonshot.ai/docs/pricing/chat
+
+Operational conclusion for ForgeGod: add `kimi` as an optional direct provider,
+detect it in onboarding/doctor/benchmark flows, but keep it experimental and do
+not promote it to a default role until live ForgeGod benchmarks show it winning
+on the repository's own workloads.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

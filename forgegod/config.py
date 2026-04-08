@@ -41,6 +41,9 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     # DeepSeek (OpenAI-compatible, 22x cheaper than GPT-4o)
     "deepseek-chat": (0.28, 0.42),
     "deepseek-reasoner": (0.55, 2.19),
+    "kimi-k2.5": (0.60, 3.00),
+    "kimi-k2-thinking": (0.60, 2.50),
+    "kimi-k2-0905-preview": (0.60, 2.50),
     # OpenRouter (varies — user overrides)
 }
 
@@ -118,6 +121,13 @@ class GeminiConfig(BaseModel):
     timeout: float = 120.0
 
 
+class KimiConfig(BaseModel):
+    """Moonshot / Kimi provider settings."""
+
+    timeout: float = 120.0
+    base_url: str = "https://api.moonshot.ai/v1"
+
+
 class ReconConfig(BaseModel):
     """Reconnaissance mode — web research before planning."""
 
@@ -145,6 +155,7 @@ class ForgeGodConfig(BaseModel):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     terse: TerseConfig = Field(default_factory=TerseConfig)
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
+    kimi: KimiConfig = Field(default_factory=KimiConfig)
     recon: ReconConfig = Field(default_factory=ReconConfig)
 
     # Runtime paths (not from config file)

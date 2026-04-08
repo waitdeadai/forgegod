@@ -10,6 +10,7 @@ from forgegod.benchmark import (
     BENCHMARK_TASKS,
     BenchmarkResult,
     BenchmarkRunner,
+    detect_available_models,
 )
 from forgegod.config import BudgetConfig, ForgeGodConfig
 from forgegod.models import BudgetMode
@@ -257,3 +258,42 @@ class TestBenchmarkRunnerInternals:
 
         assert runner._validate(tmp_path, 'python -c "print(1)"') is True
         assert "hello bench" in runner._get_test_errors(tmp_path, "python say.py")
+
+
+class TestBenchmarkModelDetection:
+    def test_detect_available_models_cloud_providers(self, monkeypatch):
+        import httpx
+
+        def fake_get(*args, **kwargs):
+            raise httpx.ConnectError("offline")
+
+        monkeypatch.setattr(httpx, "get", fake_get)
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-openai")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or")
+        monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
+        monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-deepseek")
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot")
+
+        models = detect_available_models(ForgeGodConfig())
+
+        assert "openai:gpt-4o-mini" in models
+        assert "anthropic:claude-haiku-4-5-20251001" in models
+        assert "openrouter:meta-llama/llama-3.3-70b-instruct" in models
+        assert "gemini:gemini-3-flash" in models
+        assert "deepseek:deepseek-chat" in models
+        assert "kimi:kimi-k2.5" in models
+
+    def test_detect_available_models_gemini_alias_dedupes(self, monkeypatch):
+        import httpx
+
+        def fake_get(*args, **kwargs):
+            raise httpx.ConnectError("offline")
+
+        monkeypatch.setattr(httpx, "get", fake_get)
+        monkeypatch.setenv("GOOGLE_API_KEY", "AIza-google")
+        monkeypatch.setenv("GEMINI_API_KEY", "AIza-gemini")
+
+        models = detect_available_models(ForgeGodConfig())
+
+        assert models.count("gemini:gemini-3-flash") == 1

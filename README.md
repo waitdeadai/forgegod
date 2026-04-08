@@ -23,18 +23,18 @@
 </p>
 
 <p align="center">
-  <code>23 built-in tools</code> &bull; <code>6 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
+  <code>23 built-in tools</code> &bull; <code>7 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
 </p>
 
 ---
 
-ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
+ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, and Kimi via Moonshot) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, or use cloud models when you need them.
 
 ```bash
 pip install forgegod
 ```
 
-> Audit note (2026-04-07): the current verified repo baseline is `23` registered tools, `6` provider code paths, `407` collected tests, a green core suite (`323 passed, 84 deselected`), a green full suite (`407 passed`), green lint, and a passing budget stress spot-check. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (2026-04-07): the verified baseline includes `23` registered tools, `7` provider code paths, green core/full suites, green lint, and a passing budget stress spot-check. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -124,7 +124,7 @@ forgegod doctor
 
 ForgeGod auto-detects your environment on first run:
 
-1. Finds API keys in env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+1. Finds API keys in env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_API_KEY` / `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`)
 2. Checks if Ollama is running locally
 3. Detects your project language, test framework, and linter
 4. Picks the best model for each role based on what's available
@@ -266,6 +266,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."     # Optional
 export OPENROUTER_API_KEY="sk-or-..."     # Optional
 export GOOGLE_API_KEY="AIza..."           # Optional (Gemini)
 export DEEPSEEK_API_KEY="sk-..."          # Optional
+export MOONSHOT_API_KEY="sk-..."          # Optional (Kimi / Moonshot)
 export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 ```
 
@@ -278,7 +279,10 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
 | DeepSeek | deepseek-chat, deepseek-reasoner | $ | `DEEPSEEK_API_KEY` |
+| Kimi (Moonshot direct) | kimi-k2.5, kimi-k2-thinking | $$ | `MOONSHOT_API_KEY` |
 | OpenRouter | 200+ models | varies | `OPENROUTER_API_KEY` |
+
+Kimi support uses Moonshot's official OpenAI-compatible API and is currently experimental in ForgeGod. Benchmark it on your workload before making it a default role.
 
 ## Model Leaderboard
 

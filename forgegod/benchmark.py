@@ -747,6 +747,10 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
 
     models: list[str] = []
 
+    def add_model(model: str) -> None:
+        if model not in models:
+            models.append(model)
+
     # Check Ollama
     try:
         import httpx
@@ -756,16 +760,22 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
             for m in resp.json().get("models", []):
                 name = m.get("name", "")
                 if name:
-                    models.append(f"ollama:{name}")
+                    add_model(f"ollama:{name}")
     except Exception:
         pass
 
     # Check cloud providers
     if os.environ.get("OPENAI_API_KEY"):
-        models.append("openai:gpt-4o-mini")
+        add_model("openai:gpt-4o-mini")
     if os.environ.get("ANTHROPIC_API_KEY"):
-        models.append("anthropic:claude-haiku-4-5-20251001")
+        add_model("anthropic:claude-haiku-4-5-20251001")
+    if os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"):
+        add_model("gemini:gemini-3-flash")
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        add_model("deepseek:deepseek-chat")
+    if os.environ.get("MOONSHOT_API_KEY"):
+        add_model("kimi:kimi-k2.5")
     if os.environ.get("OPENROUTER_API_KEY"):
-        models.append("openrouter:meta-llama/llama-3.3-70b-instruct")
+        add_model("openrouter:meta-llama/llama-3.3-70b-instruct")
 
     return models
