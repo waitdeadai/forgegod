@@ -143,6 +143,61 @@ detect it in onboarding/doctor/benchmark flows, but keep it experimental and do
 not promote it to a default role until live ForgeGod benchmarks show it winning
 on the repository's own workloads.
 
+## Provider Research Addendum - Z.AI / GLM
+
+Verified on `2026-04-08` before adding a new provider path:
+
+- Z.AI's API introduction documents an OpenAI-compatible API surface, which
+  makes a direct ForgeGod provider integration worthwhile instead of routing it
+  through a third-party aggregator:
+  - https://docs.z.ai/api-reference/introduction
+- Z Code's configuration docs explicitly distinguish between Z.AI, the GLM
+  Coding Plan, and generic OpenAI-compatible providers. That supports making the
+  Coding Plan endpoint a first-class config path instead of forcing users to
+  hand-edit a custom provider:
+  - https://zcode.z.ai/docs/configuration
+- Z.AI's tool-calling docs show current GLM models exposing tool/function
+  calling and reasoning content in the chat-completions family, which is the
+  key compatibility point ForgeGod needs for agent loops:
+  - https://docs.z.ai/guides/capabilities/stream-tool
+- Z.AI's pricing docs provide the cost basis for `glm-5.1` and nearby GLM
+  models added to ForgeGod's cost table:
+  - https://docs.z.ai/guides/overview/pricing
+- Z.AI's OpenClaw integration docs explicitly list the Coding Plan-supported
+  model set and show `glm-5.1` as the current coding-focused model to target:
+  - https://docs.z.ai/devpack/tool/openclaw
+
+Operational conclusion for ForgeGod: add `zai` as a first-class provider with
+an explicit Coding Plan path, detect it in onboarding/doctor/benchmark flows,
+and treat `glm-5.1` as the default benchmarkable model until repo-local
+benchmarks justify a different default.
+
+## Workflow Research Addendum - DESIGN.md + Contribution Mode
+
+Verified on `2026-04-08` before adding frontend and contribution workflows:
+
+- VoltAgent's `awesome-design-md` repo documents `DESIGN.md` as a lightweight,
+  markdown-native design system file for AI agents and positions it as a drop-in
+  repo-root artifact that coding agents can consume directly:
+  - https://github.com/VoltAgent/awesome-design-md
+- That repository explicitly cites Google Stitch's `DESIGN.md` concept and
+  standardizes reusable sections such as palette, typography, components,
+  layout, responsive behavior, and agent prompt guidance:
+  - https://github.com/VoltAgent/awesome-design-md/blob/main/README.md
+  - https://stitch.withgoogle.com/docs/design-md/overview/
+- GitHub's own guidance says contributors should look for `good first issue`
+  and `help wanted` labels when entering a project:
+  - https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/encouraging-helpful-contributions-to-your-project-with-labels?apiVersion=2022-11-28
+- GitHub's open-source contribution docs also recommend opening an issue before
+  investing major feature work so the approach aligns with maintainer
+  expectations:
+  - https://docs.github.com/en/get-started/exploring-projects-on-github/finding-ways-to-contribute-to-open-source-on-github
+
+Operational conclusion for ForgeGod: `DESIGN.md` is worth supporting as a
+first-class repo artifact for frontend tasks, and a contribution mode should
+read `CONTRIBUTING.md`, prefer approachable labels, and avoid treating
+"autonomous contribution" as license to bypass maintainer rules.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

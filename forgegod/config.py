@@ -41,6 +41,12 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     # DeepSeek (OpenAI-compatible, 22x cheaper than GPT-4o)
     "deepseek-chat": (0.28, 0.42),
     "deepseek-reasoner": (0.55, 2.19),
+    # Z.AI / GLM
+    "glm-5.1": (1.40, 4.40),
+    "glm-5": (1.00, 3.20),
+    "glm-5-turbo": (1.20, 4.00),
+    "glm-4.7": (0.60, 2.20),
+    "glm-4.5-air": (0.20, 1.10),
     "kimi-k2.5": (0.60, 3.00),
     "kimi-k2-thinking": (0.60, 2.50),
     "kimi-k2-0905-preview": (0.60, 2.50),
@@ -130,6 +136,15 @@ class KimiConfig(BaseModel):
     base_url: str = "https://api.moonshot.ai/v1"
 
 
+class ZAIConfig(BaseModel):
+    """Z.AI / GLM provider settings."""
+
+    timeout: float = 120.0
+    base_url: str = "https://api.z.ai/api/paas/v4"
+    coding_plan_base_url: str = "https://api.z.ai/api/coding/paas/v4"
+    use_coding_plan: bool = True
+
+
 class ReconConfig(BaseModel):
     """Reconnaissance mode — web research before planning."""
 
@@ -158,6 +173,7 @@ class ForgeGodConfig(BaseModel):
     terse: TerseConfig = Field(default_factory=TerseConfig)
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
     kimi: KimiConfig = Field(default_factory=KimiConfig)
+    zai: ZAIConfig = Field(default_factory=ZAIConfig)
     recon: ReconConfig = Field(default_factory=ReconConfig)
 
     # Runtime paths (not from config file)

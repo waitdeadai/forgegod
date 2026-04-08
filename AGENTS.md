@@ -12,10 +12,10 @@ This file is the repo-local operating contract for coding agents working on Forg
 ## Verified Baseline (2026-04-08)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider code paths: `7` (`openai`, `anthropic`, `gemini`, `ollama`, `openrouter`, `deepseek`, `kimi`)
-- Tests collected: `421`
-- Core suite: `python -m pytest -m "not stress" -q` -> `337 passed, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `421 passed`
+- Provider code paths: `8` (`openai`, `anthropic`, `gemini`, `ollama`, `openrouter`, `deepseek`, `kimi`, `zai`)
+- Tests collected: `439`
+- Core suite: `python -m pytest -m "not stress" -q` -> `355 passed, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `439 passed`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests` -> passes
 - Build status: `python -m build` passes
@@ -25,6 +25,8 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Agent runtime is workspace-scoped. Under agent execution, filesystem, shell, git, skills, and MCP stdio startup resolve against `config.project_dir.parent`, and filesystem tools reject paths that escape that root.
 - Parallel worktree mode now scopes each worker agent to its assigned worktree by rebasing `config.project_dir` for that worker.
 - Security config is now materially enforced: `sandbox_mode`, `sandbox_backend`, `sandbox_image`, `blocked_paths`, `audit_commands`, `redact_secrets`, and `max_rules_file_chars` are wired into runtime paths. Standard mode stays local with guardrails; strict mode uses a real Docker sandbox backend or blocks execution if no backend is available.
+- If a repo root contains `DESIGN.md`, ForgeGod now injects it into the agent prompt as the frontend design source of truth.
+- ForgeGod now ships `forgegod design` for importing `DESIGN.md` presets and `forgegod contribute` for contribution-aware planning/autonomous work that reads `CONTRIBUTING.md` plus repo rules.
 - Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.
 - Residual risk remains because ForgeGod does not yet provide microVM/syscall-level isolation, and strict mode depends on a usable local Docker backend plus a pre-pulled sandbox image.
 

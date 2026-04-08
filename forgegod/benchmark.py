@@ -775,6 +775,8 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
         add_model("deepseek:deepseek-chat")
     if os.environ.get("MOONSHOT_API_KEY"):
         add_model("kimi:kimi-k2.5")
+    if os.environ.get("ZAI_API_KEY"):
+        add_model("zai:glm-5.1")
     if os.environ.get("OPENROUTER_API_KEY"):
         add_model("openrouter:meta-llama/llama-3.3-70b-instruct")
 

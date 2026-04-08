@@ -237,6 +237,10 @@ class ModelRouter:
             text, usage_dict = await self._call_kimi(
                 spec.model, prompt, system, json_mode, max_tokens, temperature, tools
             )
+        elif spec.provider == "zai":
+            text, usage_dict = await self._call_zai(
+                spec.model, prompt, system, json_mode, max_tokens, temperature, tools
+            )
         else:
             raise ValueError(f"Unknown provider: {spec.provider}")
 
@@ -779,6 +783,67 @@ class ModelRouter:
             api_key=api_key,
             base_url=self.config.kimi.base_url,
             timeout=self.config.kimi.timeout,
+        )
+        resp = await client.chat.completions.create(**kwargs)
+
+        choice = resp.choices[0]
+        if choice.message.tool_calls:
+            tool_calls_json = []
+            for tc in choice.message.tool_calls:
+                tool_calls_json.append({
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                })
+            content = json.dumps({"tool_calls": tool_calls_json})
+        else:
+            content = choice.message.content or ""
+
+        usage_data = {
+            "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+            "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
+        }
+        return content, usage_data
+
+    async def _call_zai(
+        self, model: str, prompt: str | list[dict], system: str,
+        json_mode: bool, max_tokens: int, temperature: float,
+        tools: list[dict] | None,
+    ) -> tuple[str, dict]:
+        """Call Z.AI / GLM via its OpenAI-compatible API."""
+        import os
+
+        import openai
+
+        api_key = os.environ.get("ZAI_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "error: No Z.AI API key set.\n"
+                "  Fix: export ZAI_API_KEY=...\n"
+                "  Get one at: https://docs.z.ai/api-reference/introduction"
+            )
+
+        messages = self._to_messages(prompt, system)
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+        if tools:
+            kwargs["tools"] = tools
+
+        base_url = (
+            self.config.zai.coding_plan_base_url
+            if self.config.zai.use_coding_plan
+            else self.config.zai.base_url
+        )
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=self.config.zai.timeout,
         )
         resp = await client.chat.completions.create(**kwargs)
 

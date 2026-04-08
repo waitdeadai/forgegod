@@ -20,7 +20,10 @@ app = typer.Typer(
     help="Multi-model autonomous coding engine. Local + Cloud. 24/7.",
     no_args_is_help=True,
 )
+design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 console = Console()
+
+app.add_typer(design_app, name="design")
 
 # ── Mascot — The One-Eyed Triangle ──
 _VER = __version__
@@ -111,6 +114,9 @@ def init(
     if os.environ.get("MOONSHOT_API_KEY"):
         providers.append("kimi")
         console.print("  [green]+[/green] Moonshot / Kimi API key detected")
+    if os.environ.get("ZAI_API_KEY"):
+        providers.append("zai")
+        console.print("  [green]+[/green] Z.AI / GLM API key detected")
 
     ollama_available = False
     try:
@@ -133,6 +139,7 @@ def init(
         console.print("  export OPENAI_API_KEY=sk-...")
         console.print("  export ANTHROPIC_API_KEY=sk-ant-...")
         console.print("  export MOONSHOT_API_KEY=sk-...")
+        console.print("  export ZAI_API_KEY=...")
         console.print("  or: ollama serve  (for free local mode)")
         console.print()
 
@@ -147,6 +154,44 @@ def init(
     console.print("[dim]Config: .forgegod/config.toml | Memory: .forgegod/memory.db[/dim]")
     if ollama_available and not providers:
         console.print("[dim]Running in local-only mode ($0). Add API keys for cloud models.[/dim]")
+
+
+@design_app.command("list")
+def design_list(
+    query: str = typer.Option("", "--query", "-q", help="Filter presets by substring"),
+    limit: int = typer.Option(30, "--limit", "-n", help="Max presets to show"),
+):
+    """List available DESIGN.md presets from awesome-design-md."""
+    from forgegod.design import fetch_design_presets
+
+    presets = fetch_design_presets()
+    if query:
+        q = query.lower()
+        presets = [p for p in presets if q in p.lower()]
+    shown = presets[:limit]
+
+    table = Table(title="DESIGN.md Presets")
+    table.add_column("Preset", style="cyan")
+    table.add_column("Usage", style="dim")
+    for preset in shown:
+        table.add_row(preset, f"forgegod design pull {preset}")
+    console.print(table)
+    if len(presets) > len(shown):
+        console.print(f"[dim]Showing {len(shown)} of {len(presets)} presets[/dim]")
+
+
+@design_app.command("pull")
+def design_pull(
+    preset: str = typer.Argument(..., help="Preset slug or raw DESIGN.md URL"),
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing DESIGN.md"),
+):
+    """Install DESIGN.md into a project from awesome-design-md."""
+    from forgegod.design import install_design_md
+
+    installed = install_design_md(path, preset, force=force)
+    console.print(f"[green]Installed[/green] {installed}")
+    console.print("[dim]ForgeGod will load DESIGN.md automatically for frontend tasks.[/dim]")
 
 
 @app.command()
@@ -418,6 +463,125 @@ def recon(
         console.print(f"\n[dim]Artifacts: {recon_dir}/[/dim]")
 
     asyncio.run(_recon())
+
+
+@app.command()
+def contribute(
+    target: str = typer.Argument(
+        ".",
+        help="Local repository path or GitHub URL (https://github.com/owner/repo)",
+    ),
+    goal: Optional[str] = typer.Option(
+        None, "--goal", "-g", help="Specific contribution goal or improvement area"
+    ),
+    issue: Optional[int] = typer.Option(
+        None, "--issue", help="Prefer this issue number when planning"
+    ),
+    checkout: Optional[Path] = typer.Option(
+        None, "--checkout", help="Clone destination when target is a GitHub URL"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Write contribution PRD JSON here"
+    ),
+    autonomous: bool = typer.Option(
+        False,
+        "--autonomous",
+        help="After planning, execute the first proposed contribution story",
+    ),
+):
+    """Contribution mode — read CONTRIBUTING.md, inspect the repo, plan, then optionally act."""
+    from forgegod.config import init_project, load_config
+    from forgegod.contributing import (
+        build_contribution_task,
+        collect_contribution_context,
+        ensure_target_checkout,
+        fetch_issue_candidates,
+        parse_github_repo,
+    )
+
+    _print_banner(mini=True)
+    repo_path, repo_url = ensure_target_checkout(target, checkout)
+    parsed = parse_github_repo(repo_url or target)
+
+    issues = []
+    if parsed:
+        owner, repo = parsed
+        try:
+            issues = fetch_issue_candidates(owner, repo)
+        except Exception as e:
+            console.print(f"[yellow]Issue discovery skipped:[/yellow] {e}")
+
+    context = collect_contribution_context(
+        repo_path,
+        repo_url=repo_url,
+        issue_candidates=issues,
+    )
+    task = build_contribution_task(context, goal=goal or "", issue_number=issue)
+
+    async def _contribute():
+        from forgegod.agent import Agent
+        from forgegod.planner import Planner
+        from forgegod.router import ModelRouter
+
+        init_project(repo_path)
+        config = load_config(repo_path)
+        out_path = output or (repo_path / ".forgegod" / "contribute_prd.json")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        router = ModelRouter(config)
+        try:
+            planner = Planner(config=config, router=router)
+            prd = await planner.decompose(task, project_name=repo_path.name)
+            out_path.write_text(json.dumps(prd.model_dump(), indent=2), encoding="utf-8")
+
+            console.print(
+                Panel(
+                    f"Target: {repo_path}\n"
+                    f"Stories proposed: {len(prd.stories)}\n"
+                    f"Issue candidates: {len(issues)}\n"
+                    f"Saved plan: {out_path}",
+                    title="[bold cyan]Contribution Mode[/bold cyan]",
+                    border_style="cyan",
+                )
+            )
+            for story in prd.stories[:8]:
+                console.print(f"  [{story.id}] {story.title}")
+
+            if not autonomous:
+                return
+
+            selected = prd.stories[0] if prd.stories else None
+            if not selected:
+                console.print("[yellow]No stories proposed, nothing to run.[/yellow]")
+                return
+
+            agent = Agent(config=config, router=router)
+            exec_task = (
+                f"{task}\n\n"
+                f"## Selected Contribution Story\n"
+                f"ID: {selected.id}\n"
+                f"Title: {selected.title}\n"
+                f"Description: {selected.description}\n"
+                f"Acceptance Criteria: {selected.acceptance_criteria}\n"
+            )
+            result = await agent.run(exec_task)
+            if result.success:
+                console.print(
+                    Panel(
+                        f"[green]Contribution task completed[/green]\n"
+                        f"{result.output[:700]}",
+                        border_style="green",
+                    )
+                )
+                if result.files_modified:
+                    console.print(f"Files modified: {', '.join(result.files_modified)}")
+            else:
+                failure = result.error or result.output
+                console.print(f"[red]Contribution task failed:[/red] {failure}")
+        finally:
+            await router.close()
+
+    asyncio.run(_contribute())
 
 
 @app.command()

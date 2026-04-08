@@ -186,6 +186,24 @@ class TestProjectRules:
                 os.chdir(old_cwd)
 
 
+class TestDesignSystem:
+    def test_load_design_md_from_root(self):
+        from forgegod.agent import Agent
+        with tempfile.TemporaryDirectory() as tmpdir:
+            design_md = Path(tmpdir) / "DESIGN.md"
+            design_md.write_text("# DESIGN\nUse cyan accents.\n", encoding="utf-8")
+
+            result = Agent._load_design_system(Path(tmpdir))
+            assert "Use cyan accents." in result
+            assert "<design_system>" in result
+
+    def test_load_design_md_empty_returns_empty(self):
+        from forgegod.agent import Agent
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = Agent._load_design_system(Path(tmpdir))
+            assert result == ""
+
+
 # ── Skills ──
 
 

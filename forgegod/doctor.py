@@ -168,6 +168,7 @@ def _check_api_keys() -> HealthCheck:
         "GEMINI_API_KEY": "Gemini",
         "DEEPSEEK_API_KEY": "DeepSeek",
         "MOONSHOT_API_KEY": "Kimi",
+        "ZAI_API_KEY": "Z.AI",
     }
 
     found = []
@@ -191,7 +192,10 @@ def _check_api_keys() -> HealthCheck:
 
     return HealthCheck(
         t("doctor_api_keys"), False, "No API keys found",
-        fix="Run: forgegod init (or set OPENAI_API_KEY / ANTHROPIC_API_KEY / MOONSHOT_API_KEY)",
+        fix=(
+            "Run: forgegod init (or set OPENAI_API_KEY / ANTHROPIC_API_KEY / "
+            "MOONSHOT_API_KEY / ZAI_API_KEY)"
+        ),
     )
 
 

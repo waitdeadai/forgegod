@@ -26,6 +26,8 @@ def test_default_config():
     assert config.loop.auto_push_success is False
     assert config.security.sandbox_backend == "auto"
     assert config.security.sandbox_image == "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
+    assert config.zai.use_coding_plan is True
+    assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
 
 
 def test_deep_merge():

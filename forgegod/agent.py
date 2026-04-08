@@ -130,14 +130,18 @@ class Agent:
                 workspace_root,
                 max_chars=self.config.security.max_rules_file_chars,
             )
+            design_system = self._load_design_system(
+                workspace_root,
+                max_chars=self.config.security.max_rules_file_chars,
+            )
             skills_summary = self._load_skills_summary(workspace_root)
             if config.terse.enabled:
                 from forgegod.terse import TERSE_SYSTEM_PROMPT
                 base = TERSE_SYSTEM_PROMPT.format(cwd=workspace_root)
             else:
                 base = SYSTEM_PROMPT.format(cwd=workspace_root)
-            # Order: base + rules + skills (static, cacheable) then env (dynamic)
-            self.system_prompt = base + rules + skills_summary + env_info
+            # Order: base + rules + design + skills (static, cacheable) then env (dynamic)
+            self.system_prompt = base + rules + design_system + skills_summary + env_info
 
         # Security — canary token to detect prompt extraction
         self._canary = CanaryToken()
@@ -883,6 +887,36 @@ class Agent:
             return get_skills_summary(cwd)
         except ImportError:
             return ""
+
+    @staticmethod
+    def _load_design_system(cwd: Path | None = None, max_chars: int = 10_000) -> str:
+        """Load DESIGN.md when present so frontend work can follow it exactly.
+
+        DESIGN.md is external repo content, so it gets the same bounded treatment
+        as other project-controlled prompt inputs.
+        """
+        cwd = (cwd or Path.cwd()).resolve()
+        design_paths = [
+            cwd / "DESIGN.md",
+            cwd / ".forgegod" / "DESIGN.md",
+        ]
+
+        for p in design_paths:
+            if p.exists():
+                try:
+                    content = p.read_text(encoding="utf-8", errors="replace")
+                    if not content.strip():
+                        continue
+                    if len(content) > max_chars:
+                        content = content[:max_chars] + "\n[... truncated at security limit ...]"
+                    return (
+                        f"\n\n## Design System\n"
+                        f"Follow `{p.name}` for frontend look-and-feel decisions.\n"
+                        f"<design_system>\n{content}\n</design_system>"
+                    )
+                except OSError:
+                    continue
+        return ""
 
     @staticmethod
     def _load_project_rules(cwd: Path | None = None, max_chars: int = 10_000) -> str:

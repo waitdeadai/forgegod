@@ -23,18 +23,18 @@
 </p>
 
 <p align="center">
-  <code>23 herramientas</code> &bull; <code>7 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
+  <code>23 herramientas</code> &bull; <code>8 proveedores LLM</code> &bull; <code>Memoria de 5 niveles</code> &bull; <code>Autónomo 24/7</code> &bull; <code>Modo local $0</code>
 </p>
 
 ---
 
-ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek y Kimi via Moonshot) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, Kimi via Moonshot y Z.AI GLM) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
 
 ```bash
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `7` proveedores, `421` tests recolectados, `337` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` proveedores, `439` tests recolectados, `355` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ## Inicio Rápido (Sin Saber Programar)
 
@@ -82,6 +82,8 @@ El scaffolding agrega [~11 puntos en SWE-bench](https://arxiv.org/abs/2410.06992
 - **Ralph Loop** — Código 24/7 desde un PRD. El progreso vive en git, no en el contexto del LLM. Agente fresco por historia. Sin degradación de contexto.
 - **Memoria de 5 Niveles** — Episódica (qué pasó) + Semántica (qué sé) + Procedimental (cómo lo hago) + Grafo (cómo se conectan las cosas) + Errores-Soluciones (qué arregla qué). Las memorias decaen, se consolidan y se refuerzan automáticamente.
 - **Coder Reflexión** — 3 intentos de generación de código con modelos escalonados: local (gratis) → nube (barato) → frontier (cuando importa). El repo ya conecta scoping de workspace, auditoría de comandos, rutas bloqueadas y advertencias de código generado en runtime, mientras la auditoría sigue marcando los gaps de hardening que quedan.
+- **DESIGN.md Nativo** — Importás un preset, dejás `DESIGN.md` en la raíz, y las tareas frontend heredan ese lenguaje visual automáticamente.
+- **Modo Contribución** — Lee `CONTRIBUTING.md`, inspecciona el repo, detecta issues abordables, y planifica o ejecuta cambios chicos respetando reglas del proyecto.
 - **SICA** — Agente de Código Auto-Mejorable. Modifica sus propios prompts, ruteo de modelos y estrategia basado en resultados. 6 capas de seguridad previenen la desviación.
 - **Modos de Presupuesto** — `normal` → `throttle` → `local-only` → `halt`. Activados automáticamente por gasto. Corre para siempre en Ollama por $0.
 
@@ -115,6 +117,12 @@ forgegod cost
 
 # Benchmark de modelos
 forgegod benchmark
+
+# Instalar un preset DESIGN.md para trabajo frontend
+forgegod design pull claude
+
+# Planear una contribución sobre otro repo
+forgegod contribute https://github.com/owner/repo --goal "Mejorar tests"
 
 # Chequeo de salud
 forgegod doctor

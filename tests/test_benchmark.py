@@ -274,6 +274,7 @@ class TestBenchmarkModelDetection:
         monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
         monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-deepseek")
         monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot")
+        monkeypatch.setenv("ZAI_API_KEY", "zai-test-key")
 
         models = detect_available_models(ForgeGodConfig())
 
@@ -283,6 +284,7 @@ class TestBenchmarkModelDetection:
         assert "gemini:gemini-3-flash" in models
         assert "deepseek:deepseek-chat" in models
         assert "kimi:kimi-k2.5" in models
+        assert "zai:glm-5.1" in models
 
     def test_detect_available_models_gemini_alias_dedupes(self, monkeypatch):
         import httpx

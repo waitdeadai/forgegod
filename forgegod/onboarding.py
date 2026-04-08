@@ -60,7 +60,8 @@ class OnboardingWizard:
         console.print(f"  [cyan]5.[/cyan] {t('opt_gemini')}")
         console.print(f"  [cyan]6.[/cyan] {t('opt_deepseek')}")
         console.print(f"  [cyan]7.[/cyan] {t('opt_kimi')}")
-        console.print(f"  [cyan]8.[/cyan] {t('opt_multi')}")
+        console.print(f"  [cyan]8.[/cyan] {t('opt_zai')}")
+        console.print(f"  [cyan]9.[/cyan] {t('opt_multi')}")
         console.print()
 
         choice = typer.prompt("Select", default="1")
@@ -80,6 +81,8 @@ class OnboardingWizard:
         elif choice == "7":
             self._setup_api_key("kimi", "MOONSHOT_API_KEY", "https://platform.moonshot.ai/console/api-keys")
         elif choice == "8":
+            self._setup_api_key("zai", "ZAI_API_KEY", "https://docs.z.ai/api-reference/introduction")
+        elif choice == "9":
             self._setup_ollama()
             for provider, env_var, url in [
                 ("openai", "OPENAI_API_KEY", "https://platform.openai.com/api-keys"),
@@ -87,6 +90,7 @@ class OnboardingWizard:
                 ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys"),
                 ("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys"),
                 ("kimi", "MOONSHOT_API_KEY", "https://platform.moonshot.ai/console/api-keys"),
+                ("zai", "ZAI_API_KEY", "https://docs.z.ai/api-reference/introduction"),
             ]:
                 add = typer.confirm(f"  Add {provider}?", default=False)
                 if add:
@@ -216,6 +220,24 @@ class OnboardingWizard:
                         return
                     else:
                         console.print(f"  [red]-[/red] {t('error_key_invalid', url='https://platform.openai.com/api-keys')}")
+                except Exception:
+                    pass
+            if provider == "zai" and os.environ.get("ZAI_API_KEY"):
+                try:
+                    import httpx
+
+                    resp = httpx.get(
+                        "https://api.z.ai/api/paas/v4/models",
+                        headers={"Authorization": f"Bearer {os.environ['ZAI_API_KEY']}"},
+                        timeout=10,
+                    )
+                    if resp.status_code == 200:
+                        console.print(f"  [green]+[/green] {t('verify_ok')} (Z.AI)")
+                        return
+                    else:
+                        console.print(
+                            f"  [red]-[/red] {t('error_key_invalid', url='https://docs.z.ai/api-reference/introduction')}"
+                        )
                 except Exception:
                     pass
 
