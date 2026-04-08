@@ -133,6 +133,18 @@ class TestCircuitBreaker:
         # With threshold=0 and sliding window, any failure opens
         assert len(cb._failure_times.get("openai", [])) >= 1
 
+    def test_fresh_open_state_is_observable_once_even_after_timeout(self):
+        """A just-opened circuit reports OPEN at least once on slow runtimes."""
+        cb = CircuitBreaker(failure_threshold=1, reset_timeout=0.01)
+        times = iter([0.0, 0.02, 0.02])
+        cb._now = lambda: next(times)
+
+        cb.record_failure("openai")
+
+        assert cb.is_open("openai") is True
+        assert cb.is_open("openai") is False
+        assert "openai" in cb._half_open
+
 
 class TestFallbackChain:
     """Tests for FALLBACK_CHAINS and routing logic."""
@@ -494,3 +506,31 @@ class TestOpenAICompatConfig:
                 0.2,
                 None,
             )
+
+
+class TestHTTP2Fallback:
+    def test_get_client_falls_back_when_h2_extra_missing(self, monkeypatch):
+        calls: list[dict] = []
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                calls.append(kwargs.copy())
+                if kwargs.get("http2") is True:
+                    raise ImportError(
+                        "Using http2=True, but the 'h2' package is not installed."
+                    )
+                self.is_closed = False
+
+            async def aclose(self):
+                self.is_closed = True
+
+        monkeypatch.setattr("httpx.AsyncClient", FakeClient)
+
+        router = ModelRouter(ForgeGodConfig())
+        client = router._get_client("ollama", timeout=12.5)
+
+        assert client is not None
+        assert len(calls) == 2
+        assert calls[0]["http2"] is True
+        assert calls[1]["http2"] is False
+        assert router._http2_fallback_warned is True

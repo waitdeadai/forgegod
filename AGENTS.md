@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `503`
-- Core suite: `python -m pytest -m "not stress" -q` -> `418 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `502 passed, 1 skipped`
+- Tests collected: `505`
+- Core suite: `python -m pytest -m "not stress" -q` -> `420 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `504 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -32,6 +32,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - ForgeGod now supports native subscription-backed OpenAI access inside the ForgeGod CLI through `forgegod auth login openai-codex` and `forgegod auth sync`. Z.AI's Coding Plan path is also first-class via `ZAI_CODING_API_KEY`.
 - `forgegod init`, onboarding, and `forgegod auth sync` now write auth-aware model defaults so planner/reviewer/adversary flows can run without hand-editing `config.toml` when the user has OpenAI Codex or Z.AI but no OpenAI API key.
 - OpenAI Codex subscription routing is verified for planner/reviewer/adversary workflows. Coder-loop use is available, but it remains experimental and should be benchmarked per repo before making it the default remote coder.
+- HTTP client initialization now degrades cleanly when optional HTTP/2 extras
+  are absent. ForgeGod logs once and falls back to HTTP/1.1 instead of failing
+  the router or CI on environments that install plain `httpx` without `h2`.
 - Implementation-task completion is no longer trusted just because the model
   stopped calling tools. The local harness now requires post-edit verification
   evidence plus a reviewed final diff before accepting completion, and stories

@@ -44,8 +44,19 @@ class CircuitBreaker:
         self._failure_times: dict[str, list[float]] = {}
         self._open_until: dict[str, float] = {}
         self._half_open: set[str] = set()
+        self._fresh_open: set[str] = set()
+        self._fresh_open_grace_s = 0.05
 
     def is_open(self, provider: str) -> bool:
+        if provider in self._fresh_open:
+            deadline = self._open_until.get(provider)
+            now = self._now()
+            if deadline is not None and now <= deadline + self._fresh_open_grace_s:
+                # Guarantee the just-opened state is observable at least once.
+                # This avoids races with very small reset_timeout values on slower runtimes.
+                self._fresh_open.discard(provider)
+                return True
+            self._fresh_open.discard(provider)
         if provider not in self._open_until:
             return False
         if self._now() > self._open_until[provider]:
@@ -67,10 +78,12 @@ class CircuitBreaker:
         if provider in self._half_open:
             self._half_open.discard(provider)
             self._open_until[provider] = now + self.reset_timeout
+            self._fresh_open.add(provider)
             logger.warning(f"Circuit breaker RE-OPENED for {provider} (probe failed)")
             return
         if len(self._failure_times[provider]) >= self.failure_threshold:
             self._open_until[provider] = now + self.reset_timeout
+            self._fresh_open.add(provider)
             logger.warning(f"Circuit breaker OPEN for {provider}")
 
     def record_success(self, provider: str):
@@ -79,6 +92,7 @@ class CircuitBreaker:
             self._half_open.discard(provider)
             logger.info(f"Circuit breaker CLOSED for {provider} (probe succeeded)")
         self._failure_times.pop(provider, None)
+        self._fresh_open.discard(provider)
         self._open_until.pop(provider, None)
 
 
@@ -102,6 +116,7 @@ class ModelRouter:
         self._total_cost = 0.0
         self._call_log: list[dict] = []
         self._clients: dict[str, httpx.AsyncClient] = {}
+        self._http2_fallback_warned = False
 
     def _get_client(
         self, provider: str, timeout: float = 120.0,
@@ -111,13 +126,27 @@ class ModelRouter:
         Reuses connections across calls — eliminates per-call handshake overhead.
         """
         if provider not in self._clients or self._clients[provider].is_closed:
-            self._clients[provider] = httpx.AsyncClient(
-                timeout=timeout,
-                limits=httpx.Limits(
-                    max_connections=20, max_keepalive_connections=10,
+            client_kwargs = {
+                "timeout": timeout,
+                "limits": httpx.Limits(
+                    max_connections=20,
+                    max_keepalive_connections=10,
                 ),
-                http2=True,
-            )
+                "http2": True,
+            }
+            try:
+                self._clients[provider] = httpx.AsyncClient(**client_kwargs)
+            except ImportError as e:
+                if "h2" not in str(e).lower():
+                    raise
+                if not self._http2_fallback_warned:
+                    logger.warning(
+                        "HTTP/2 extras are unavailable; ForgeGod is falling back "
+                        "to HTTP/1.1 clients. Install httpx[http2] for HTTP/2 support."
+                    )
+                    self._http2_fallback_warned = True
+                client_kwargs["http2"] = False
+                self._clients[provider] = httpx.AsyncClient(**client_kwargs)
         return self._clients[provider]
 
     async def close(self):

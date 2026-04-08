@@ -22,18 +22,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `503`
+- Tests collected: `505`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-08 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `418 passed, 1 skipped, 84 deselected in 71.38s` |
+| `python -m pytest -m "not stress" -q` | `420 passed, 1 skipped, 84 deselected in 42.65s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 97.49s` |
-| `python -m pytest tests -q` | `502 passed, 1 skipped in 185.08s` |
-| `python -m pytest --collect-only -q` | `503 tests collected in 0.36s` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 125.85s` |
+| `python -m pytest tests -q` | `504 passed, 1 skipped in 179.10s` |
+| `python -m pytest --collect-only -q` | `505 tests collected in 0.40s` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -101,8 +101,14 @@ This document is the current system of record for day-to-day work in this reposi
 - ForgeGod now has deterministic CLI coverage for auth-aware provider selection
   in `forgegod auth sync`, including cloud-budget normalization and the Codex
   experimental-coder note.
+- ForgeGod now degrades cleanly when optional HTTP/2 support is unavailable in
+  the host environment. If `httpx` was installed without `h2`, the router logs
+  a single warning and reuses HTTP/1.1 clients instead of failing requests and
+  collapsing CI on Python 3.11.
 - The benchmark file is historical, not a current green-build signal.
-- Based on the local verified baseline, the shipped CI workflow should now be green again: lint passes, the full test tree passes, stress passes, and build passes.
+- Based on the local verified baseline, including a full rerun on Python 3.11,
+  the shipped CI workflow should now be green again: lint passes, the full test
+  tree passes, stress passes, and build passes.
 
 ## Safe Workflow
 
