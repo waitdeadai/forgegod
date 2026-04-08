@@ -32,6 +32,8 @@ class CircuitBreaker:
     Sliding window: only failures within the last 60s count toward threshold.
     """
 
+    _now = staticmethod(time.monotonic)
+
     def __init__(
         self, failure_threshold: int = 3, reset_timeout: float = 300,
         window_s: float = 60.0,
@@ -46,7 +48,7 @@ class CircuitBreaker:
     def is_open(self, provider: str) -> bool:
         if provider not in self._open_until:
             return False
-        if time.time() > self._open_until[provider]:
+        if self._now() > self._open_until[provider]:
             # Transition to half-open: allow one probe request
             self._half_open.add(provider)
             del self._open_until[provider]
@@ -54,7 +56,7 @@ class CircuitBreaker:
         return True
 
     def record_failure(self, provider: str):
-        now = time.time()
+        now = self._now()
         times = self._failure_times.setdefault(provider, [])
         times.append(now)
         # Sliding window: only count failures within window

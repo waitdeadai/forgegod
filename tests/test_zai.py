@@ -38,12 +38,13 @@ def test_zai_provider_routing():
 @pytest.mark.asyncio
 async def test_zai_missing_api_key(monkeypatch):
     monkeypatch.delenv("ZAI_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_CODING_API_KEY", raising=False)
 
     from forgegod.router import ModelRouter
 
     router = ModelRouter(ForgeGodConfig())
 
-    with pytest.raises(RuntimeError, match="ZAI_API_KEY"):
+    with pytest.raises(RuntimeError, match="ZAI_CODING_API_KEY or ZAI_API_KEY"):
         await router._call_zai(
             model="glm-5.1",
             prompt="test",

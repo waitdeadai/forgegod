@@ -387,7 +387,7 @@ class TestModelRouterFallback:
         router.circuit.record_failure("ollama")  # Opens circuit
 
         # Simulate timeout by backdating the open_until timestamp
-        router.circuit._open_until["ollama"] = time.time() - 1
+        router.circuit._open_until["ollama"] = router.circuit._now() - 1
 
         # Circuit should be closed now
         assert router.circuit.is_open("ollama") is False

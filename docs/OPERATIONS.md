@@ -16,20 +16,21 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `448`
+- Tests collected: `449`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-08 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `364 passed, 84 deselected in 20.55s` |
+| `python -m pytest -m "not stress" -q` | `365 passed, 84 deselected in 34.28s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 101.62s` |
-| `python -m pytest tests -q` | `448 passed in 114.32s` |
-| `python -m pytest --collect-only -q` | `448 tests collected in 0.23s` |
-| `python -m ruff check forgegod tests` | passes |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 109.08s` |
+| `python -m pytest tests -q` | `449 passed in 154.28s` |
+| `python -m pytest --collect-only -q` | `449 tests collected in 0.30s` |
+| `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
+| `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
 
 ## Current Reality Check

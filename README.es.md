@@ -38,7 +38,20 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `448` tests recolectados, `364` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `449` tests recolectados, `365` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+
+### Harness Experimental Recomendado: GLM-5.1 + Codex
+
+Para la configuración por suscripción más fuerte hoy dentro de ForgeGod, usá
+`glm-5.1` para `planner` / `researcher` / `coder` y `openai-codex:gpt-5.4`
+para `reviewer` / `sentinel` / `escalation`.
+
+Mirá [docs/GLM_CODEX_HARNESS_2026-04-08.md](docs/GLM_CODEX_HARNESS_2026-04-08.md),
+[docs/examples/glm_codex_coding_plan.toml](docs/examples/glm_codex_coding_plan.toml),
+y corré `python scripts/smoke_glm_codex_harness.py` antes de usarlo en tareas críticas.
+El camino con `ZAI_CODING_API_KEY` funciona hoy en ForgeGod, pero sigue siendo
+experimental hasta que Z.AI reconozca explícitamente a ForgeGod como coding
+tool soportada.
 
 ## Inicio Rápido (Sin Saber Programar)
 

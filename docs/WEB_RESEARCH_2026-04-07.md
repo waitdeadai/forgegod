@@ -214,6 +214,53 @@ the one-time provider login is complete, and avoid claiming native subscription
 support for OpenRouter or Alibaba until there is an official, reproducible path
 that fits ForgeGod's autonomous workflow model.
 
+## Harness Research Addendum - GLM Coding Plan + Codex Adversary
+
+Verified on `2026-04-08` before designing a stronger ForgeGod harness for
+agentic product builds:
+
+- OpenAI's help material says Codex on supported ChatGPT plans can run in the
+  terminal, edit files, execute tests, work in parallel, and operate in
+  isolated sandboxes. That reinforces using Codex as the review/adversary layer
+  instead of forcing it into the primary builder role:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI's harness-engineering article explicitly argues that stronger
+  scaffolding, PR-sized loops, clean repo docs, and agent-review cycles produce
+  the gains. That fits a `GLM builder + Codex adversary` split better than
+  symmetric multi-agent redundancy:
+  - https://openai.com/index/harness-engineering/
+- OpenAI's Codex use-case docs also position Codex strongly for PR review and
+  front-end iteration with visual checks:
+  - https://developers.openai.com/codex/use-cases
+- Z.AI's DevPack docs position `glm-5.1` as a coding-agent model and expose the
+  coding endpoint separately from the general OpenAI-compatible endpoint:
+  - https://docs.z.ai/devpack/using5.1
+  - https://docs.z.ai/api-reference/introduction
+- Z.AI's FAQ says Coding Plan quota is only for coding tools designated or
+  recognized by Z.AI and should not be assumed for arbitrary apps/bots/websites
+  through direct API use:
+  - https://docs.z.ai/devpack/faq
+- There is still strong evidence that this pattern is used in real coding tools:
+  OpenClaw's official provider docs explicitly support Coding Plan choices like
+  `zai-coding-global` and `glm-5.1`, and Z.AI documents multiple supported tool
+  integrations across OpenClaw, OpenCode, Cline, Crush, Cursor, Goose, and
+  "other tools" OpenAI-compatible flows:
+  - https://docs.openclaw.ai/providers/zai
+  - https://docs.z.ai/devpack/tool/openclaw
+  - https://docs.z.ai/devpack/tool/opencode
+  - https://docs.z.ai/devpack/tool/cline
+  - https://docs.z.ai/devpack/tool/crush
+  - https://docs.z.ai/devpack/tool/cursor
+  - https://docs.z.ai/devpack/tool/goose
+  - https://docs.z.ai/devpack/quick-start
+
+Operational conclusion for ForgeGod: the best research-backed harness today is
+`glm-5.1` as planner/researcher/coder and `openai-codex:gpt-5.4` as
+reviewer/sentinel/escalation. If ForgeGod users choose to wire
+`ZAI_CODING_API_KEY` into this harness, the implementation should be treated as
+an experimental, at-your-own-risk mode rather than marketed as a guaranteed
+provider-sanctioned billing path.
+
 ## Workflow Research Addendum - DESIGN.md + Contribution Mode
 
 Verified on `2026-04-08` before adding frontend and contribution workflows:

@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `448` collected tests, `364` non-stress tests passing, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `449` collected tests, `365` non-stress tests passing, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -95,6 +95,25 @@ ForgeGod stays the entrypoint. It delegates the one-time login to the official C
 2. Install ForgeGod: `pip install forgegod`
 3. Run: `forgegod auth sync`
 4. Try it: `forgegod run "Build a REST API with user authentication"`
+
+### Recommended Experimental Harness: GLM-5.1 + Codex
+
+For the strongest current subscription-backed setup inside ForgeGod, use:
+
+- `planner = zai:glm-5.1`
+- `researcher = zai:glm-5.1`
+- `coder = zai:glm-5.1`
+- `reviewer = openai-codex:gpt-5.4`
+- `sentinel = openai-codex:gpt-5.4`
+- `escalation = openai-codex:gpt-5.4`
+
+See [docs/GLM_CODEX_HARNESS_2026-04-08.md](docs/GLM_CODEX_HARNESS_2026-04-08.md),
+[docs/examples/glm_codex_coding_plan.toml](docs/examples/glm_codex_coding_plan.toml),
+and run `python scripts/smoke_glm_codex_harness.py` before high-stakes use.
+
+This harness is research-backed and works in ForgeGod today. The `ZAI_CODING_API_KEY`
+path should still be treated as experimental and at-your-own-risk until Z.AI
+explicitly recognizes ForgeGod as a supported coding tool.
 
 ### Something not working?
 

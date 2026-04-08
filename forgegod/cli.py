@@ -230,8 +230,12 @@ def design_pull(
 def auth_status():
     """Show which provider auth surfaces are currently usable."""
     import os
+    from pathlib import Path
 
+    from forgegod.config import _load_dotenv
     from forgegod.native_auth import codex_login_status_sync
+
+    _load_dotenv(Path.cwd() / ".forgegod" / ".env")
 
     table = Table(title="ForgeGod Auth Status")
     table.add_column("Surface", style="cyan")

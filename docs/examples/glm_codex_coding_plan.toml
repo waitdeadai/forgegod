@@ -1,0 +1,64 @@
+# Experimental preset: GLM Coding Plan + Codex adversary
+#
+# This works with ForgeGod's current provider router, but Z.AI officially frames
+# Coding Plan quota around supported/recognized coding tools. Use at your own
+# risk and prefer ZAI_API_KEY if you need the most policy-safe path.
+
+[models]
+planner = "zai:glm-5.1"
+coder = "zai:glm-5.1"
+reviewer = "openai-codex:gpt-5.4"
+sentinel = "openai-codex:gpt-5.4"
+escalation = "openai-codex:gpt-5.4"
+researcher = "zai:glm-5.1"
+
+[budget]
+daily_limit_usd = 15.0
+mode = "normal"
+
+[loop]
+max_iterations = 120
+max_context_tokens = 120000
+context_rotation_pct = 80
+gutter_detection = true
+gutter_threshold = 3
+parallel_workers = 1
+story_max_retries = 2
+cooldown_seconds = 2.0
+story_timeout_s = 1200.0
+auto_commit_success = false
+auto_push_success = false
+
+[review]
+enabled = true
+sample_rate = 1
+always_review_run = true
+
+[security]
+sandbox_mode = "strict"
+redact_secrets = true
+max_rules_file_chars = 12000
+audit_commands = true
+
+[openai_codex]
+timeout = 240.0
+sandbox = "read-only"
+ephemeral = true
+
+[zai]
+timeout = 180.0
+base_url = "https://api.z.ai/api/paas/v4"
+coding_plan_base_url = "https://api.z.ai/api/coding/paas/v4"
+use_coding_plan = true
+
+[recon]
+enabled = true
+max_searches = 12
+max_fetch_chars = 5000
+search_provider = "searxng"
+searxng_url = "http://localhost:8888"
+brave_api_key = ""
+exa_api_key = ""
+debate_rounds = 3
+min_approval_score = 8.0
+cache_results = true
