@@ -4,7 +4,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/mascot.png" alt="ForgeGod" width="120" />
+  <img src="docs/mascot.png" alt="Mascota oficial de ForgeGod" width="120" />
+</p>
+
+<p align="center">
+  <sub>Diseño oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>.</sub>
 </p>
 
 <h1 align="center">ForgeGod</h1>
@@ -302,6 +306,15 @@ Damos la bienvenida a contribuciones. Ver [CONTRIBUTING.md](CONTRIBUTING.md) par
 - Reportes de bugs y solicitudes de features: [GitHub Issues](https://github.com/waitdeadai/forgegod/issues)
 - Preguntas y discusión: [GitHub Discussions](https://github.com/waitdeadai/forgegod/discussions)
 
+## Colaboradores
+
+ForgeGod acredita públicamente trabajo de código y no-código.
+
+- [Matias Mesa](https://www.linkedin.com/in/matt-mesa/) - `design` - sistema oficial de mascota de ForgeGod
+- [WAITDEAD](https://waitdead.com) - `code`, `infra`, `research`, `projectManagement`, `maintenance`
+
+Ver [CONTRIBUTORS.md](CONTRIBUTORS.md) para la lista actual de colaboradores.
+
 ## Licencia
 
 Apache 2.0 — ver [LICENSE](LICENSE).
@@ -309,5 +322,5 @@ Apache 2.0 — ver [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  Construido por <a href="https://waitdead.com">WAITDEAD</a> &bull; Potenciado por técnicas de OpenClaw, Hermes, e investigación SOTA 2026 de agentes de código.
+  Construido por <a href="https://waitdead.com">WAITDEAD</a> &bull; Diseño oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a> &bull; Potenciado por técnicas de OpenClaw, Hermes, e investigación SOTA 2026 de agentes de código.
 </p>

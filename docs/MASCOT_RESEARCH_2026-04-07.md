@@ -1,25 +1,27 @@
 # ForgeGod Mascot Research Notes
 
-Date verified: 2026-04-07
+Date verified: 2026-04-08
 
 ## Source-backed direction
 
-- Adobe's mascot design guidance says a mascot should have its own personality, should be designed with multiple use cases in mind, and usually works as a supplementary brand asset rather than the only logo. It also recommends vector-ready simplification for scalability.
-  Source: https://www.adobe.com/my_en/creativecloud/design/discover/mascot-logo-design.html
+- The All Contributors specification says open source projects should include a visible contributors section in a prominent project surface, typically the README, and that contributors should be recognized across contribution categories rather than only code.
+  Source: https://allcontributors.org/en/specification/
 
-- Adobe Express' 2026 design trends emphasize organic and imperfect design plus a warm, personal visual style. That supports moving away from overly sterile pixel minimalism toward a more human, character-led mark.
-  Source: https://www.adobe.com/express/learn/blog/design-trends-2026
+- The All Contributors emoji key explicitly defines `design` as a first-class contribution category covering UI/UX, branding, and visuals.
+  Source: https://allcontributors.org/en/emoji-key/
+
+- Google's current image metadata guidance recommends using `ImageObject` structured data with `creator` and/or `creditText` when you want published images to carry attribution metadata.
+  Source: https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata
 
 ## Decisions applied in this pass
 
-- Keep the cyan pyramid, halo, and white `1` as the non-negotiable identity anchors.
-- Treat the detailed illustrated mascot as the primary expressive brand asset for web, social cards, and repo presentation.
-- Keep the CLI banner and SVG as simplified companions, not literal attempts to reproduce the full illustration.
-- Preserve strong silhouette legibility so the mascot still works at icon sizes.
-- Avoid direct resemblance to well-known triangle mascots by keeping ForgeGod's distinct halo, circuitry body, centered eye treatment, and numeric pupil.
+- Adopt the user-supplied PNG by Matias Mesa as the official ForgeGod mascot source of truth.
+- Keep WAITDEAD as the software author and maintainer while crediting Matias Mesa as the mascot creator in visible repo surfaces and site metadata.
+- Publish contributor credit in both the README and a top-level `CONTRIBUTORS.md` file so the first design collaboration is visible without hunting through commit history.
+- Add structured image credit to the website for the official mascot asset rather than relying only on plain text.
 
 ## Implementation notes
 
-- `docs/mascot.png` and derived web assets now use the user-supplied 2026 reference direction as the base.
-- `docs/og-image.png` and `docs/og-image.webp` were regenerated to match the updated mascot.
-- `docs/mascot.svg` was refreshed to align with the illustrated mascot instead of the old minimal placeholder.
+- `docs/mascot.png` now matches the approved 2026 mascot artwork from Matias Mesa.
+- `docs/mascot.webp`, `docs/mascot-192.webp`, `docs/mascot.svg`, `docs/og-image.png`, and `docs/og-image.webp` were regenerated from that approved source.
+- `README.md`, `README.es.md`, `CONTRIBUTING.md`, `CONTRIBUTORS.md`, and `docs/index.html` now carry explicit contributor credit for the mascot design.

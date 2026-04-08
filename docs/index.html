@@ -13,7 +13,7 @@
 <meta property="og:image" content="https://forgegod.com/og-image.webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ForgeGod autonomous coding agent — terminal-first, multi-model, 24/7">
+<meta property="og:image:alt" content="ForgeGod official mascot and autonomous coding agent social card">
 <meta property="og:url" content="https://forgegod.com">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ForgeGod">
@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="ForgeGod — Research-Backed Autonomous Coding Agent">
 <meta name="twitter:description" content="Multi-model autonomous coding agent with optional recon workflows, 5-tier memory, and $0 local mode. Audited and tested against a verified 2026 baseline.">
 <meta name="twitter:image" content="https://forgegod.com/og-image.webp">
-<meta name="twitter:image:alt" content="ForgeGod autonomous coding agent">
+<meta name="twitter:image:alt" content="ForgeGod official mascot">
 <link rel="icon" type="image/webp" href="mascot-192.webp">
 <link rel="alternate" hreflang="en" href="https://forgegod.com/">
 <link rel="alternate" hreflang="es" href="https://forgegod.com/es/">
@@ -42,6 +42,21 @@
   "softwareVersion": "0.1.0",
   "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "author": { "@type": "Organization", "name": "WAITDEAD", "url": "https://waitdead.com" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ImageObject",
+  "name": "ForgeGod official mascot",
+  "contentUrl": "https://forgegod.com/mascot.png",
+  "url": "https://forgegod.com/mascot.png",
+  "creator": {
+    "@type": "Person",
+    "name": "Matias Mesa",
+    "url": "https://www.linkedin.com/in/matt-mesa/"
+  },
+  "creditText": "Official ForgeGod mascot design by Matias Mesa"
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -473,6 +488,7 @@ footer {
   margin-top: 4rem;
 }
 footer p { font-size: 0.8rem; color: var(--text-dim); }
+footer p + p { margin-top: 0.35rem; }
 footer a { color: var(--cyan); }
 .footer-links {
   display: flex; justify-content: center; gap: 2rem;
@@ -717,7 +733,7 @@ body::after {
 <nav>
   <div class="container">
     <a href="/" class="nav-logo">
-      <picture><source srcset="mascot-192.webp" type="image/webp"><img src="mascot.png" alt="ForgeGod" width="28" height="28" loading="eager"></picture>
+      <picture><source srcset="mascot-192.webp" type="image/webp"><img src="mascot.png" alt="ForgeGod official mascot" width="28" height="28" loading="eager"></picture>
       FORGEGOD
     </a>
     <button id="nav-hamburger" class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">
@@ -744,7 +760,7 @@ body::after {
   <div class="container">
     <picture>
       <source srcset="mascot.webp" type="image/webp">
-      <img src="mascot.png" alt="ForgeGod — open-source autonomous coding agent" class="hero-mascot" width="160" height="160" fetchpriority="high" loading="eager" decoding="async">
+      <img src="mascot.png" alt="ForgeGod official mascot" class="hero-mascot" width="160" height="160" fetchpriority="high" loading="eager" decoding="async">
     </picture>
     <h1>FORGEGOD</h1>
     <p class="hero-tagline" data-i18n-html="hero_tagline">
@@ -1428,11 +1444,13 @@ body::after {
   <div class="container">
     <div class="footer-links">
       <a href="https://github.com/waitdeadai/forgegod">GitHub</a>
+      <a href="https://github.com/waitdeadai/forgegod/blob/main/CONTRIBUTORS.md" data-i18n="footer_contributors">Contributors</a>
       <a href="https://github.com/waitdeadai/forgegod/blob/main/CONTRIBUTING.md" data-i18n="footer_contributing">Contributing</a>
       <a href="https://github.com/waitdeadai/forgegod/blob/main/SECURITY.md" data-i18n="footer_security">Security</a>
       <a href="https://github.com/waitdeadai/forgegod/blob/main/LICENSE">Apache 2.0</a>
     </div>
     <p data-i18n-html="footer_built">Built by <a href="https://waitdead.com">WAITDEAD</a></p>
+    <p data-i18n-html="footer_mascot">Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a></p>
   </div>
 </footer>
 
@@ -1619,9 +1637,11 @@ var STRINGS = {
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod init</code> \u2192 <code style="color:var(--cyan)">forgegod run "your task"</code>',
     install_note: 'Python 3.11+ \u2022 API keys or native auth surfaces \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
+    footer_contributors: "Contributors",
     footer_contributing: "Contributing",
     footer_security: "Security",
-    footer_built: 'Built by <a href="https://waitdead.com">WAITDEAD</a>'
+    footer_built: 'Built by <a href="https://waitdead.com">WAITDEAD</a>',
+    footer_mascot: 'Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
   },
   es: {
     page_title: "ForgeGod \u2014 Agente de C\u00f3digo Aut\u00f3nomo Respaldado por Investigaci\u00f3n",
@@ -1803,9 +1823,11 @@ var STRINGS = {
     provider_free: "$0 / GRATIS",
     install_then: 'Luego: <code style="color:var(--cyan)">forgegod init --lang es</code> \u2192 <code style="color:var(--cyan)">forgegod run "tu tarea"</code>',
     install_note: 'Python 3.11+ \u2022 API keys o superficies de auth nativas \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
+    footer_contributors: "Colaboradores",
     footer_contributing: "Contribuir",
     footer_security: "Seguridad",
-    footer_built: 'Hecho por <a href="https://waitdead.com">WAITDEAD</a>'
+    footer_built: 'Hecho por <a href="https://waitdead.com">WAITDEAD</a>',
+    footer_mascot: 'Diseño oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
   }
 };
 

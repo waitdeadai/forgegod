@@ -4,7 +4,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/mascot.png" alt="ForgeGod" width="120" />
+  <img src="docs/mascot.png" alt="ForgeGod official mascot" width="120" />
+</p>
+
+<p align="center">
+  <sub>Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>.</sub>
 </p>
 
 <h1 align="center">ForgeGod</h1>
@@ -397,6 +401,15 @@ We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - Bug reports and feature requests: [GitHub Issues](https://github.com/waitdeadai/forgegod/issues)
 - Questions and discussion: [GitHub Discussions](https://github.com/waitdeadai/forgegod/discussions)
 
+## Contributors
+
+ForgeGod credits code and non-code work in public.
+
+- [Matias Mesa](https://www.linkedin.com/in/matt-mesa/) - `design` - official ForgeGod mascot system
+- [WAITDEAD](https://waitdead.com) - `code`, `infra`, `research`, `projectManagement`, `maintenance`
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the current contributor list.
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
@@ -404,5 +417,5 @@ Apache 2.0 — see [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  Built by <a href="https://waitdead.com">WAITDEAD</a> &bull; Powered by techniques from OpenClaw, Hermes, and SOTA 2026 coding agent research.
+  Built by <a href="https://waitdead.com">WAITDEAD</a> &bull; Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a> &bull; Powered by techniques from OpenClaw, Hermes, and SOTA 2026 coding agent research.
 </p>

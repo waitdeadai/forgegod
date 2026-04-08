@@ -74,6 +74,13 @@ async def mytool():
 - `async def` for I/O-bound operations
 - Line length: 100 chars max
 
+## Contributor Recognition
+
+ForgeGod credits code and non-code contributions in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+- We recognize engineering, docs, research, design, security, and community work.
+- If you want a specific display name or profile URL used in credits, include it in your PR or issue.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under Apache 2.0.
