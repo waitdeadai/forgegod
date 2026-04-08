@@ -1,26 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130" width="120" height="130">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130" width="120" height="130" role="img" aria-label="ForgeGod mascot">
   <defs>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+    <linearGradient id="haloGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff9a8"/>
+      <stop offset="100%" stop-color="#f2d35b"/>
+    </linearGradient>
+    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86edf6"/>
+      <stop offset="100%" stop-color="#5dcdda"/>
+    </linearGradient>
+    <linearGradient id="eyeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d8fbff"/>
+      <stop offset="100%" stop-color="#baf1f7"/>
+    </linearGradient>
+    <radialGradient id="irisGradient" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#2d7f88"/>
+      <stop offset="100%" stop-color="#1d4f57"/>
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.8" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="glow-gold">
-      <feGaussianBlur stdDeviation="2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
+    <clipPath id="triangleClip">
+      <polygon points="60,38 18,118 102,118"/>
+    </clipPath>
   </defs>
-  <!-- Aureola / Halo -->
-  <ellipse cx="60" cy="22" rx="20" ry="7" fill="none" stroke="#f0c040" stroke-width="4" filter="url(#glow-gold)" opacity="0.9"/>
-  <ellipse cx="60" cy="22" rx="16" ry="5" fill="none" stroke="#ffd700" stroke-width="2" opacity="0.6"/>
-  <!-- Triangle body -->
-  <polygon points="60,35 15,120 105,120" fill="#00e5ff" filter="url(#glow)" opacity="0.95"/>
-  <polygon points="60,42 22,116 98,116" fill="#00d4ee"/>
-  <!-- Eye: number 1 -->
-  <text x="60" y="100" text-anchor="middle" font-family="'Courier New', monospace" font-size="36" font-weight="bold" fill="white" filter="url(#glow)">1</text>
+
+  <ellipse cx="60" cy="20" rx="23" ry="7.5" fill="none" stroke="url(#haloGradient)" stroke-width="7" filter="url(#softGlow)"/>
+
+  <polygon points="60,39 18,118 102,118" fill="#0f2a34" opacity="0.18"/>
+  <polygon points="60,38 18,118 102,118" fill="url(#bodyGradient)" stroke="#2b7f88" stroke-width="2.5"/>
+
+  <g clip-path="url(#triangleClip)" fill="none" stroke="#2a7a84" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke-width="1.4" opacity="0.72">
+      <path d="M60 42v12h-6v10h-10"/>
+      <path d="M60 42v16h10v10h11"/>
+      <path d="M33 98v-20h12v-8h8"/>
+      <path d="M87 100v-18h-12v-8h-8"/>
+      <path d="M28 113v-14h10v-8h7"/>
+      <path d="M92 113v-12h-10v-8h-7"/>
+      <path d="M48 118v-20h8v-9"/>
+      <path d="M72 118v-20h-8v-9"/>
+      <path d="M26 90h8v-9h10"/>
+      <path d="M94 90h-8v-9h-10"/>
+      <path d="M37 62v10h8v9"/>
+      <path d="M83 62v10h-8v9"/>
+      <path d="M52 58v9h-7v8"/>
+      <path d="M68 58v9h7v8"/>
+      <path d="M43 112v-10h-8"/>
+      <path d="M77 112v-10h8"/>
+    </g>
+    <g stroke-width="1">
+      <rect x="54" y="45" width="8" height="12" rx="1.2"/>
+      <rect x="31" y="82" width="10" height="8" rx="1.2"/>
+      <rect x="79" y="82" width="10" height="8" rx="1.2"/>
+      <rect x="38" y="100" width="12" height="12" rx="1.2"/>
+      <rect x="70" y="100" width="12" height="12" rx="1.2"/>
+      <rect x="72" y="60" width="10" height="6" rx="1.2"/>
+      <rect x="38" y="60" width="8" height="6" rx="1.2"/>
+      <g fill="#2a7a84" stroke="none">
+        <circle cx="44" cy="64" r="1.2"/>
+        <circle cx="76" cy="64" r="1.2"/>
+        <circle cx="36" cy="89" r="1.2"/>
+        <circle cx="84" cy="89" r="1.2"/>
+        <circle cx="49" cy="103" r="1.2"/>
+        <circle cx="71" cy="103" r="1.2"/>
+        <circle cx="45" cy="73" r="1.2"/>
+        <circle cx="75" cy="73" r="1.2"/>
+      </g>
+    </g>
+  </g>
+
+  <path d="M30 78c8-14 22-20 30-20s22 6 30 20c-8 14-22 20-30 20s-22-6-30-20z" fill="url(#eyeGradient)" stroke="#4d97a1" stroke-width="2.2"/>
+  <circle cx="60" cy="78" r="11.5" fill="url(#irisGradient)" opacity="0.95"/>
+  <text x="60" y="86" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="19" font-weight="700" fill="#ffffff">1</text>
 </svg>
