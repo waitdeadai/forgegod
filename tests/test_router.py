@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -427,3 +428,69 @@ class TestModelRouterFallback:
     async def test_router_budget_tracking(self, router: ModelRouter):
         """Router tracks budget mode."""
         assert router.config.budget.mode == BudgetMode.NORMAL
+
+
+class TestOpenAICompatConfig:
+    @pytest.mark.asyncio
+    async def test_openai_uses_configured_base_url_without_api_key_for_local_endpoint(
+        self, monkeypatch
+    ):
+        captured = {}
+
+        class FakeCompletions:
+            async def create(self, **kwargs):
+                captured["kwargs"] = kwargs
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="mock ok", tool_calls=[]),
+                        )
+                    ],
+                    usage=SimpleNamespace(prompt_tokens=11, completion_tokens=7),
+                )
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                captured["client_kwargs"] = kwargs
+                self.chat = SimpleNamespace(completions=FakeCompletions())
+
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr("openai.AsyncOpenAI", FakeClient)
+
+        config = ForgeGodConfig()
+        config.openai.base_url = "http://127.0.0.1:9999/v1"
+        config.openai.timeout = 9.5
+        router = ModelRouter(config)
+
+        text, usage = await router._call_openai(
+            "gpt-4o-mini",
+            "Say hi",
+            "system",
+            False,
+            64,
+            0.2,
+            None,
+        )
+
+        assert text == "mock ok"
+        assert usage["input_tokens"] == 11
+        assert captured["client_kwargs"]["base_url"] == "http://127.0.0.1:9999/v1"
+        assert captured["client_kwargs"]["timeout"] == 9.5
+        assert captured["client_kwargs"]["api_key"] == "forgegod-local-dev-token"
+        assert captured["kwargs"]["model"] == "gpt-4o-mini"
+
+    @pytest.mark.asyncio
+    async def test_openai_requires_api_key_for_official_endpoint(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        router = ModelRouter(ForgeGodConfig())
+
+        with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+            await router._call_openai(
+                "gpt-4o-mini",
+                "Say hi",
+                "system",
+                False,
+                64,
+                0.2,
+                None,
+            )

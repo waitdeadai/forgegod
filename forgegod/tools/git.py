@@ -96,12 +96,17 @@ async def git_worktree_create(branch: str) -> str:
     """Create a git worktree for parallel work."""
     import uuid
 
+    head_check = await _run_git("rev-parse", "--verify", "HEAD")
+    if head_check.startswith("Error"):
+        return (
+            "Error: Parallel worktrees require at least one git commit before "
+            "ForgeGod can create an isolated worktree."
+        )
+
     worktree_id = uuid.uuid4().hex[:8]
     path = f".forgegod/worktrees/{worktree_id}"
 
-    # Create branch if it doesn't exist
-    await _run_git("branch", branch, "HEAD")
-    result = await _run_git("worktree", "add", path, branch)
+    result = await _run_git("worktree", "add", "-b", branch, path)
     if result.startswith("Error"):
         return result
     return f"Worktree created at {path} on branch {branch}"

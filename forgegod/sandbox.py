@@ -33,6 +33,13 @@ class SandboxExecutionResult:
     stderr: str
 
 
+@dataclass(frozen=True)
+class SandboxReadiness:
+    ready: bool
+    detail: str
+    fix: str = ""
+
+
 class SandboxUnavailableError(RuntimeError):
     """Raised when strict mode cannot obtain a real sandbox backend."""
 
@@ -72,7 +79,7 @@ def detect_real_sandbox_backend(security) -> tuple[str | None, str | None]:
     return None, (
         "Strict mode requires a real sandbox backend. "
         f"Docker is unavailable: {reason}. "
-        "Start Docker Desktop or switch out of strict mode."
+        "Open Docker Desktop, wait for the engine to start, and rerun `forgegod doctor`."
     )
 
 
@@ -86,7 +93,62 @@ def _ensure_docker_image_available(image: str) -> str | None:
         return None
     return (
         f"Docker sandbox image is not available locally: {image}. "
-        f"Inspect error: {reason}. Pull it first with `docker pull {image}`."
+        f"Inspect error: {reason}. Pull it once on the host with "
+        f"`docker pull {image}` and keep strict mode enabled."
+    )
+
+
+def diagnose_strict_sandbox(security) -> SandboxReadiness:
+    """Return a user-facing readiness check for strict sandbox prerequisites."""
+    image = _docker_image(security)
+    backend = getattr(security, "sandbox_backend", "auto")
+
+    if backend not in {"auto", "docker"}:
+        return SandboxReadiness(
+            ready=False,
+            detail=f"Unsupported sandbox backend: {backend}",
+            fix="Set [security].sandbox_backend to `auto` or `docker` in .forgegod/config.toml.",
+        )
+
+    ok, reason = _run_probe("docker", "version", "--format", "{{.Client.Version}}")
+    if not ok:
+        return SandboxReadiness(
+            ready=False,
+            detail=f"Docker CLI is not available: {reason}",
+            fix=(
+                "1. Install Docker Desktop from docs.docker.com. "
+                "2. Open Docker Desktop once. "
+                "3. Rerun `forgegod doctor`."
+            ),
+        )
+
+    ok, reason = _run_probe("docker", "info", "--format", "{{json .ServerVersion}}")
+    if not ok:
+        return SandboxReadiness(
+            ready=False,
+            detail=f"Docker daemon is not ready: {reason}",
+            fix=(
+                "1. Open Docker Desktop. "
+                "2. Wait until it shows the engine as running. "
+                "3. Rerun `forgegod doctor`."
+            ),
+        )
+
+    image_error = _ensure_docker_image_available(image)
+    if image_error:
+        return SandboxReadiness(
+            ready=False,
+            detail=f"Strict sandbox image missing: {image}",
+            fix=(
+                f"1. Run `docker pull {image}` once on the host. "
+                "2. Rerun `forgegod doctor`. "
+                "3. Keep `sandbox_mode = \"strict\"` if you want real isolation."
+            ),
+        )
+
+    return SandboxReadiness(
+        ready=True,
+        detail=f"Docker strict sandbox ready with local image {image}",
     )
 
 

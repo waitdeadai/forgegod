@@ -147,17 +147,29 @@ Output ONLY valid JSON."""
 
         return await self.review(task=task, code=code)
 
-    def should_review(self, story_index: int, is_single_shot: bool = False) -> bool:
+    def should_review(
+        self,
+        story_index: int,
+        is_single_shot: bool = False,
+        acceptance_criteria: int = 0,
+    ) -> bool:
         """Decide whether to review this output.
 
         Args:
             story_index: 0-based index of the story in the loop.
             is_single_shot: True if running in `forgegod run` mode.
+            acceptance_criteria: Number of acceptance criteria attached to the task/story.
         """
         if not self.config.review.enabled:
             return False
 
         if is_single_shot and self.config.review.always_review_run:
+            return True
+
+        if (
+            acceptance_criteria > 0
+            and self.config.review.force_review_acceptance_criteria
+        ):
             return True
 
         # In loop mode, sample every Nth story

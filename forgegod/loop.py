@@ -34,6 +34,7 @@ from forgegod.models import (
 from forgegod.reviewer import Reviewer
 from forgegod.router import ModelRouter
 from forgegod.terse import TERSE_STORY_INSTRUCTIONS
+from forgegod.worktree import WorktreePool
 
 logger = logging.getLogger("forgegod.loop")
 console = Console()
@@ -62,26 +63,30 @@ class RalphLoop:
         router: ModelRouter | None = None,
         budget: BudgetTracker | None = None,
         max_iterations: int | None = None,
+        tool_approver=None,
     ):
         self.config = config
         self.prd = prd
         self.router = router or ModelRouter(config)
         self.budget = budget or BudgetTracker(config)
         self.max_iterations = max_iterations or config.loop.max_iterations
+        self.tool_approver = tool_approver
 
         # Reviewer (SOTA: sample-based quality gate)
         self.reviewer = Reviewer(config=config, router=self.router)
 
         # Memory system — shared across all story ticks
-        try:
-            self.memory = Memory(config)
-        except Exception:
-            self.memory = None
-            logger.debug("Memory system unavailable in loop")
+        self.memory = None
+        if self.config.memory.enabled:
+            try:
+                self.memory = Memory(config)
+            except Exception:
+                self.memory = None
+                logger.debug("Memory system unavailable in loop")
 
         # Memory Agent — dedicated LLM-powered memory extraction
         self._memory_agent = None
-        if self.memory:
+        if self.memory and self.config.memory.extraction_enabled:
             try:
                 from forgegod.memory_agent import MemoryAgent
 
@@ -143,21 +148,7 @@ class RalphLoop:
         try:
             while self._running:
                 if workers > 1:
-                    # Parallel mode: run up to N stories concurrently
-                    ready = self._get_ready_stories(max_count=workers)
-                    if not ready:
-                        await self._tick()  # fallback single-tick (handles idle/kill/budget)
-                    else:
-                        sem = asyncio.Semaphore(workers)
-
-                        async def _guarded_tick(story: Story):
-                            async with sem:
-                                await self._tick(story)
-
-                        await asyncio.gather(
-                            *[_guarded_tick(s) for s in ready],
-                            return_exceptions=True,
-                        )
+                    await self._tick_parallel(workers)
                 else:
                     await self._tick()
 
@@ -189,6 +180,90 @@ class RalphLoop:
         """Stop the loop gracefully."""
         self._running = False
 
+    def _pre_tick_checks(self) -> bool:
+        """Run loop-level checks shared by single-worker and parallel paths."""
+        self.state.last_tick_at = datetime.now(timezone.utc).isoformat()
+
+        if self._is_killed():
+            logger.info("KILLSWITCH detected — stopping")
+            self.state.status = LoopStatus.KILLED
+            self._running = False
+            return False
+
+        effective_mode = self.budget.check_budget()
+        if effective_mode == BudgetMode.HALT:
+            logger.warning("Budget HALT — pausing loop")
+            self.state.status = LoopStatus.PAUSED
+            self._running = False
+            return False
+
+        return True
+
+    async def _tick_parallel(self, workers: int) -> None:
+        """Run one isolated parallel tick using git worktrees."""
+        self.state.total_iterations += 1
+        if not self._pre_tick_checks():
+            return
+
+        ready = self._get_ready_stories(max_count=workers)
+        if not ready:
+            logger.info("No stories ready — loop idle")
+            return
+        self.state.total_iterations += max(0, len(ready) - 1)
+
+        pool = WorktreePool(
+            config=self.config,
+            router=self.router,
+            budget=self.budget,
+            max_workers=workers,
+            tool_approver=self.tool_approver,
+        )
+        readiness_error = await pool.ensure_parallel_ready()
+        if readiness_error:
+            logger.warning(readiness_error)
+            self.state.status = LoopStatus.PAUSED
+            self._running = False
+            self._save_state()
+            raise RuntimeError(readiness_error)
+
+        for story in ready:
+            logger.info(f"Working on in parallel: [{story.id}] {story.title}")
+            story.status = StoryStatus.IN_PROGRESS
+            story.iterations += 1
+
+        self.state.current_story_id = ",".join(story.id for story in ready)
+        self._save_state()
+        self._save_prd()
+
+        story_prompts: dict[str, str] = {}
+        for story in ready:
+            story_prompts[story.id] = await self._build_story_prompt(story)
+
+        try:
+            results = await pool.run_parallel(
+                ready,
+                story_prompts=story_prompts,
+            )
+            for story, result in results:
+                review_code = None
+                apply_patch = None
+                if result.success and result.files_modified:
+                    review_code = await pool.diff_for_story(story.id)
+
+                    async def _apply(story_id: str = story.id) -> str:
+                        return await pool.apply_patch_for_story(story_id)
+
+                    apply_patch = _apply
+
+                await self._finalize_story_result(
+                    story,
+                    result,
+                    review_code=review_code,
+                    apply_patch=apply_patch,
+                )
+        finally:
+            await pool.cleanup()
+
     async def _tick(self, story: Story | None = None) -> None:
         """One tick of the Ralph loop.
 
@@ -196,21 +271,7 @@ class RalphLoop:
             story: Pre-selected story (parallel mode). If None, picks next story.
         """
         self.state.total_iterations += 1
-        self.state.last_tick_at = datetime.now(timezone.utc).isoformat()
-
-        # 1. Check killswitch
-        if self._is_killed():
-            logger.info("KILLSWITCH detected — stopping")
-            self.state.status = LoopStatus.KILLED
-            self._running = False
-            return
-
-        # 2. Budget check
-        effective_mode = self.budget.check_budget()
-        if effective_mode == BudgetMode.HALT:
-            logger.warning("Budget HALT — pausing loop")
-            self.state.status = LoopStatus.PAUSED
-            self._running = False
+        if not self._pre_tick_checks():
             return
 
         # 3. Pick next story (if not pre-selected by parallel dispatcher)
@@ -237,6 +298,7 @@ class RalphLoop:
             budget=self.budget,
             role="coder",
             max_turns=100,
+            tool_approver=self.tool_approver,
         )
 
         # 6. Execute (with dead-man's switch timeout)
@@ -246,26 +308,84 @@ class RalphLoop:
                 agent.run(task_prompt), timeout=timeout_s,
             )
         except asyncio.TimeoutError:
-            story.error_log.append(
-                f"Story timed out after {timeout_s}s (dead-man's switch)"
+            self._handle_story_failure(
+                story,
+                f"Story timed out after {timeout_s}s (dead-man's switch)",
+                timeout=True,
             )
-            if story.iterations >= self.config.loop.story_max_retries:
-                story.status = StoryStatus.BLOCKED
-                self.state.stories_failed += 1
-                logger.warning(f"Story [{story.id}] BLOCKED (timeout)")
-            else:
-                story.status = StoryStatus.TODO
-                logger.warning(f"Story [{story.id}] timed out, will retry")
-            self._save_prd()
             return
 
-        # 7. Evaluate result
+        await self._finalize_story_result(story, result)
+
+    def _handle_story_failure(
+        self,
+        story: Story,
+        error_text: str,
+        *,
+        timeout: bool = False,
+    ) -> None:
+        """Mark a story for retry or block it after a failed execution."""
+        if story.iterations >= self.config.loop.story_max_retries:
+            story.status = StoryStatus.BLOCKED
+            story.error_log.append(error_text)
+            self.state.stories_failed += 1
+            if timeout:
+                logger.warning(f"Story [{story.id}] BLOCKED (timeout)")
+            else:
+                logger.warning(
+                    f"Story [{story.id}] BLOCKED after {story.iterations} attempts"
+                )
+        else:
+            story.status = StoryStatus.TODO
+            story.error_log.append(error_text)
+            if timeout:
+                logger.warning(f"Story [{story.id}] timed out, will retry")
+            else:
+                logger.info(
+                    f"Story [{story.id}] failed attempt {story.iterations}, "
+                    f"will retry ({self.config.loop.story_max_retries - story.iterations} left)"
+                )
+        self._save_prd()
+
+    async def _collect_review_code(self, result, review_code: str | None = None) -> str:
+        """Collect the best available code artifact for reviewer analysis."""
+        if review_code:
+            return review_code[:6000]
+
+        review_text = result.output[:6000]
+        try:
+            diff_proc = await asyncio.create_subprocess_exec(
+                "git", "diff", "HEAD",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(self._workspace_root),
+            )
+            diff_out, _ = await diff_proc.communicate()
+            if not diff_out:
+                diff_proc = await asyncio.create_subprocess_exec(
+                    "git", "log", "-1", "-p", "--stat",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=str(self._workspace_root),
+                )
+                diff_out, _ = await diff_proc.communicate()
+            if diff_out:
+                review_text = diff_out.decode(errors="replace")[:6000]
+        except Exception:
+            pass
+        return review_text
+
+    async def _finalize_story_result(
+        self,
+        story: Story,
+        result,
+        *,
+        review_code: str | None = None,
+        apply_patch=None,
+    ) -> None:
+        """Apply reviewer gates, patch transfer, and final story state updates."""
         if result.success:
-            # Guard: if agent produced no file changes, don't mark as DONE.
-            # This catches models that call read-only tools (repo_map, git_status)
-            # but never use write_file/edit_file to produce actual code.
             if not result.files_modified:
-                # Reclaim iteration — empty retries shouldn't burn budget
                 self.state.total_iterations -= 1
                 if story.iterations >= self.config.loop.story_max_retries:
                     story.status = StoryStatus.BLOCKED
@@ -280,9 +400,7 @@ class RalphLoop:
                     )
                 else:
                     story.status = StoryStatus.TODO
-                    story.error_log.append(
-                        "Agent produced no output (0 tool calls)"
-                    )
+                    story.error_log.append("Agent produced no output (0 tool calls)")
                     logger.warning(
                         f"Story [{story.id}] produced no work, will retry "
                         f"(attempt {story.iterations}"
@@ -291,44 +409,22 @@ class RalphLoop:
                 self._save_prd()
                 return
 
-            # Quality gate: sample-based frontier review (SOTA pattern)
             story_idx = self.prd.stories.index(story)
-            if self.reviewer.should_review(story_idx):
+            if self.reviewer.should_review(
+                story_idx,
+                acceptance_criteria=len(story.acceptance_criteria),
+            ):
                 try:
-                    # Collect actual code diffs for review (not agent prose)
-                    review_code = result.output[:6000]
-                    try:
-                        diff_proc = await asyncio.create_subprocess_exec(
-                            "git", "diff", "HEAD",
-                            stdout=asyncio.subprocess.PIPE,
-                            stderr=asyncio.subprocess.PIPE,
-                            cwd=str(self._workspace_root),
-                        )
-                        diff_out, _ = await diff_proc.communicate()
-                        if not diff_out:
-                            diff_proc = await asyncio.create_subprocess_exec(
-                                "git", "log", "-1", "-p", "--stat",
-                                stdout=asyncio.subprocess.PIPE,
-                                stderr=asyncio.subprocess.PIPE,
-                                cwd=str(self._workspace_root),
-                            )
-                            diff_out, _ = await diff_proc.communicate()
-                        if diff_out:
-                            review_code = diff_out.decode(
-                                errors="replace"
-                            )[:6000]
-                    except Exception:
-                        pass  # Fall back to result.output
                     review = await self.reviewer.review(
                         task=story.title,
-                        code=review_code,
+                        code=await self._collect_review_code(result, review_code=review_code),
                         files_changed=result.files_modified,
                     )
                     if review.verdict == ReviewVerdict.REJECT:
                         logger.warning(
                             f"Story [{story.id}] REJECTED by reviewer: {review.reasoning}"
                         )
-                        story.status = StoryStatus.TODO  # Retry with feedback
+                        story.status = StoryStatus.TODO
                         story.error_log.append(f"Reviewer rejected: {review.reasoning}")
                         self._save_prd()
                         return
@@ -338,6 +434,12 @@ class RalphLoop:
                         )
                 except Exception as e:
                     logger.debug(f"Review skipped: {e}")
+
+            if apply_patch is not None:
+                patch_result = await apply_patch()
+                if patch_result != "applied":
+                    self._handle_story_failure(story, patch_result)
+                    return
 
             story.status = StoryStatus.DONE
             story.completed_at = datetime.now(timezone.utc).isoformat()
@@ -383,23 +485,9 @@ class RalphLoop:
                 except Exception:
                     logger.debug("Auto-push skipped")
         else:
-            # Check retry limit
-            if story.iterations >= self.config.loop.story_max_retries:
-                story.status = StoryStatus.BLOCKED
-                story.error_log.append(result.error or result.output)
-                self.state.stories_failed += 1
-                logger.warning(
-                    f"Story [{story.id}] BLOCKED after {story.iterations} attempts"
-                )
-            else:
-                story.status = StoryStatus.TODO  # Will retry next tick
-                story.error_log.append(result.error or result.output)
-                logger.info(
-                    f"Story [{story.id}] failed attempt {story.iterations}, "
-                    f"will retry ({self.config.loop.story_max_retries - story.iterations} left)"
-                )
+            self._handle_story_failure(story, result.error or result.output)
+            return
 
-        # 8. Dedicated MemoryAgent — LLM-powered extraction
         if self._memory_agent:
             try:
                 await self._memory_agent.process_coding_task(
@@ -410,14 +498,12 @@ class RalphLoop:
             except Exception as e:
                 logger.debug(f"MemoryAgent extraction skipped: {e}")
 
-        # 9. Auto-consolidate memory (AutoDream pattern)
         if self.memory:
             try:
                 await self.memory.maybe_consolidate()
             except Exception as e:
                 logger.debug(f"Memory consolidation skipped: {e}")
 
-        # 9. Context rotation tracking
         self.state.context_rotations += 1
         self.state.current_story_id = ""
         self._save_state()

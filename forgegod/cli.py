@@ -60,6 +60,25 @@ def _print_banner(mini: bool = False):
         console.print(_build_banner())
 
 
+def _build_tool_approver():
+    """Return a CLI approval callback for blocked tool calls."""
+
+    def _approver(name: str, arguments: dict, reason: str) -> bool:
+        payload = json.dumps(arguments, ensure_ascii=False)[:400]
+        console.print(
+            Panel(
+                f"[yellow]Approval required[/yellow]\n"
+                f"Tool: {name}\n"
+                f"Reason: {reason}\n"
+                f"Arguments: {payload}",
+                border_style="yellow",
+            )
+        )
+        return typer.confirm("Approve this tool call?", default=False)
+
+    return _approver
+
+
 def _detect_runtime_model_defaults():
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
@@ -352,10 +371,83 @@ def auth_sync(
 
 
 @app.command()
+def permissions(
+    permission_mode: Optional[str] = typer.Option(
+        None,
+        "--permission-mode",
+        help="Preview a specific permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: Optional[str] = typer.Option(
+        None,
+        "--approval-mode",
+        help="Preview approval mode: deny, prompt, approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allowed-tool",
+        help="Repeat to preview a restricted allowlist",
+    ),
+):
+    """Show the effective ForgeGod tool-permission policy for this workspace."""
+    from forgegod.config import load_config
+    from forgegod.tools import load_all_tools, permission_policy_snapshot
+
+    config = load_config()
+    if permission_mode:
+        config.security.permission_mode = permission_mode
+    if approval_mode:
+        config.security.approval_mode = approval_mode
+    if allowed_tool is not None:
+        config.security.allowed_tools = list(allowed_tool)
+
+    load_all_tools()
+    snapshot = permission_policy_snapshot(config)
+
+    summary = Table(title="ForgeGod Permissions")
+    summary.add_column("Setting", style="cyan")
+    summary.add_column("Value", style="dim")
+    summary.add_row("Mode", snapshot["mode"])
+    summary.add_row("Approval mode", snapshot["approval_mode"])
+    summary.add_row("Allowed-tool override", ", ".join(snapshot["allowed_tools"]) or "(none)")
+    summary.add_row("Effective allowed tools", str(len(snapshot["effective_allowed_tools"])))
+    summary.add_row("Blocked tools", str(len(snapshot["blocked_tools"])))
+    console.print(summary)
+
+    if snapshot["blocked_tools"]:
+        blocked = Table(title="Blocked Tools")
+        blocked.add_column("Tool", style="red")
+        for tool in snapshot["blocked_tools"]:
+            blocked.add_row(tool)
+        console.print(blocked)
+
+    if snapshot["mode"] == "read-only":
+        preview = ", ".join(snapshot["read_only_bash_prefixes"][:8])
+        console.print(
+            "[dim]Read-only bash is prefix-based. Examples:[/dim] "
+            f"{preview}"
+        )
+
+
+@app.command()
 def run(
     task: str = typer.Argument(..., help="Task description"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Override coder model"),
     review: bool = typer.Option(True, "--review/--no-review", help="Review output with frontier"),
+    permission_mode: Optional[str] = typer.Option(
+        None,
+        "--permission-mode",
+        help="Permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: Optional[str] = typer.Option(
+        None,
+        "--approval-mode",
+        help="Approval mode: deny, prompt, approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allowed-tool",
+        help="Repeat to allow only specific tools for this run",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
     terse: bool = typer.Option(
         False, "--terse", help="Caveman mode — terse prompts"
@@ -372,30 +464,87 @@ def run(
     if model:
         config.models.coder = model
     config.review.always_review_run = review
+    if permission_mode:
+        config.security.permission_mode = permission_mode
+    if approval_mode:
+        config.security.approval_mode = approval_mode
+    if allowed_tool is not None:
+        config.security.allowed_tools = list(allowed_tool)
     if terse:
         config.terse.enabled = True
         console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
 
     async def _run():
         from forgegod.agent import Agent
+        from forgegod.models import ReviewVerdict
+        from forgegod.reviewer import Reviewer
         from forgegod.router import ModelRouter
 
         router = ModelRouter(config)
-        agent = Agent(router=router, config=config)
-        result = await agent.run(task)
+        try:
+            approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
+            agent = Agent(router=router, config=config, tool_approver=approver)
+            result = await agent.run(task)
 
-        if result.success:
+            if not result.success:
+                failure = result.error or result.output or "Unknown failure"
+                console.print(f"[red]Task failed:[/red] {failure}")
+                if result.completion_blockers:
+                    console.print("[yellow]Completion blockers:[/yellow]")
+                    for blocker in result.completion_blockers:
+                        console.print(f"  - {blocker}")
+                return 1
+
+            if review and result.files_modified:
+                reviewer = Reviewer(config=config, router=router)
+                review_code = result.output[:6000]
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "git", "diff", "HEAD",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(config.project_dir.parent),
+                    )
+                    stdout, _ = await proc.communicate()
+                    if stdout:
+                        review_code = stdout.decode("utf-8", errors="replace")[:6000]
+                except Exception:
+                    pass
+
+                review_result = await reviewer.review(
+                    task=task,
+                    code=review_code,
+                    files_changed=result.files_modified,
+                )
+                if review_result.verdict != ReviewVerdict.APPROVE:
+                    color = "yellow" if review_result.verdict == ReviewVerdict.REVISE else "red"
+                    console.print(
+                        Panel(
+                            f"[{color}]Reviewer blocked completion: "
+                            f"{review_result.verdict.value}[/{color}]\n"
+                            f"{review_result.reasoning}",
+                            border_style=color,
+                        )
+                    )
+                    if review_result.issues:
+                        for issue in review_result.issues:
+                            console.print(f"  - {issue}")
+                    return 1
+
             console.print(Panel(f"[green]Task completed[/green]\n{result.output[:500]}"))
             if result.files_modified:
                 console.print(f"Files modified: {', '.join(result.files_modified)}")
+            if result.verification_commands:
+                console.print(f"Verification: {', '.join(result.verification_commands)}")
             console.print(
                 f"Cost: ${result.total_usage.cost_usd:.4f} | "
                 f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
             )
-        else:
-            console.print(f"[red]Task failed:[/red] {result.error}")
+            return 0
+        finally:
+            await router.close()
 
-    asyncio.run(_run())
+    raise typer.Exit(asyncio.run(_run()))
 
 
 @app.command()
@@ -405,6 +554,21 @@ def loop(
     ),
     workers: int = typer.Option(1, "--workers", "-w", help="Parallel workers"),
     max_iterations: Optional[int] = typer.Option(None, "--max", help="Max iterations"),
+    permission_mode: Optional[str] = typer.Option(
+        None,
+        "--permission-mode",
+        help="Permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: Optional[str] = typer.Option(
+        None,
+        "--approval-mode",
+        help="Approval mode: deny, prompt, approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allowed-tool",
+        help="Repeat to allow only specific tools during the loop",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
     dry_run: bool = typer.Option(
         False, "--dry-run", "-d", help="Print story order, don't run"
@@ -423,6 +587,15 @@ def loop(
         config.loop.parallel_workers = workers
     if max_iterations is not None:
         config.loop.max_iterations = max_iterations
+    if permission_mode:
+        config.security.permission_mode = permission_mode
+    if approval_mode:
+        config.security.approval_mode = approval_mode
+    if allowed_tool is not None:
+        config.security.allowed_tools = list(allowed_tool)
+    if config.security.approval_mode == "prompt" and workers > 1:
+        console.print("[red]Prompt approval mode is only supported with --workers 1.[/red]")
+        raise typer.Exit(1)
 
     if not prd.exists():
         console.print(f"[red]PRD not found at {prd}[/red]")
@@ -447,29 +620,33 @@ def loop(
         from forgegod.router import ModelRouter
 
         router = ModelRouter(config)
-        ralph = RalphLoop.from_prd_file(prd, config, router=router)
-
-        if dry_run:
-            state = await ralph.run(dry_run=True)
-            return
-
-        _print_banner()
-        console.print(
-            "[bold green]Ralph Loop started.[/bold green]"
-            " Press Ctrl+C to stop.\n"
-        )
+        approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
         try:
-            state = await ralph.run()
-        except KeyboardInterrupt:
-            await ralph.stop()
-            state = ralph.state
-            console.print("\n[yellow]Loop stopped by user.[/yellow]")
+            ralph = RalphLoop.from_prd_file(prd, config, router=router, tool_approver=approver)
 
-        console.print(
-            f"Completed: {state.stories_completed} | "
-            f"Failed: {state.stories_failed} | "
-            f"Cost: ${state.total_cost_usd:.4f}"
-        )
+            if dry_run:
+                state = await ralph.run(dry_run=True)
+                return
+
+            _print_banner()
+            console.print(
+                "[bold green]Ralph Loop started.[/bold green]"
+                " Press Ctrl+C to stop.\n"
+            )
+            try:
+                state = await ralph.run()
+            except KeyboardInterrupt:
+                await ralph.stop()
+                state = ralph.state
+                console.print("\n[yellow]Loop stopped by user.[/yellow]")
+
+            console.print(
+                f"Completed: {state.stories_completed} | "
+                f"Failed: {state.stories_failed} | "
+                f"Cost: ${state.total_cost_usd:.4f}"
+            )
+        finally:
+            await router.close()
 
     asyncio.run(_loop())
 

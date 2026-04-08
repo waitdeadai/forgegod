@@ -510,9 +510,24 @@ class ModelRouter:
         json_mode: bool, max_tokens: int, temperature: float,
         tools: list[dict] | None,
     ) -> tuple[str, dict]:
+        import os
+
         import openai
 
         is_reasoning = model in self._REASONING_MODELS
+        base_url = self.config.openai.base_url
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            if base_url != "https://api.openai.com/v1":
+                # OpenAI-compatible local/proxy endpoints often ignore auth but the SDK
+                # still expects a non-empty token shape.
+                api_key = "forgegod-local-dev-token"
+            else:
+                raise RuntimeError(
+                    "error: No OpenAI API key set.\n"
+                    "  Fix: export OPENAI_API_KEY=...\n"
+                    "  Or point [openai].base_url at a local OpenAI-compatible endpoint."
+                )
 
         # Reasoning models: no temperature, no system role, use max_completion_tokens
         if is_reasoning:
@@ -539,7 +554,11 @@ class ModelRouter:
         if tools:
             kwargs["tools"] = tools
 
-        client = openai.AsyncOpenAI()
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=self.config.openai.timeout,
+        )
         resp = await client.chat.completions.create(**kwargs)
 
         choice = resp.choices[0]

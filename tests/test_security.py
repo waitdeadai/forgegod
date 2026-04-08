@@ -6,7 +6,11 @@ from pathlib import Path
 import pytest
 
 from forgegod.config import ForgeGodConfig
-from forgegod.sandbox import SandboxExecutionResult, SandboxUnavailableError
+from forgegod.sandbox import (
+    SandboxExecutionResult,
+    SandboxUnavailableError,
+    diagnose_strict_sandbox,
+)
 from forgegod.tools import load_all_tools, reset_tool_context, set_tool_context
 from forgegod.tools.shell import bash, check_dangerous, redact_secrets
 
@@ -261,6 +265,39 @@ class TestCanaryToken:
 
 
 class TestSandboxModes:
+    def test_diagnose_strict_sandbox_reports_missing_image(self, monkeypatch):
+        config = ForgeGodConfig()
+        config.security.sandbox_backend = "docker"
+
+        def fake_run_probe(*args, **_kwargs):
+            if args[:2] == ("docker", "version"):
+                return True, ""
+            if args[:2] == ("docker", "info"):
+                return True, ""
+            if args[:3] == ("docker", "image", "inspect"):
+                return False, "No such image"
+            return False, "unexpected"
+
+        monkeypatch.setattr("forgegod.sandbox._run_probe", fake_run_probe)
+        readiness = diagnose_strict_sandbox(config.security)
+
+        assert readiness.ready is False
+        assert "image" in readiness.detail.lower()
+        assert "docker pull" in readiness.fix
+
+    def test_diagnose_strict_sandbox_reports_ready(self, monkeypatch):
+        config = ForgeGodConfig()
+        config.security.sandbox_backend = "docker"
+
+        def fake_run_probe(*_args, **_kwargs):
+            return True, ""
+
+        monkeypatch.setattr("forgegod.sandbox._run_probe", fake_run_probe)
+        readiness = diagnose_strict_sandbox(config.security)
+
+        assert readiness.ready is True
+        assert "ready" in readiness.detail.lower()
+
     @pytest.mark.asyncio
     async def test_standard_blocks_shell_chaining(self, tmp_path):
         config = ForgeGodConfig()

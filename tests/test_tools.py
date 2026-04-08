@@ -1,5 +1,6 @@
 """Tests for ForgeGod tool system."""
 
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from forgegod.tools import (
     set_tool_context,
 )
 from forgegod.tools.filesystem import edit_file, glob_files, grep_files, read_file, write_file
+from forgegod.tools.git import git_worktree_create, git_worktree_remove
 
 
 @pytest.fixture(autouse=True)
@@ -178,3 +180,94 @@ async def test_read_file_blocks_workspace_escape_when_scoped():
 
         assert "inside" in inside
         assert "escapes workspace root" in blocked
+
+
+def _init_git_repo_with_commit(workspace: Path) -> None:
+    subprocess.run(
+        ["git", "init"],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "forgegod@example.com"],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "ForgeGod"],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (workspace / "README.md").write_text("forgegod\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "."],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+@pytest.mark.asyncio
+async def test_git_worktree_create_requires_commit(tmp_path):
+    workspace = tmp_path / "repo-no-head"
+    workspace.mkdir()
+    subprocess.run(
+        ["git", "init"],
+        cwd=str(workspace),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    config = ForgeGodConfig()
+    config.project_dir = workspace / ".forgegod"
+    config.project_dir.mkdir()
+
+    token = set_tool_context(config)
+    try:
+        result = await git_worktree_create("forgegod/test-no-head")
+    finally:
+        reset_tool_context(token)
+
+    assert "at least one git commit" in result
+
+
+@pytest.mark.asyncio
+async def test_git_worktree_create_roundtrip(tmp_path):
+    workspace = tmp_path / "repo"
+    workspace.mkdir()
+    _init_git_repo_with_commit(workspace)
+
+    config = ForgeGodConfig()
+    config.project_dir = workspace / ".forgegod"
+    config.project_dir.mkdir()
+
+    token = set_tool_context(config)
+    try:
+        result = await git_worktree_create("forgegod/test-worktree")
+        assert result.startswith("Worktree created at .forgegod/worktrees/")
+
+        created_rel = result.split("Worktree created at ", 1)[1].split(" on branch", 1)[0]
+        created_path = workspace / created_rel
+        assert created_path.exists()
+
+        removed = await git_worktree_remove(created_rel)
+    finally:
+        reset_tool_context(token)
+
+    assert removed == "(no output)"
+    assert not created_path.exists()

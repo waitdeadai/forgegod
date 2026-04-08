@@ -1,0 +1,55 @@
+{
+  "version": "2026-04-08",
+  "scenarios": [
+    {
+      "id": "read_file_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_read_file_roundtrip",
+      "description": "Agent reads a file and completes a read-only task deterministically."
+    },
+    {
+      "id": "grep_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_grep_roundtrip",
+      "description": "Agent uses grep deterministically and returns a grounded answer."
+    },
+    {
+      "id": "write_file_allowed",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_write_file_allowed_workspace_scoped",
+      "description": "Workspace-scoped file writes succeed in the local harness."
+    },
+    {
+      "id": "write_file_denied",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_write_file_denied_workspace_escape",
+      "description": "Writes that escape the workspace are denied deterministically."
+    },
+    {
+      "id": "multi_tool_turn_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_multi_tool_turn_roundtrip",
+      "description": "A deterministic multi-tool turn exercises repo_map, grep, and read_file."
+    },
+    {
+      "id": "bash_stdout_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_bash_stdout_roundtrip",
+      "description": "Shell stdout is returned and scoped through the local harness."
+    },
+    {
+      "id": "completion_gate_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_completion_gate_roundtrip",
+      "description": "Implementation completion is blocked until verification and git_diff both happen."
+    },
+    {
+      "id": "tool_scope_roundtrip",
+      "nodeid": "tests/test_mock_parity_harness.py::test_parity_direct_tool_roundtrips_are_scoped",
+      "description": "Direct read/grep tool roundtrips remain rooted to the active workspace."
+    },
+    {
+      "id": "reviewer_blocks_cli_completion",
+      "nodeid": "tests/test_cli_run.py::test_run_blocks_when_reviewer_requests_revision",
+      "description": "forgegod run --review treats revise/reject as blocking verdicts."
+    },
+    {
+      "id": "acceptance_criteria_force_review",
+      "nodeid": "tests/test_reviewer.py::TestShouldReview::test_should_review_acceptance_criteria_override",
+      "description": "Stories with acceptance criteria force review by default."
+    }
+  ]
+}

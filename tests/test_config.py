@@ -25,6 +25,8 @@ def test_default_config():
     assert config.loop.max_iterations == 100
     assert config.loop.auto_commit_success is False
     assert config.loop.auto_push_success is False
+    assert config.memory.enabled is True
+    assert config.memory.extraction_enabled is True
     assert config.security.sandbox_backend == "auto"
     assert config.security.sandbox_image == "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
     assert config.openai_codex.command == "codex"
@@ -63,6 +65,7 @@ def test_init_project():
         data = toml.loads(config_text)
         assert "models" in data
         assert "budget" in data
+        assert data["budget"]["mode"] == "normal"
 
 
 def test_load_config_defaults():

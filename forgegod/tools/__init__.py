@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+import re
 from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import Any, Callable, Coroutine
@@ -11,6 +13,7 @@ from forgegod.models import ToolDef
 # Global tool registry
 _TOOLS: dict[str, tuple[ToolDef, Callable[..., Coroutine[Any, Any, str]]]] = {}
 _TOOL_CONFIG: ContextVar[Any | None] = ContextVar("forgegod_tool_config", default=None)
+_TOOL_APPROVER: ContextVar[Any | None] = ContextVar("forgegod_tool_approver", default=None)
 
 __all__ = [
     "register_tool",
@@ -22,9 +25,57 @@ __all__ = [
     "get_project_dir",
     "resolve_tool_path",
     "blocked_path_reason",
+    "tool_permission_error",
+    "permission_policy_snapshot",
+    "set_tool_approver",
+    "reset_tool_approver",
     "set_tool_context",
     "reset_tool_context",
 ]
+
+READ_ONLY_TOOLS = {
+    "read_file", "glob", "grep", "repo_map", "git_status",
+    "git_diff", "git_log", "mcp_list", "list_skills", "load_skill",
+    "web_search", "web_fetch", "pypi_info", "github_search",
+}
+
+WORKSPACE_WRITE_BLOCKED_TOOLS = {
+    "git_commit", "git_worktree_create", "git_worktree_remove",
+    "mcp_connect", "mcp_call", "mcp_auth",
+}
+
+READ_ONLY_BASH_PREFIXES = (
+    "python --version",
+    "python -m pytest",
+    "pytest",
+    "ruff",
+    "git status",
+    "git diff",
+    "git log",
+    "ls",
+    "dir",
+    "cat",
+    "type",
+    "find",
+    "findstr",
+    "rg",
+    "npm test",
+    "npm run test",
+    "npm run lint",
+    "npm run build",
+    "pnpm test",
+    "pnpm lint",
+    "pnpm build",
+    "yarn test",
+    "yarn lint",
+    "yarn build",
+    "bun test",
+    "bun run lint",
+    "bun run build",
+    "cargo test",
+    "go test",
+    "deno test",
+)
 
 
 def register_tool(
@@ -53,6 +104,16 @@ def set_tool_context(config: Any) -> Token:
 def reset_tool_context(token: Token) -> None:
     """Reset runtime config for tool execution in the current async context."""
     _TOOL_CONFIG.reset(token)
+
+
+def set_tool_approver(approver: Any) -> Token:
+    """Set an approval callback for permission overrides in the current context."""
+    return _TOOL_APPROVER.set(approver)
+
+
+def reset_tool_approver(token: Token) -> None:
+    """Reset the approval callback in the current async context."""
+    _TOOL_APPROVER.reset(token)
 
 
 def get_project_dir() -> Path:
@@ -116,6 +177,129 @@ def blocked_path_reason(path: Path) -> str | None:
     return None
 
 
+def _normalize_command(command: str) -> str:
+    return re.sub(r"\s+", " ", command.strip().lower())
+
+
+def _read_only_bash_allowed(command: str) -> bool:
+    normalized = _normalize_command(command)
+    for prefix in READ_ONLY_BASH_PREFIXES:
+        if normalized == prefix or normalized.startswith(prefix + " "):
+            return True
+    return False
+
+
+def tool_permission_error(name: str, arguments: dict[str, Any]) -> str | None:
+    """Return a permission error for a tool call, or None if allowed."""
+    config = get_tool_config()
+    if not config:
+        return None
+
+    security = getattr(config, "security", None)
+    if not security:
+        return None
+
+    mode = getattr(security, "permission_mode", "workspace-write")
+    allowed_tools = {
+        str(tool).strip()
+        for tool in getattr(security, "allowed_tools", []) or []
+        if str(tool).strip()
+    }
+
+    if allowed_tools and name not in allowed_tools:
+        return (
+            f"Tool '{name}' is not in the allowed tool list for this run. "
+            f"Allowed: {', '.join(sorted(allowed_tools))}"
+        )
+
+    if mode == "danger-full-access":
+        return None
+
+    if mode == "read-only":
+        if name in READ_ONLY_TOOLS:
+            return None
+        if name == "bash" and _read_only_bash_allowed(str(arguments.get("command", ""))):
+            return None
+        return f"Tool '{name}' is blocked in read-only permission mode"
+
+    if mode == "workspace-write":
+        if name in WORKSPACE_WRITE_BLOCKED_TOOLS:
+            return f"Tool '{name}' is blocked in workspace-write permission mode"
+        return None
+
+    return f"Unknown permission mode: {mode}"
+
+
+async def _tool_permission_approved(
+    name: str,
+    arguments: dict[str, Any],
+    permission_error: str,
+) -> bool:
+    config = get_tool_config()
+    security = getattr(config, "security", None) if config else None
+    approval_mode = getattr(security, "approval_mode", "deny") if security else "deny"
+
+    if approval_mode == "approve":
+        return True
+    if approval_mode != "prompt":
+        return False
+
+    approver = _TOOL_APPROVER.get()
+    if approver is None:
+        return False
+
+    decision = approver(name, arguments, permission_error)
+    if inspect.isawaitable(decision):
+        decision = await decision
+    return bool(decision)
+
+
+def permission_policy_snapshot(config: Any) -> dict[str, Any]:
+    """Describe the effective tool-permission surface for the current config."""
+    security = getattr(config, "security", None)
+    if security:
+        mode = getattr(security, "permission_mode", "workspace-write")
+    else:
+        mode = "workspace-write"
+    allowed_tools = {
+        str(tool).strip()
+        for tool in getattr(security, "allowed_tools", []) or []
+        if str(tool).strip()
+    }
+    registered_tools = set(_TOOLS.keys())
+
+    if allowed_tools:
+        effective_allowed_tools = sorted(registered_tools & allowed_tools)
+        blocked_tools = sorted(registered_tools - allowed_tools)
+    elif mode == "read-only":
+        effective_allowed_tools = sorted(registered_tools & READ_ONLY_TOOLS)
+        blocked_tools = sorted(
+            tool for tool in registered_tools
+            if tool not in READ_ONLY_TOOLS and tool != "bash"
+        )
+    elif mode == "workspace-write":
+        effective_allowed_tools = sorted(
+            tool for tool in registered_tools if tool not in WORKSPACE_WRITE_BLOCKED_TOOLS
+        )
+        blocked_tools = sorted(registered_tools & WORKSPACE_WRITE_BLOCKED_TOOLS)
+    elif mode == "danger-full-access":
+        effective_allowed_tools = sorted(registered_tools)
+        blocked_tools = []
+    else:
+        effective_allowed_tools = sorted(registered_tools)
+        blocked_tools = []
+
+    return {
+        "mode": mode,
+        "approval_mode": getattr(security, "approval_mode", "deny") if security else "deny",
+        "registered_tools": sorted(registered_tools),
+        "allowed_tools": sorted(allowed_tools),
+        "effective_allowed_tools": effective_allowed_tools,
+        "blocked_tools": blocked_tools,
+        "read_only_bash_prefixes": list(READ_ONLY_BASH_PREFIXES) if mode == "read-only" else [],
+    }
+
+
 def get_tool_defs() -> list[dict]:
     """Get all tool definitions in OpenAI function-calling format."""
     return [
@@ -135,6 +319,9 @@ async def execute_tool(name: str, arguments: dict[str, Any]) -> str:
     """Execute a registered tool by name."""
     if name not in _TOOLS:
         return f"Error: Unknown tool '{name}'"
+    permission_error = tool_permission_error(name, arguments)
+    if permission_error and not await _tool_permission_approved(name, arguments, permission_error):
+        return f"Error: {permission_error}"
     _, handler = _TOOLS[name]
     try:
         return await handler(**arguments)

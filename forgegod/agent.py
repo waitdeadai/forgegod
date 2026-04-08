@@ -27,11 +27,49 @@ from forgegod.tools import (
     execute_tool,
     get_tool_defs,
     load_all_tools,
+    reset_tool_approver,
     reset_tool_context,
+    set_tool_approver,
     set_tool_context,
 )
 
 logger = logging.getLogger("forgegod.agent")
+
+IMPLEMENTATION_MARKERS = (
+    "implement", "fix", "build", "create", "add", "update", "modify",
+    "edit", "write", "refactor", "change", "patch", "integrate",
+    "support", "scaffold", "ship",
+)
+
+READ_ONLY_MARKERS = (
+    "explain", "analyze", "audit", "review", "inspect", "summarize",
+    "research", "plan", "brainstorm", "compare", "what", "why",
+    "list", "show", "status", "report", "check", "verify", "confirm",
+    "probe", "run",
+)
+
+VERIFICATION_COMMAND_MARKERS = (
+    "pytest", "python -m pytest", "uv run pytest", "npm test", "pnpm test",
+    "yarn test", "bun test", "vitest", "jest", "playwright", "ruff",
+    "mypy", "pyright", "tsc", "next build", "npm run build", "pnpm build",
+    "yarn build", "bun run build", "npm run lint", "pnpm lint",
+    "yarn lint", "bun run lint", "cargo test", "go test", "deno test",
+)
+PERMISSION_ERROR_MARKERS = (
+    "blocked in read-only permission mode",
+    "blocked in workspace-write permission mode",
+    "not in the allowed tool list",
+)
+
+CODELIKE_EXTENSIONS = {
+    ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".rb", ".java",
+    ".c", ".cpp", ".sh", ".sql", ".html", ".css",
+}
+
+CODELIKE_FILENAMES = {
+    "package.json", "pyproject.toml", "Cargo.toml", "go.mod", "go.sum",
+    "requirements.txt", "uv.lock", "pnpm-lock.yaml", "package-lock.json",
+}
 
 # System prompt — engineered from SWE-bench top-scoring agent patterns:
 # 1. Structured problem-solving workflow (understand → locate → plan → implement → verify)
@@ -78,6 +116,11 @@ Do NOT advance to FINALIZE until VERIFY passes.
 (3) Is this truly a new approach?
 - **Minimal changes**: Don't refactor code you weren't asked to change.
 - **Escalate when stuck**: If genuinely blocked, explain what's blocking you.
+- **Completion gate**: For implementation tasks, do not finalize until you
+  have reviewed the final patch with `git_diff` and run at least one relevant
+  verification command after your last code change.
+- **Completion report**: Your final answer must briefly state files changed
+  and verification commands run.
 
 ## Anti-Patterns (AVOID)
 - Editing without reading → broken code
@@ -112,6 +155,7 @@ class Agent:
         system_prompt: str = "",
         max_turns: int = 200,
         max_tool_calls: int = 1000,
+        tool_approver: Any | None = None,
     ):
         self.config = config
         self.router = router or ModelRouter(config)
@@ -119,6 +163,7 @@ class Agent:
         self.role = role
         self.max_turns = max_turns
         self.max_tool_calls = max_tool_calls
+        self.tool_approver = tool_approver
 
         # Build system prompt — static content first for prompt caching
         if system_prompt:
@@ -162,6 +207,8 @@ class Agent:
         self._turn = 0
         self._gutter_tracker: dict[str, int] = {}  # action_hash → repeat count
         self._error_solutions_used: list[str] = []  # avoid re-injecting same solution
+        self._post_edit_verification_commands: list[str] = []
+        self._reviewed_final_diff = False
 
         # Load tools
         load_all_tools()
@@ -189,6 +236,7 @@ class Agent:
         """
         start = time.time()
         task_id = f"task-{int(start)}"
+        requires_code_changes = self._task_requires_code_changes(task)
 
         # Recall relevant memories before starting
         memory_context = ""
@@ -252,12 +300,16 @@ class Agent:
                     # of calling tools. If no files modified yet and we're
                     # early in the loop, nudge the agent to use tools.
                     needs_codex_tool_nudge = (
+                        requires_code_changes
+                        and
                         usage.provider == "openai-codex"
                         and self.role == "coder"
                         and not self.files_modified
                         and self._turn <= 3
                     )
                     if (
+                        requires_code_changes
+                        and
                         not self.files_modified
                         and self._turn <= 5
                         and self.tool_calls_count > 0
@@ -284,6 +336,24 @@ class Agent:
                                 "DO NOT describe changes — execute them with "
                                 "tools NOW. Call the tool directly."
                             ),
+                        })
+                        continue
+
+                    blockers = self._completion_blockers(
+                        requires_code_changes=requires_code_changes
+                    )
+                    if blockers:
+                        logger.warning(
+                            "Agent attempted completion before satisfying closure gates: %s",
+                            "; ".join(blockers),
+                        )
+                        self.messages.append({
+                            "role": "assistant",
+                            "content": response_text,
+                        })
+                        self.messages.append({
+                            "role": "user",
+                            "content": self._completion_blocker_prompt(blockers),
                         })
                         continue
 
@@ -341,6 +411,7 @@ class Agent:
                         path = tc.arguments.get("path", "")
                         if path and path not in self.files_modified:
                             self.files_modified.append(path)
+                    self._record_completion_signal(tc, result)
 
                     # Security: check file content for injection patterns
                     if tc.name == "read_file" and not result.error:
@@ -376,6 +447,22 @@ class Agent:
                                 "role": "user", "content": hint,
                             })
 
+                        permission_blocker = self._permission_failure(
+                            tc=tc,
+                            result=result,
+                            requires_code_changes=requires_code_changes,
+                        )
+                        if permission_blocker:
+                            logger.warning(permission_blocker)
+                            failed = self._build_result(
+                                success=False,
+                                output=permission_blocker,
+                                elapsed=time.time() - start,
+                                completion_blockers=[permission_blocker],
+                            )
+                            await self._record_episode(task_id, task, failed)
+                            return failed
+
                     # Gutter detection with forced structured reflection (SOTA pattern)
                     if self._detect_gutter(tc, result):
                         logger.warning(f"Gutter detected: {tc.name} repeated 3x with same args")
@@ -405,6 +492,9 @@ class Agent:
                 success=False,
                 output=f"[Max turns ({self.max_turns}) reached]",
                 elapsed=time.time() - start,
+                completion_blockers=self._completion_blockers(
+                    requires_code_changes=requires_code_changes
+                ),
             )
             await self._record_episode(task_id, task, result)
             return result
@@ -416,6 +506,9 @@ class Agent:
                 output="",
                 elapsed=time.time() - start,
                 error=str(e),
+                completion_blockers=self._completion_blockers(
+                    requires_code_changes=requires_code_changes
+                ),
             )
             await self._record_episode(task_id, task, result)
             return result
@@ -621,9 +714,14 @@ class Agent:
         # Stage 2: Execute
         try:
             token = set_tool_context(self.config)
+            approval_token = None
+            if self.tool_approver is not None:
+                approval_token = set_tool_approver(self.tool_approver)
             try:
                 result = await execute_tool(tc.name, tc.arguments)
             finally:
+                if approval_token is not None:
+                    reset_tool_approver(approval_token)
                 reset_tool_context(token)
             is_error = result.startswith("Error")
             return ToolResult(
@@ -660,6 +758,7 @@ class Agent:
             budget=self.budget,
             role=role,
             max_turns=max_turns,
+            tool_approver=self.tool_approver,
         )
         result = await subagent.run(task)
 
@@ -699,6 +798,124 @@ class Agent:
                     msg["content"] = (
                         f"{head}\n\n[... {trimmed} chars pruned ...]\n\n{tail}"
                     )
+
+    def _record_completion_signal(self, tc: ToolCall, result: ToolResult):
+        """Track implementation evidence after successful tool calls."""
+        if result.error:
+            return
+
+        if tc.name in {"write_file", "edit_file"}:
+            self._post_edit_verification_commands = []
+            self._reviewed_final_diff = False
+            return
+
+        if tc.name == "git_diff":
+            self._reviewed_final_diff = True
+            return
+
+        if tc.name == "bash":
+            command = str(tc.arguments.get("command", "")).strip()
+            lowered = command.lower()
+            if any(marker in lowered for marker in VERIFICATION_COMMAND_MARKERS):
+                self._post_edit_verification_commands.append(command)
+
+    @staticmethod
+    def _task_requires_code_changes(task: str) -> bool:
+        """Classify whether a task should produce real file changes."""
+        lowered = task.lower()
+        if "## acceptance criteria" in lowered or "## current story:" in lowered:
+            return True
+        if any(marker in lowered for marker in IMPLEMENTATION_MARKERS):
+            return True
+        if any(marker in lowered for marker in READ_ONLY_MARKERS):
+            return False
+        if "?" in task and not any(marker in lowered for marker in IMPLEMENTATION_MARKERS):
+            return False
+        return True
+
+    @staticmethod
+    def _files_need_runtime_verification(files_modified: list[str]) -> bool:
+        """Require post-edit verification only for code-like changes."""
+        for path_str in files_modified:
+            path = Path(path_str)
+            if path.name in CODELIKE_FILENAMES or path.suffix.lower() in CODELIKE_EXTENSIONS:
+                return True
+        return False
+
+    def _completion_blockers(self, requires_code_changes: bool) -> list[str]:
+        """Return deterministic reasons why completion is not credible yet."""
+        blockers: list[str] = []
+
+        if requires_code_changes and not self.files_modified:
+            blockers.append(
+                "The task requires real file changes, but no files were modified yet."
+            )
+
+        if self.files_modified and not self._reviewed_final_diff:
+            blockers.append(
+                "Review the final patch with git_diff after your last code change."
+            )
+
+        if (
+            self.files_modified
+            and self._files_need_runtime_verification(self.files_modified)
+            and not self._post_edit_verification_commands
+        ):
+            blockers.append(
+                "Run at least one meaningful verification command after your last "
+                "code change (tests, lint, build, or typecheck)."
+            )
+
+        return blockers
+
+    def _permission_failure(
+        self,
+        tc: ToolCall,
+        result: ToolResult,
+        requires_code_changes: bool,
+    ) -> str | None:
+        """Return a terminal failure when policy makes a write task impossible."""
+        if not requires_code_changes or not result.error:
+            return None
+
+        lowered = result.content.lower()
+        if not any(marker in lowered for marker in PERMISSION_ERROR_MARKERS):
+            return None
+
+        security = getattr(self.config, "security", None)
+        permission_mode = getattr(security, "permission_mode", "workspace-write")
+        allowed_tools = [
+            str(tool).strip()
+            for tool in getattr(security, "allowed_tools", []) or []
+            if str(tool).strip()
+        ]
+
+        fixes: list[str] = []
+        if permission_mode == "read-only":
+            fixes.append("rerun with `--permission-mode workspace-write`")
+        elif permission_mode == "workspace-write" and tc.name.startswith("git_"):
+            fixes.append("rerun with `--permission-mode danger-full-access`")
+        if allowed_tools and tc.name not in allowed_tools:
+            fixes.append(f"add `--allowed-tool {tc.name}`")
+
+        fix_text = " or ".join(fixes) if fixes else "adjust the permission policy"
+        return (
+            f"ForgeGod blocked tool '{tc.name}' under the current permission policy "
+            f"before the task could complete. Fix: {fix_text}."
+        )
+
+    @staticmethod
+    def _completion_blocker_prompt(blockers: list[str]) -> str:
+        bullet_list = "\n".join(f"- {blocker}" for blocker in blockers)
+        return (
+            "[COMPLETION BLOCKED]\n"
+            "You cannot finalize yet. Satisfy every blocker with real tool calls.\n"
+            f"{bullet_list}\n\n"
+            "After the blockers are resolved, provide a brief completion report with:\n"
+            "- files changed\n"
+            "- verification commands run\n"
+            "- any remaining risk"
+        )
 
     async def _run_hooks(self, event: str, context: dict | None = None):
         """Run lifecycle hooks — user-defined scripts at agent events.
@@ -815,7 +1032,12 @@ class Agent:
         self.total_usage.provider = usage.provider
 
     def _build_result(
-        self, success: bool, output: str, elapsed: float, error: str = ""
+        self,
+        success: bool,
+        output: str,
+        elapsed: float,
+        error: str = "",
+        completion_blockers: list[str] | None = None,
     ) -> AgentResult:
         """Build the final AgentResult."""
         self.total_usage.elapsed_s = round(elapsed, 2)
@@ -825,6 +1047,9 @@ class Agent:
             files_modified=self.files_modified,
             tool_calls_count=self.tool_calls_count,
             total_usage=self.total_usage,
+            verification_commands=list(self._post_edit_verification_commands),
+            reviewed_final_diff=self._reviewed_final_diff,
+            completion_blockers=completion_blockers or [],
             error=error,
         )
 

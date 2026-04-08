@@ -192,3 +192,22 @@ class TestShouldReview:
         # sample_rate=1 → every story reviewed in loop mode too
         for i in range(10):
             assert reviewer_run.should_review(i, is_single_shot=False) is True
+
+    def test_should_review_acceptance_criteria_override(self, reviewer_loop: Reviewer) -> None:
+        """Stories with acceptance criteria should be reviewed by default."""
+        assert reviewer_loop.should_review(0, acceptance_criteria=2) is True
+        assert reviewer_loop.should_review(1, acceptance_criteria=1) is True
+
+    def test_should_review_acceptance_override_can_be_disabled(self) -> None:
+        """Sampling still applies when the acceptance override is disabled."""
+        from forgegod.config import ReviewConfig
+
+        rc = ReviewConfig(
+            enabled=True,
+            sample_rate=3,
+            always_review_run=False,
+            force_review_acceptance_criteria=False,
+        )
+        reviewer = Reviewer(config=ForgeGodConfig(review=rc))
+        assert reviewer.should_review(0, acceptance_criteria=2) is False
+        assert reviewer.should_review(2, acceptance_criteria=2) is True

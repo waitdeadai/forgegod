@@ -108,6 +108,9 @@ class AgentResult(BaseModel):
     files_modified: list[str] = Field(default_factory=list)
     tool_calls_count: int = 0
     total_usage: ModelUsage = Field(default_factory=ModelUsage)
+    verification_commands: list[str] = Field(default_factory=list)
+    reviewed_final_diff: bool = False
+    completion_blockers: list[str] = Field(default_factory=list)
     error: str = ""
 
 

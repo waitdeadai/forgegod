@@ -92,6 +92,12 @@ class ReviewConfig(BaseModel):
     enabled: bool = True
     sample_rate: int = 3  # Review every Nth story in loop mode
     always_review_run: bool = True  # Always review in single-shot mode
+    force_review_acceptance_criteria: bool = True
+
+
+class MemoryConfig(BaseModel):
+    enabled: bool = True
+    extraction_enabled: bool = True
 
 
 class SICAConfig(BaseModel):
@@ -103,6 +109,9 @@ class SICAConfig(BaseModel):
 class SecurityConfig(BaseModel):
     """Security guardrails — defense-in-depth for autonomous coding."""
 
+    permission_mode: str = "workspace-write"  # read-only | workspace-write | danger-full-access
+    approval_mode: str = "deny"  # deny | prompt | approve
+    allowed_tools: list[str] = Field(default_factory=list)
     sandbox_mode: str = "standard"  # permissive | standard | strict
     sandbox_backend: str = "auto"  # auto | docker
     sandbox_image: str = "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
@@ -127,6 +136,13 @@ class GeminiConfig(BaseModel):
     """Google Gemini provider settings."""
 
     timeout: float = 120.0
+
+
+class OpenAIConfig(BaseModel):
+    """OpenAI-compatible provider settings for direct and mock endpoints."""
+
+    timeout: float = 120.0
+    base_url: str = "https://api.openai.com/v1"
 
 
 class OpenAICodexConfig(BaseModel):
@@ -177,10 +193,12 @@ class ForgeGodConfig(BaseModel):
     loop: LoopConfig = Field(default_factory=LoopConfig)
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     review: ReviewConfig = Field(default_factory=ReviewConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
     sica: SICAConfig = Field(default_factory=SICAConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     terse: TerseConfig = Field(default_factory=TerseConfig)
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
+    openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     openai_codex: OpenAICodexConfig = Field(default_factory=OpenAICodexConfig)
     kimi: KimiConfig = Field(default_factory=KimiConfig)
     zai: ZAIConfig = Field(default_factory=ZAIConfig)
@@ -341,7 +359,12 @@ def init_project(
         if model_defaults is not None:
             default.models = model_defaults
         config_path.write_text(
-            toml.dumps(default.model_dump(exclude={"global_dir", "project_dir"}))
+            toml.dumps(
+                default.model_dump(
+                    mode="json",
+                    exclude={"global_dir", "project_dir"},
+                )
+            )
         )
 
     # Create subdirs

@@ -261,6 +261,89 @@ reviewer/sentinel/escalation. If ForgeGod users choose to wire
 an experimental, at-your-own-risk mode rather than marketed as a guaranteed
 provider-sanctioned billing path.
 
+## Origin Baseline Addendum - claw-code
+
+Verified on `2026-04-08` before the next ForgeGod harness pass:
+
+- The public `claw-code` repo presents itself as the canonical public `claw`
+  harness implementation and centers `USAGE.md`, `PARITY.md`,
+  `PHILOSOPHY.md`, and container-oriented runtime docs as the operational map:
+  - https://github.com/ultraworkers/claw-code
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/PARITY.md
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/PHILOSOPHY.md
+- `claw-code` makes doctor/preflight a first-class product surface. Its usage
+  guide says to run `/doctor` before prompts or automation, which supports
+  keeping setup and sandbox diagnostics in the main CLI rather than as a
+  hidden support path:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+- `claw-code` exposes explicit permission modes and tool allowlists
+  (`read-only`, `workspace-write`, `danger-full-access`, plus
+  `--allowedTools`). That is a stronger user-facing permission model than
+  ForgeGod currently exposes:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+- `claw-code` also maintains a deterministic mock parity harness with scripted
+  scenarios for tool roundtrips, permission denials, and bash flows. That is a
+  stronger reproducibility story than ForgeGod's current mix of unit tests,
+  stress tests, and live-provider smoke checks:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/PARITY.md
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/rust/MOCK_PARITY_HARNESS.md
+- At the same time, `claw-code` keeps a simpler routing story based on a small
+  provider matrix and model-prefix selection, while ForgeGod already has a
+  broader provider and auth matrix:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+
+Operational conclusion for ForgeGod: ForgeGod already exceeds `claw-code` in
+provider breadth, native auth surfaces, PRD-loop orchestration, and memory
+architecture. The remaining delta is now narrower and more specific:
+interactive approval behavior in broader loop/worktree contexts and deeper
+end-to-end harness coverage. The repo no longer needs generic "better
+permissions" rhetoric; it needs the next layer of reproducible proof.
+
+## Harness Research Addendum - OpenAI-Compatible Mock Endpoints
+
+Verified on `2026-04-08` before extending ForgeGod's deterministic harness:
+
+- OpenAI's external-model guide explicitly supports evaluating a custom model
+  endpoint that implements OpenAI-compatible chat completions. That is strong
+  current-year evidence that a local OpenAI-compatible endpoint is a legitimate
+  harness target for deterministic verification, not a hack:
+  - https://platform.openai.com/docs/guides/evals?api-mode=responses#run-an-evaluation-on-an-external-model
+- `claw-code`'s usage guide also exposes `OPENAI_BASE_URL` for local
+  OpenAI-compatible providers and pairs that with deterministic parity work.
+  That makes configurable endpoint routing part of the lineage baseline rather
+  than an invented ForgeGod detour:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+- Z.AI's official docs continue to document an OpenAI-compatible API surface,
+  and the OpenClaw integration page shows the Coding Plan being wired into a
+  real agent product through explicit provider setup plus model selection:
+  - https://docs.z.ai/api-reference/introduction
+  - https://docs.z.ai/devpack/tool/openclaw
+
+Operational conclusion for ForgeGod: adding configurable OpenAI-compatible
+endpoint routing and a local CLI mock parity harness is aligned with both
+current official guidance and the `claw-code` baseline. The safer product
+direction is to make this an explicit, documented harness surface instead of
+leaving deterministic end-to-end testing to monkeypatch-heavy unit tests.
+
+## Git Worktree Addendum - Parallel Isolation Contract
+
+Verified on `2026-04-08` before tightening ForgeGod's worktree contract:
+
+- The official Git worktree manual documents `git worktree add -b <new-branch> <path>`
+  as the direct one-step way to create and check out a new branch into a new
+  worktree, and notes that `-b` defaults its base commit to `HEAD`:
+  - https://git-scm.com/docs/git-worktree.html
+- The same manual also explains that omitted commit-ish behavior changes when a
+  repository has no valid branches yet; Git can fall back to unborn-branch
+  convenience behavior in that state:
+  - https://git-scm.com/docs/git-worktree.html
+
+Operational conclusion for ForgeGod: the harness should not rely on Git's
+unborn-branch convenience path for autonomous parallel coding because ForgeGod
+reviews and patches worker output against `HEAD`. Requiring at least one commit
+before parallel workers start is the cleaner and more reproducible contract.
+
 ## Workflow Research Addendum - DESIGN.md + Contribution Mode
 
 Verified on `2026-04-08` before adding frontend and contribution workflows:

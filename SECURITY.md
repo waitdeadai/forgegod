@@ -42,6 +42,7 @@ ForgeGod implements defense-in-depth:
 
 - ForgeGod sends file contents and code to third-party LLM APIs. Do not use on repositories containing secrets or proprietary code without appropriate safeguards.
 - `strict` mode depends on a usable local Docker daemon and a pre-pulled sandbox image. If those prerequisites are missing, strict execution is blocked.
+- ForgeGod now includes a strict-sandbox doctor check and a non-technical setup guide in [docs/STRICT_SANDBOX_SETUP.md](docs/STRICT_SANDBOX_SETUP.md). Prefer that path over disabling `strict` for convenience.
 - ForgeGod still does not provide microVM isolation, custom seccomp profiles, or a stronger backend than the local Docker Engine.
 - `standard` mode is still a host-local guardrailed workflow, not a locked-down profile. Suspicious generated code is blocked only in `strict` mode.
 - MCP server connections spawn external processes. Only connect to trusted MCP servers.

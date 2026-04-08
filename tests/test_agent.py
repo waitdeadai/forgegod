@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from forgegod.config import ForgeGodConfig
-from forgegod.models import ToolCall, ToolResult
+from forgegod.models import ModelUsage, ToolCall, ToolResult
 
 
 @pytest.fixture
@@ -318,3 +318,107 @@ class TestToolValidation:
             agent.budget.close()
             assert result.error is False
             assert "test content" in result.content
+
+
+class FakeRouter:
+    def __init__(self, responses: list[str]):
+        self.responses = responses
+        self.calls = 0
+
+    async def call(self, **_kwargs):
+        response = self.responses[self.calls]
+        self.calls += 1
+        return response, ModelUsage(provider="zai", model="glm-5.1")
+
+
+class TestCompletionEvidence:
+    def test_task_requires_code_changes(self, agent):
+        assert agent._task_requires_code_changes("Implement the API handler") is True
+        assert agent._task_requires_code_changes("## Acceptance Criteria\n- add tests") is True
+        assert agent._task_requires_code_changes("Explain the current architecture") is False
+        assert agent._task_requires_code_changes("Run python --version and report it.") is False
+        assert agent._task_requires_code_changes(
+            "Check whether strict sandbox execution is available."
+        ) is False
+        assert agent._task_requires_code_changes("Run tests and fix failures") is True
+
+    def test_completion_blockers_for_code_changes(self, agent):
+        agent.files_modified = ["src/app.py"]
+        blockers = agent._completion_blockers(requires_code_changes=True)
+        assert any("git_diff" in blocker for blocker in blockers)
+        assert any("verification command" in blocker for blocker in blockers)
+
+    def test_docs_only_change_does_not_require_runtime_verification(self, agent):
+        agent.files_modified = ["README.md"]
+        blockers = agent._completion_blockers(requires_code_changes=True)
+        assert blockers == ["Review the final patch with git_diff after your last code change."]
+
+    @pytest.mark.asyncio
+    async def test_agent_run_requires_post_edit_verification_and_diff(self, tmp_path):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter([
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_1",
+                    "name": "write_file",
+                    "arguments": {"path": "src/app.py", "content": "print('hi')\n"},
+                }]
+            }),
+            "Implemented the change.",
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_2",
+                    "name": "bash",
+                    "arguments": {"command": "python -m pytest -q"},
+                }]
+            }),
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_3",
+                    "name": "git_diff",
+                    "arguments": {},
+                }]
+            }),
+            (
+                "Implemented src/app.py.\n"
+                "Files changed: src/app.py\n"
+                "Verification commands run: python -m pytest -q"
+            ),
+        ])
+
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=8,
+        )
+        agent.memory = None
+
+        async def fake_execute(tool_calls):
+            results = []
+            for tc in tool_calls:
+                results.append(
+                    ToolResult(
+                        tool_call_id=tc.id,
+                        name=tc.name,
+                        content="ok",
+                        error=False,
+                    )
+                )
+            return results
+
+        agent._execute_tool_batch = fake_execute  # type: ignore[method-assign]
+
+        result = await agent.run("Implement the API handler")
+        agent.budget.close()
+
+        assert result.success is True
+        assert result.files_modified == ["src/app.py"]
+        assert result.verification_commands == ["python -m pytest -q"]
+        assert result.reviewed_final_diff is True
+        assert router.calls == 5

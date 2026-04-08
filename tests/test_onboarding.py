@@ -5,7 +5,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from forgegod.doctor import HealthCheck, _check_git, _check_python, run_doctor
+from forgegod.doctor import (
+    HealthCheck,
+    _check_git,
+    _check_python,
+    _check_strict_sandbox,
+    run_doctor,
+)
 from forgegod.i18n import STRINGS, get_lang, set_lang, t
 
 
@@ -96,8 +102,28 @@ class TestDoctor:
     def test_run_doctor_returns_checks(self, tmp_path: Path):
         """run_doctor should return a list of HealthCheck objects."""
         checks = run_doctor(tmp_path)
-        assert len(checks) == 6
+        assert len(checks) == 7
         assert all(isinstance(c, HealthCheck) for c in checks)
+
+    def test_strict_sandbox_check_skips_without_config(self, tmp_path: Path):
+        """Strict sandbox check should not fail when config does not exist yet."""
+        check = _check_strict_sandbox(tmp_path)
+        assert check.passed is True
+        assert "Skipped" in check.detail
+
+    def test_strict_sandbox_check_reports_optional_for_standard_mode(self, tmp_path: Path):
+        """Standard mode should not require Docker sandbox prerequisites."""
+        forgegod_dir = tmp_path / ".forgegod"
+        forgegod_dir.mkdir()
+        (forgegod_dir / "config.toml").write_text(
+            "[security]\n"
+            'sandbox_mode = "standard"\n',
+            encoding="utf-8",
+        )
+
+        check = _check_strict_sandbox(tmp_path)
+        assert check.passed is True
+        assert "optional" in check.detail.lower()
 
     def test_health_check_model(self):
         """HealthCheck should store all fields."""

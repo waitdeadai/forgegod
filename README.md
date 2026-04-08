@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `449` collected tests, `365` non-stress tests passing, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `503` collected tests, `418` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -119,6 +119,11 @@ explicitly recognizes ForgeGod as a supported coding tool.
 
 Run `forgegod doctor` — it checks your setup and tells you exactly what to fix.
 
+If you want the real `strict` sandbox, read
+[docs/STRICT_SANDBOX_SETUP.md](docs/STRICT_SANDBOX_SETUP.md).
+It explains Docker Desktop, the required sandbox image, and the safe fix path
+in non-technical terms.
+
 ## Quickstart
 
 ```bash
@@ -143,6 +148,7 @@ forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
 # 24/7 autonomous loop from PRD
 # Loop defaults: no auto-commit or auto-push unless you explicitly enable those flags
+# Parallel workers require a git repo with at least one commit because ForgeGod uses isolated worktrees
 forgegod loop --prd .forgegod/prd.json
 
 # Caveman mode — 50-75% token savings with ultra-terse prompts
@@ -402,7 +408,7 @@ Defense-in-depth, not security theater:
 - **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
 - **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
 
-> **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-08 baseline, `strict` uses a real Docker sandbox backend and blocks if Docker/image prerequisites are missing, while `standard` remains a host-local guarded workflow. Review changes on a disposable branch or worktree before using autonomous mode.
+> **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-08 baseline, `strict` uses a real Docker sandbox backend and blocks if Docker/image prerequisites are missing, while `standard` remains a host-local guarded workflow. Use `forgegod doctor` and [docs/STRICT_SANDBOX_SETUP.md](docs/STRICT_SANDBOX_SETUP.md) instead of weakening the sandbox just to get past setup friction.
 
 ## Operational Docs
 

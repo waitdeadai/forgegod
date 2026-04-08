@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from forgegod.i18n import t
+from forgegod.sandbox import diagnose_strict_sandbox
 
 console = Console()
 
@@ -48,7 +49,10 @@ def run_doctor(project_path: Path | None = None) -> list[HealthCheck]:
     # 5. Git installed + repo
     checks.append(_check_git(project))
 
-    # 6. Test runner detected
+    # 6. Strict sandbox readiness
+    checks.append(_check_strict_sandbox(project))
+
+    # 7. Test runner detected
     checks.append(_check_test_runner(project))
 
     return checks
@@ -242,4 +246,43 @@ def _check_test_runner(project: Path) -> HealthCheck:
     return HealthCheck(
         t("doctor_tests"), False, "No test runner found",
         fix="Install: pip install pytest",
+    )
+
+
+def _check_strict_sandbox(project: Path) -> HealthCheck:
+    """Check whether strict sandbox prerequisites are ready."""
+    config_path = project / ".forgegod" / "config.toml"
+    if not config_path.exists():
+        return HealthCheck(
+            t("doctor_sandbox"),
+            True,
+            "Skipped until .forgegod/config.toml exists",
+        )
+
+    try:
+        import toml
+
+        config = toml.load(config_path)
+    except Exception as e:
+        return HealthCheck(
+            t("doctor_sandbox"),
+            False,
+            f"Could not read sandbox config: {e}",
+            fix="Fix .forgegod/config.toml or rerun `forgegod init`.",
+        )
+
+    security = config.get("security", {})
+    if security.get("sandbox_mode", "standard") != "strict":
+        return HealthCheck(
+            t("doctor_sandbox"),
+            True,
+            "Config is not using strict mode; Docker sandbox prerequisites are optional",
+        )
+
+    readiness = diagnose_strict_sandbox(type("SecurityConfig", (), security)())
+    return HealthCheck(
+        t("doctor_sandbox"),
+        readiness.ready,
+        readiness.detail,
+        readiness.fix,
     )

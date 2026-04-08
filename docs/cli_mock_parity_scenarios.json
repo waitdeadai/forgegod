@@ -1,0 +1,62 @@
+[
+  {
+    "name": "cli_read_file_roundtrip",
+    "description": "CLI run reads a file through a local OpenAI-compatible endpoint.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_mock_parity_roundtrips[cli_read_file_roundtrip-hello-0-The file says hello forgegod.-hello.txt-hello forgegod\\n-2]"
+  },
+  {
+    "name": "cli_write_file_allowed",
+    "description": "CLI run writes a file, reviews the diff, and completes.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_mock_parity_roundtrips[cli_write_file_allowed-git-0-Created notes.txt successfully.-notes.txt-hello forgegod\\n-3]"
+  },
+  {
+    "name": "cli_write_file_denied",
+    "description": "CLI run fails fast when permissions block a required write.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_mock_parity_roundtrips[cli_write_file_denied-none-1-ForgeGod blocked tool 'write_file'-blocked.txt-None-1]"
+  },
+  {
+    "name": "cli_completion_gate_roundtrip",
+    "description": "CLI run edits code, verifies it, and only then completes.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_mock_parity_roundtrips[cli_completion_gate_roundtrip-git_src-0-Implemented src/app.py and verified the change.-src/app.py-print('forgegod')\\n-4]"
+  },
+  {
+    "name": "cli_tool_result_turn_capture",
+    "description": "CLI harness captures tool-result turns sent back to the model.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_mock_parity_captures_tool_result_turns"
+  },
+  {
+    "name": "cli_prompt_approval_allows_write",
+    "description": "CLI prompt approval can authorize a blocked write and continue the task.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_prompt_approval_allows_write"
+  },
+  {
+    "name": "cli_prompt_approval_denies_write",
+    "description": "CLI prompt denial keeps the write blocked and fails fast.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_prompt_approval_denies_write"
+  },
+  {
+    "name": "cli_loop_story_success",
+    "description": "CLI loop completes a single story through write, verify, diff, and final completion.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_loop_completes_story_via_mock_provider"
+  },
+  {
+    "name": "cli_loop_story_denied",
+    "description": "CLI loop blocks a forbidden write, marks the story blocked, and exits cleanly.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_loop_blocks_story_when_permissions_forbid_required_write"
+  },
+  {
+    "name": "cli_loop_parallel_worktree_success",
+    "description": "CLI loop with parallel workers executes through an isolated git worktree and patches the result back cleanly.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_loop_parallel_uses_worktree_path"
+  },
+  {
+    "name": "cli_strict_bash_roundtrip",
+    "description": "CLI run executes an allowed strict-mode bash command through the real sandbox interface.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_strict_bash_roundtrip_uses_real_sandbox_interface"
+  },
+  {
+    "name": "cli_strict_backend_blocked",
+    "description": "CLI run surfaces a strict sandbox backend failure back through the model and CLI.",
+    "nodeid": "tests/test_cli_mock_parity.py::test_cli_strict_backend_unavailable_surfaces_block"
+  }
+]
