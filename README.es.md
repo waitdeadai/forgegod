@@ -34,7 +34,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (2026-04-07): la baseline verificada incluye `23` herramientas registradas, `7` proveedores, suites core/completa en verde, lint en verde y una prueba puntual de estres de presupuesto pasando. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `7` proveedores, `421` tests recolectados, `337` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ## Inicio Rápido (Sin Saber Programar)
 
@@ -262,7 +262,7 @@ Defensa en profundidad, no teatro de seguridad:
 - **Killswitch** — Creá `.forgegod/KILLSWITCH` para detener inmediatamente los loops autónomos
 - **Protección de archivos sensibles** — `.env`, archivos de credenciales reciben advertencias + redacción automática
 
-> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Segun la linea base verificada del 2026-04-07, el loop ya no hace auto-commit ni auto-push por defecto, pero la ejecución shell sigue siendo un modelo con denylist y guardrails, no un sandbox real. Revisá los cambios en una branch o worktree descartable antes de usar modo autonomo.
+> **Advertencia**: ForgeGod ejecuta comandos shell y modifica archivos. Segun la linea base verificada del 2026-04-08, `strict` usa un backend real de sandbox con Docker y se bloquea si faltan Docker o la imagen requerida, mientras que `standard` sigue siendo un flujo local con guardrails. Revisá los cambios en una branch o worktree descartable antes de usar modo autonomo.
 
 ## Documentacion Operativa
 

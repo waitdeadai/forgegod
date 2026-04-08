@@ -8,24 +8,25 @@ This document is the current system of record for day-to-day work in this reposi
 - That target is only credible when backed by current primary or official 2026 sources and confirmed by local repo evidence such as passing tests, reproducible benchmarks, or documented verification steps.
 - If the repo falls short of that bar, document the gap explicitly rather than silently implying frontier quality.
 
-## Verified Baseline (2026-04-07)
+## Verified Baseline (2026-04-08)
 
 - OS: `Windows-11-10.0.26200-SP0`
 - Python: `3.13.5`
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider code paths present in `forgegod/router.py`: `6`
-- Tests collected: `407`
+- Provider code paths present in `forgegod/router.py`: `7`
+- Tests collected: `421`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
-| Command | Observed result on 2026-04-07 |
+| Command | Observed result on 2026-04-08 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `323 passed, 84 deselected in 18.69s` |
-| `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.10s` |
-| `python -m pytest tests -q` | `407 passed in 103.38s` |
-| `python -m pytest --collect-only -q` | `407 tests collected in 0.26s` |
+| `python -m pytest -m "not stress" -q` | `337 passed, 84 deselected in 29.82s` |
+| `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 135.94s` |
+| `python -m pytest tests -q` | `421 passed in 165.05s` |
+| `python -m pytest --collect-only -q` | `421 tests collected in 0.21s` |
 | `python -m ruff check forgegod tests` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
@@ -36,10 +37,12 @@ This document is the current system of record for day-to-day work in this reposi
 - The benchmark runner no longer calls `Agent(..., project_dir=...)`; that constructor path is fixed, and quoted validation commands are parsed safely.
 - Worktree support now scopes worker agents to their assigned worktree by rebasing `config.project_dir` per worker.
 - Filesystem tools are repository-scoped under agent execution. Paths that escape the active workspace root are rejected, and configured `blocked_paths` are enforced.
-- Security configuration is partially but meaningfully wired through the tool layer now: shell denylist behavior honors `sandbox_mode`, outputs honor `redact_secrets`, command execution can be audited, and rules loading respects `max_rules_file_chars`.
-- Generated-code validation is now surfaced on file writes and edits, but it is still advisory rather than a hard sandbox in normal operation.
+- Security configuration is now materially wired through the tool layer: shell execution honors `sandbox_mode`, `sandbox_backend`, and `sandbox_image`; outputs honor `redact_secrets`; command execution can be audited; and rules loading respects `max_rules_file_chars`.
+- Standard mode remains a host-local guarded workflow: isolated process dirs, workspace scoping, blocked shell operators, and command policy checks.
+- Strict mode now requires a real Docker sandbox backend. Commands run in a no-network, read-only-root container with the workspace bind-mounted, or they are blocked if Docker/image prerequisites are missing.
+- Strict mode also blocks suspicious generated-code writes and edits.
 - The benchmark file is historical, not a current green-build signal.
-- Based on the local verified baseline, the shipped CI workflow should now be green again: lint passes, the full test tree passes, and build passes.
+- Based on the local verified baseline, the shipped CI workflow should now be green again: lint passes, the full test tree passes, stress passes, and build passes.
 
 ## Safe Workflow
 
@@ -48,7 +51,8 @@ This document is the current system of record for day-to-day work in this reposi
 3. Read [AGENTS.md](../AGENTS.md) and the dated audit before changing loop, worktree, filesystem, or security behavior.
 4. Use the smallest verification command that proves the change.
 5. If runtime behavior changes, update this file and the dated audit in the same commit.
-6. Avoid trusting the website bundle in `docs/index.html` for operational truth. It is a static marketing artifact.
+6. If public-facing claims, providers, versions, benchmark numbers, or security posture change, update `docs/index.html` and verify the live site in the same workstream.
+7. Avoid trusting the website bundle in `docs/index.html` for operational truth. It is a static marketing artifact.
 
 ## Documentation Map
 
@@ -60,7 +64,7 @@ This document is the current system of record for day-to-day work in this reposi
 
 ## Recommended Next Work
 
-1. Regenerate benchmark claims now that the benchmark path is fixed, or keep benchmark docs explicitly historical.
-2. Decide whether generated-code validation should become blocking in `strict` mode instead of advisory-only.
-3. Replace the current shell denylist model with stronger sandboxing if ForgeGod is intended for untrusted repositories.
+1. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
+2. Add lifecycle tooling for strict sandbox images and Docker readiness checks in onboarding/doctor flows.
+3. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
 4. Add explicit tests for worktree isolation and loop auto-commit flag behavior so those guarantees stay locked in.

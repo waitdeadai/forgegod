@@ -24,6 +24,8 @@ def test_default_config():
     assert config.loop.max_iterations == 100
     assert config.loop.auto_commit_success is False
     assert config.loop.auto_push_success is False
+    assert config.security.sandbox_backend == "auto"
+    assert config.security.sandbox_image == "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
 
 
 def test_deep_merge():

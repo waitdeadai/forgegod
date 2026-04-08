@@ -9,14 +9,14 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Use [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) for the dated defect list and verification baseline.
 - Treat `README.md`, `README.es.md`, `BENCHMARKS.md`, and `docs/index.html` as secondary sources. They contain marketing and historical content.
 
-## Verified Baseline (2026-04-07)
+## Verified Baseline (2026-04-08)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider code paths: `6` (`openai`, `anthropic`, `gemini`, `ollama`, `openrouter`, `deepseek`)
-- Tests collected: `407`
-- Core suite: `python -m pytest -m "not stress" -q` -> `323 passed, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `407 passed`
-- Stress spot check: `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` -> passes
+- Provider code paths: `7` (`openai`, `anthropic`, `gemini`, `ollama`, `openrouter`, `deepseek`, `kimi`)
+- Tests collected: `421`
+- Core suite: `python -m pytest -m "not stress" -q` -> `337 passed, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `421 passed`
+- Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests` -> passes
 - Build status: `python -m build` passes
 
@@ -24,8 +24,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - `forgegod loop` no longer auto-commits or auto-pushes by default. Those behaviors are now opt-in via `loop.auto_commit_success` and `loop.auto_push_success`.
 - Agent runtime is workspace-scoped. Under agent execution, filesystem, shell, git, skills, and MCP stdio startup resolve against `config.project_dir.parent`, and filesystem tools reject paths that escape that root.
 - Parallel worktree mode now scopes each worker agent to its assigned worktree by rebasing `config.project_dir` for that worker.
-- Security config is more real than before: `sandbox_mode`, `blocked_paths`, `audit_commands`, `redact_secrets`, and `max_rules_file_chars` are wired into runtime paths. Residual risk remains because the shell tool is still a denylist guardrail, not a true OS sandbox.
-- Generated-code validation now runs on writes and edits, but today it is advisory output, not a hard block in `standard` mode.
+- Security config is now materially enforced: `sandbox_mode`, `sandbox_backend`, `sandbox_image`, `blocked_paths`, `audit_commands`, `redact_secrets`, and `max_rules_file_chars` are wired into runtime paths. Standard mode stays local with guardrails; strict mode uses a real Docker sandbox backend or blocks execution if no backend is available.
+- Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.
+- Residual risk remains because ForgeGod does not yet provide microVM/syscall-level isolation, and strict mode depends on a usable local Docker backend plus a pre-pulled sandbox image.
 
 ## Working Rules
 - Run `git status --short` before editing and do not revert user-owned local changes.
@@ -33,6 +34,7 @@ This file is the repo-local operating contract for coding agents working on Forg
 - ForgeGod aims for SOTA 2026 or beyond. Treat that as an engineering standard, not a marketing slogan: new architecture, safety, benchmark, or workflow changes should move the repo toward frontier practice, or clearly justify why a more conservative choice is better.
 - Prefer small patches and rerun the smallest relevant verification command after each change.
 - If you change runtime behavior, update `docs/OPERATIONS.md` and the dated audit doc in the same patch.
+- If you change public-facing claims, provider counts, versions, benchmark numbers, security posture, or capability copy, update `docs/index.html` and verify the live site in the same workstream.
 - Do not describe a change as SOTA, state-of-the-art, or beyond-SOTA unless both conditions are true: the design is backed by current 2026 sources and the repo proves it locally with passing tests or benchmarks.
 - If README-style claims drift again, correct the docs or add a dated audit note instead of leaving silent mismatches.
 

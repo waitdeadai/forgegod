@@ -98,6 +98,8 @@ class SecurityConfig(BaseModel):
     """Security guardrails — defense-in-depth for autonomous coding."""
 
     sandbox_mode: str = "standard"  # permissive | standard | strict
+    sandbox_backend: str = "auto"  # auto | docker
+    sandbox_image: str = "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
     redact_secrets: bool = True  # Strip API keys from tool output
     max_rules_file_chars: int = 10_000  # Cap rules.md injection (prompt injection defense)
     audit_commands: bool = True  # Log all bash commands to audit file

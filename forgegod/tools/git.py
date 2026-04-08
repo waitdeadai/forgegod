@@ -5,25 +5,48 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
+from forgegod.sandbox import SandboxUnavailableError, run_in_real_sandbox
 from forgegod.tools import get_tool_config, get_workspace_root, register_tool
 
 
 async def _run_git(*args: str, cwd: Path | None = None) -> str:
     """Run a git command and return output."""
     active_cwd = cwd
-    if active_cwd is None and get_tool_config():
+    config = get_tool_config()
+    if active_cwd is None and config:
         active_cwd = get_workspace_root()
-    proc = await asyncio.create_subprocess_exec(
-        "git", *args,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        cwd=str(active_cwd) if active_cwd else None,
-    )
-    stdout, stderr = await proc.communicate()
-    out = stdout.decode("utf-8", errors="replace").strip()
-    err = stderr.decode("utf-8", errors="replace").strip()
-    if proc.returncode != 0:
-        return f"Error (exit {proc.returncode}): {err or out}"
+
+    security = getattr(config, "security", None) if config else None
+    sandbox_mode = getattr(security, "sandbox_mode", "standard")
+    if sandbox_mode == "strict" and active_cwd and config:
+        try:
+            result = await run_in_real_sandbox(
+                argv=["git", *args],
+                workspace_root=get_workspace_root().resolve(),
+                sandbox_root=config.project_dir / "sandbox",
+                timeout=120,
+                security=security,
+            )
+        except SandboxUnavailableError as e:
+            return f"Error: {e}"
+
+        out = result.stdout.strip()
+        err = result.stderr.strip()
+        returncode = result.returncode
+    else:
+        proc = await asyncio.create_subprocess_exec(
+            "git", *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=str(active_cwd) if active_cwd else None,
+        )
+        stdout, stderr = await proc.communicate()
+        out = stdout.decode("utf-8", errors="replace").strip()
+        err = stderr.decode("utf-8", errors="replace").strip()
+        returncode = proc.returncode
+
+    if returncode != 0:
+        return f"Error (exit {returncode}): {err or out}"
     return out or "(no output)"
 
 

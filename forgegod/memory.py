@@ -113,6 +113,7 @@ class Memory:
         self.config = config
         self._db_path = config.project_dir / "memory.db"
         self._global_db_path = Path.home() / ".forgegod" / "memory.db"
+        self._semantic_text_cache: dict[str, str] = {}
         self._ensure_db(self._db_path)
         self._ensure_db(self._global_db_path)
 
@@ -526,8 +527,15 @@ class Memory:
         tags: list[str] | None = None,
     ) -> str:
         """Add or reinforce a semantic memory."""
+        cache_key = self._semantic_cache_key(text)
+        cached_memory_id = self._semantic_text_cache.get(cache_key)
+        if cached_memory_id:
+            await self._reinforce_semantic(cached_memory_id, source_episode)
+            return cached_memory_id
+
         existing = await self._find_similar_semantic(text)
         if existing:
+            self._semantic_text_cache[cache_key] = existing
             await self._reinforce_semantic(existing, source_episode)
             return existing
 
@@ -550,6 +558,7 @@ class Memory:
         )
         conn.commit()
         conn.close()
+        self._semantic_text_cache[cache_key] = memory_id
         return memory_id
 
     # ═══════════════════════════════════════════════════════════════════
@@ -1206,24 +1215,19 @@ class Memory:
         factors_present = self._detect_factors(outcome, code_files)
 
         for factor in factors_present:
-            row = conn.execute(
-                "SELECT weight, observations FROM causal_edges WHERE factor = ? AND outcome = ?",
-                (factor, outcome_label),
-            ).fetchone()
-
-            if row:
-                old_weight, obs = row
-                new_obs = obs + 1
-                new_weight = round(old_weight + (1.0 - old_weight) / new_obs, 4)
-                conn.execute(
-                    "UPDATE causal_edges SET weight = ?, observations = ? WHERE factor = ? AND outcome = ?",
-                    (new_weight, new_obs, factor, outcome_label),
-                )
-            else:
-                conn.execute(
-                    "INSERT INTO causal_edges VALUES (?, ?, ?, ?)",
-                    (factor, outcome_label, 0.5, 1),
-                )
+            conn.execute(
+                """INSERT INTO causal_edges (factor, outcome, weight, observations)
+                   VALUES (?, ?, ?, ?)
+                   ON CONFLICT(factor, outcome) DO UPDATE SET
+                       observations = causal_edges.observations + 1,
+                       weight = round(
+                           causal_edges.weight
+                           + (1.0 - causal_edges.weight)
+                           / (causal_edges.observations + 1),
+                           4
+                       )""",
+                (factor, outcome_label, 0.5, 1),
+            )
 
         conn.commit()
         conn.close()
@@ -1724,6 +1728,11 @@ class Memory:
         Returns memory_id if found, None otherwise.
         Uses Jaccard similarity on word sets.
         """
+        cache_key = self._semantic_cache_key(text)
+        cached_memory_id = self._semantic_text_cache.get(cache_key)
+        if cached_memory_id:
+            return cached_memory_id
+
         candidate_words = set(text.lower().split())
         if not candidate_words:
             return None
@@ -1740,6 +1749,7 @@ class Memory:
                 candidate_words | existing_words
             )
             if similarity > 0.6:
+                self._semantic_text_cache[cache_key] = memory_id
                 return memory_id
         return None
 
@@ -1771,6 +1781,10 @@ class Memory:
             )
             conn.commit()
         conn.close()
+
+    def _semantic_cache_key(self, text: str) -> str:
+        """Normalize semantic text so repeated heuristics can reuse lookups."""
+        return " ".join(text.lower().split())
 
     def _detect_factors(self, outcome: dict, code_files: list[dict] | None) -> list[str]:
         """Detect which causal factors are present."""

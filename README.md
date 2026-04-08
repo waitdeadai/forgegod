@@ -34,7 +34,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (2026-04-07): the verified baseline includes `23` registered tools, `7` provider code paths, green core/full suites, green lint, and a passing budget stress spot-check. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `7` provider code paths, `421` collected tests, `337` non-stress tests passing, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -59,7 +59,7 @@ Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) —
 - **Ralph Loop** — 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
 - **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
 - **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
-- **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. 6 safety layers prevent drift.
+- **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
 - **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
 
 ## Getting Started (No Coding Required)
@@ -254,6 +254,8 @@ enabled = false              # --terse flag or set true here
 
 [security]
 sandbox_mode = "standard"    # permissive | standard | strict
+sandbox_backend = "auto"     # auto | docker
+sandbox_image = "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
 redact_secrets = true
 audit_commands = true
 ```
@@ -307,7 +309,7 @@ forgegod/
 ├── loop.py         # Ralph loop (24/7 autonomous coding, parallel workers, story timeout)
 ├── planner.py      # Task decomposition → PRD
 ├── reviewer.py     # Frontier model quality gate (sample-based)
-├── sica.py         # Self-improving strategy modification (6 safety layers)
+├── sica.py         # Self-improving strategy modification (guardrails + audit policy)
 ├── memory.py       # 5-tier cognitive memory (FTS5 + RRF hybrid retrieval, WAL mode)
 ├── budget.py       # SQLite cost + token tracking, forecasting, auto budget modes
 ├── worktree.py     # Parallel git worktree workers
@@ -320,7 +322,7 @@ forgegod/
 ├── models.py       # Pydantic v2 data models
 └── tools/
     ├── filesystem.py  # async read/write (aiofiles), atomic writes, fuzzy edit, glob, grep, repo_map
-    ├── shell.py       # bash (command denylist + secret redaction)
+    ├── shell.py       # bash (isolated runtime env + strict command policy + secret redaction)
     ├── git.py         # git status, diff, commit, worktrees
     ├── mcp.py         # MCP server client (5,800+ servers)
     └── skills.py      # On-demand skill loading
@@ -330,17 +332,19 @@ forgegod/
 
 Defense-in-depth, not security theater:
 
-- **Command denylist** — 13 dangerous patterns blocked (`rm -rf /`, `curl | sh`, `sudo`, fork bombs)
+- **Real strict sandbox** — `strict` runs inside Docker with no network, read-only rootfs, dropped caps, and workspace-only mounts
+- **Standard shell policy** — `standard` keeps the local guardrails: isolated runtime dirs, blocked shell operators, and workspace scoping
 - **Secret redaction** — 11 patterns strip API keys from tool output before LLM context
 - **Prompt injection detection** — 8 patterns scan for jailbreak/role-override attempts
-- **AST code validation** — Detects obfuscated dangerous calls (`getattr(os, 'system')`) that regex misses
+- **AST code validation** — Detects obfuscated dangerous calls (`getattr(os, 'system')`) that regex misses, and blocks suspicious writes in `strict` mode
+- **Workspace-scoped file ops** — file and shell tools reject paths that escape the active workspace root
 - **Supply chain defense** — Flags known-abandoned/typosquat packages (python-jose, jeIlyfish, etc.)
 - **Canary token system** — Detects if system prompt leaks into tool arguments, with per-session rotation
 - **Budget limits** — Cost controls with token tracking + burn-rate forecasting
 - **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
 - **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
 
-> **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-07 baseline, loop mode no longer auto-commits or auto-pushes by default, but shell execution is still a guardrailed denylist model rather than a true sandbox. Review changes on a disposable branch or worktree before using autonomous mode.
+> **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-08 baseline, `strict` uses a real Docker sandbox backend and blocks if Docker/image prerequisites are missing, while `standard` remains a host-local guarded workflow. Review changes on a disposable branch or worktree before using autonomous mode.
 
 ## Operational Docs
 

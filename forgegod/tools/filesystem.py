@@ -77,17 +77,23 @@ def _validate_write_target(
     return resolved, None
 
 
-def _security_write_notice(path: Path, content: str) -> str:
-    """Return a security notice for generated code, if any."""
+def _security_write_gate(path: Path, content: str) -> tuple[str, bool]:
+    """Return a security notice and whether the write must be blocked."""
     if path.suffix not in {".py", ".js", ".jsx", ".ts", ".tsx", ".sh", ".rb", ".go", ".rs"}:
-        return ""
+        return "", False
 
     warnings = validate_generated_code(content)
     if not warnings:
-        return ""
+        return "", False
 
-    notice = "Warning: Security validation flagged generated code:\n"
-    return notice + "\n".join(f"- {warning}" for warning in warnings[:10]) + "\n"
+    config = get_tool_config()
+    security = getattr(config, "security", None) if config else None
+    sandbox_mode = getattr(security, "sandbox_mode", "standard")
+
+    prefix = "BLOCKED" if sandbox_mode == "strict" else "Warning"
+    notice = f"{prefix}: Security validation flagged generated code:\n"
+    notice += "\n".join(f"- {warning}" for warning in warnings[:10]) + "\n"
+    return notice, sandbox_mode == "strict"
 
 
 async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
@@ -130,9 +136,13 @@ async def write_file(path: str, content: str) -> str:
         # Atomic write: async write to temp file, then rename
         async with aiofiles.open(tmp, "w", encoding="utf-8") as f:
             await f.write(content)
-        tmp.replace(p)
         display = _display_path(p)
-        notice = _security_write_notice(p, content)
+        notice, blocked = _security_write_gate(p, content)
+        if blocked:
+            if tmp.exists():
+                tmp.unlink(missing_ok=True)
+            return notice.strip()
+        tmp.replace(p)
         return f"{notice}Written {len(content)} bytes to {display}".strip()
     except Exception as e:
         # Clean up temp file on error
@@ -162,8 +172,10 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
             if count > 1:
                 return f"Error: old_string found {count} times in {path} — must be unique"
             updated = content.replace(old_string, new_string, 1)
+            notice, blocked = _security_write_gate(p, updated)
+            if blocked:
+                return notice.strip()
             p.write_text(updated, encoding="utf-8")
-            notice = _security_write_notice(p, updated)
             return f"{notice}Edited {display}: replaced 1 occurrence".strip()
 
         # Pass 2: Whitespace-normalized match
@@ -175,8 +187,10 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
             if match_result:
                 start, end = match_result
                 updated = content[:start] + new_string + content[end:]
+                notice, blocked = _security_write_gate(p, updated)
+                if blocked:
+                    return notice.strip()
                 p.write_text(updated, encoding="utf-8")
-                notice = _security_write_notice(p, updated)
                 return (
                     f"{notice}Edited {display}: replaced 1 occurrence "
                     "(fuzzy whitespace match)"
@@ -192,8 +206,10 @@ async def edit_file(path: str, old_string: str, new_string: str) -> str:
             if match_result:
                 start, end = match_result
                 updated = content[:start] + new_string + content[end:]
+                notice, blocked = _security_write_gate(p, updated)
+                if blocked:
+                    return notice.strip()
                 p.write_text(updated, encoding="utf-8")
-                notice = _security_write_notice(p, updated)
                 return (
                     f"{notice}Edited {display}: replaced 1 occurrence "
                     "(fuzzy trailing-ws match)"

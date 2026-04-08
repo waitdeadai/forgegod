@@ -63,6 +63,54 @@ That directly supports the choice to document ForgeGod's real filesystem and she
 5. Document unsafe defaults honestly until sandboxing, path boundaries, and tool annotations are actually enforced.
 6. Use the repo docs as the maintainers' system of record, then update marketing pages second.
 
+## Sandbox Hardening Addendum
+
+Verified on `2026-04-08` before tightening ForgeGod's local runtime:
+
+- OpenAI's Codex app launch materials emphasize isolated task execution as a
+  core safety property for coding agents, which supports treating stronger
+  execution boundaries as a first-class product concern rather than a nice-to-have:
+  - https://openai.com/index/introducing-the-codex-app/
+- OpenAI's Codex system card is even more explicit: Codex runs in a container
+  with no internet access while the agent is in control, and filesystem access
+  is limited to the sandboxed environment. That supports ForgeGod treating real
+  runtime isolation as a product requirement, not a documentation nicety:
+  - https://cdn.openai.com/pdf/8df7697b-c1b2-4222-be00-1fd3298f351d/codex_system_card.pdf
+- Anthropic's Claude Code settings and permissions model support explicit
+  allow/deny controls for shell commands, including operator-aware matching,
+  which supports ForgeGod blocking chaining, redirection, pipes, and command
+  substitution in tighter modes instead of relying only on a destructive-command
+  denylist:
+  - https://docs.anthropic.com/en/docs/claude-code/settings
+- OpenHands documents that a local runtime runs directly on the host and is
+  not sandboxed by default, which supports keeping ForgeGod's docs honest about
+  the difference between guardrails and a true sandbox:
+  - https://docs.all-hands.dev/usage/runtimes/runtime-local
+- Docker's `docker run` reference documents the specific container controls
+  ForgeGod can actually enforce today for a real strict backend: read-only
+  root filesystems and bind mounts using `--mount`:
+  - https://docs.docker.com/reference/cli/docker/container/run/
+- Docker's security docs reinforce the value of capability reduction as an
+  allowlist-based hardening layer, which supports dropping capabilities in
+  ForgeGod's strict backend instead of treating the container as safe by default:
+  - https://docs.docker.com/engine/security/
+- MCP security guidance requires implementations to sanitize user inputs,
+  validate generated content, and document their security requirements. That
+  supports blocking suspicious generated-code writes in strict mode and writing
+  down exactly what ForgeGod does and does not isolate:
+  - https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+  - https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+
+Operational conclusion for ForgeGod: workspace scoping, isolated process
+home/cache/config directories, operator blocking, and strict-mode allowlists
+were worth enforcing immediately, but they were not enough by themselves.
+ForgeGod now has a stricter Docker-backed sandbox path for `strict` mode:
+no network, read-only rootfs, dropped capabilities, and workspace-only mounts.
+That is materially better than host execution, but it should still be documented
+honestly as container isolation rather than the end state of sandboxing. Repo
+policy should also require syncing the public website whenever public-facing
+runtime claims change.
+
 ## Provider Research Addendum - Kimi / Moonshot
 
 Verified on `2026-04-07` before adding a new provider path:

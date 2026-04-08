@@ -16,6 +16,7 @@ import ast
 import logging
 import re
 import secrets
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,12 @@ def validate_generated_code(code: str) -> list[str]:
     Runs regex patterns + AST analysis + import validation.
     Returns list of warnings (empty = safe).
     """
+    return list(_validate_generated_code_cached(code))
+
+
+@lru_cache(maxsize=512)
+def _validate_generated_code_cached(code: str) -> tuple[str, ...]:
+    """Cache repeated validations for identical generated code blobs."""
     warnings = []
     # Layer 1: Regex patterns (fast, catches literal dangerous code)
     for pattern in _DANGEROUS_CODE_PATTERNS:
@@ -83,7 +90,7 @@ def validate_generated_code(code: str) -> list[str]:
     warnings.extend(_ast_validate(code))
     # Layer 3: Supply chain validation (catches suspicious imports)
     warnings.extend(_validate_imports(code))
-    return warnings
+    return tuple(warnings)
 
 
 # ── AST-based code validation ───────────────────────────────────────────
