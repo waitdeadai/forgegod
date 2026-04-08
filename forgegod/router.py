@@ -16,6 +16,7 @@ import httpx
 
 from forgegod.config import MODEL_COSTS, ForgeGodConfig
 from forgegod.models import BudgetMode, ModelSpec, ModelUsage
+from forgegod.native_auth import codex_exec, codex_login_status, render_messages_as_prompt
 
 logger = logging.getLogger("forgegod.router")
 
@@ -213,6 +214,10 @@ class ModelRouter:
             text, usage_dict = await self._call_ollama(
                 spec.model, prompt, system, max_tokens, temperature, tools
             )
+        elif spec.provider == "openai-codex":
+            text, usage_dict = await self._call_openai_codex(
+                spec.model, prompt, system, json_mode, max_tokens, temperature, tools
+            )
         elif spec.provider == "openai":
             text, usage_dict = await self._call_openai(
                 spec.model, prompt, system, json_mode, max_tokens, temperature, tools
@@ -251,7 +256,7 @@ class ModelRouter:
         elapsed = time.time() - start
         self.circuit.record_success(spec.provider)
 
-        cost = self._calculate_cost(spec.model, usage_dict)
+        cost = self._calculate_cost(spec.provider, spec.model, usage_dict)
         usage = ModelUsage(
             input_tokens=usage_dict.get("input_tokens", 0),
             output_tokens=usage_dict.get("output_tokens", 0),
@@ -319,6 +324,47 @@ class ModelRouter:
         if has_complex or tokens_est > 1000:
             return "complex"
         return "medium"
+
+    def _build_codex_prompt(
+        self,
+        prompt: str | list[dict],
+        system: str,
+        json_mode: bool,
+        tools: list[dict] | None,
+    ) -> str:
+        """Render ForgeGod messages into a Codex-friendly plain-text prompt."""
+        messages = self._to_messages(prompt, system)
+        rendered = render_messages_as_prompt(messages)
+        if tools:
+            tool_json = json.dumps(tools, indent=2)
+            return (
+                f"{rendered}\n\n"
+                "[INSTRUCTIONS]\n"
+                "You are being used as the model backend inside ForgeGod.\n"
+                "You are NOT the active agent runtime here.\n"
+                "Do not use Codex's own autonomous tooling, built-in file inspection, "
+                "or shell access.\n"
+                "Do not inspect the repository except by emitting ForgeGod tool calls.\n"
+                "When tools are available, your next response MUST be one of these "
+                "two forms only:\n"
+                "1. A valid JSON tool call object when more information or action is needed.\n"
+                "2. A final plain-text answer only if the task is already complete "
+                "from the messages alone.\n"
+                "If the task mentions inspecting, reading, searching, editing, "
+                "testing, running commands, or repo state, "
+                "you MUST respond with tool_calls JSON first.\n"
+                "Respond ONLY with valid JSON in this exact shape when calling a tool:\n"
+                '{"tool_calls":[{"name":"tool_name","arguments":{"arg":"value"}}]}\n'
+                "Available tools:\n"
+                f"{tool_json}"
+            )
+        if json_mode:
+            return (
+                f"{rendered}\n\n"
+                "[INSTRUCTIONS]\n"
+                "Return valid JSON only. Do not wrap the response in markdown fences."
+            )
+        return rendered
 
     # ── Provider Implementations ──
 
@@ -426,6 +472,36 @@ class ModelRouter:
         "o3", "o3-mini", "o4-mini", "o1", "o1-mini",
         "o1-preview", "deepseek-reasoner",
     }
+
+    async def _call_openai_codex(
+        self, model: str, prompt: str | list[dict], system: str,
+        json_mode: bool, max_tokens: int, temperature: float,
+        tools: list[dict] | None,
+    ) -> tuple[str, dict]:
+        """Call OpenAI Codex CLI with native ChatGPT subscription auth."""
+        del max_tokens, temperature  # Controlled by Codex itself.
+
+        logged_in, status_text = await codex_login_status(
+            self.config.openai_codex.command
+        )
+        if not logged_in:
+            raise RuntimeError(
+                "error: Codex CLI is not logged in.\n"
+                "  Fix: run `codex login` and sign in with ChatGPT.\n"
+                f"  Status: {status_text}"
+            )
+
+        rendered_prompt = self._build_codex_prompt(prompt, system, json_mode, tools)
+        return await codex_exec(
+            rendered_prompt,
+            cwd=self.config.project_dir.parent.resolve(),
+            model=model,
+            command=self.config.openai_codex.command,
+            timeout=self.config.openai_codex.timeout,
+            sandbox=self.config.openai_codex.sandbox,
+            ephemeral=self.config.openai_codex.ephemeral,
+            json_mode=json_mode,
+        )
 
     async def _call_openai(
         self, model: str, prompt: str | list[dict], system: str,
@@ -815,11 +891,20 @@ class ModelRouter:
 
         import openai
 
-        api_key = os.environ.get("ZAI_API_KEY", "")
+        api_key = (
+            os.environ.get("ZAI_CODING_API_KEY", "")
+            if self.config.zai.use_coding_plan
+            else os.environ.get("ZAI_API_KEY", "")
+        ) or os.environ.get("ZAI_API_KEY", "")
         if not api_key:
+            env_hint = (
+                "ZAI_CODING_API_KEY or ZAI_API_KEY"
+                if self.config.zai.use_coding_plan
+                else "ZAI_API_KEY"
+            )
             raise RuntimeError(
                 "error: No Z.AI API key set.\n"
-                "  Fix: export ZAI_API_KEY=...\n"
+                f"  Fix: export {env_hint}=...\n"
                 "  Get one at: https://docs.z.ai/api-reference/introduction"
             )
 
@@ -864,6 +949,8 @@ class ModelRouter:
             "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
             "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
         }
+        if self.config.zai.use_coding_plan and os.environ.get("ZAI_CODING_API_KEY"):
+            usage_data["subscription_billing"] = True
         return content, usage_data
 
     # ── Helpers ──
@@ -880,7 +967,9 @@ class ModelRouter:
         messages.append({"role": "user", "content": prompt})
         return messages
 
-    def _calculate_cost(self, model: str, usage: dict) -> float:
+    def _calculate_cost(self, provider: str, model: str, usage: dict) -> float:
+        if provider == "openai-codex" or usage.get("subscription_billing"):
+            return 0.0
         costs = MODEL_COSTS.get(model, (0, 0))
         input_price, output_price = costs
 

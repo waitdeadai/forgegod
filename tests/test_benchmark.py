@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import httpx
 import pytest
 
+import forgegod.native_auth as native_auth
 from forgegod.benchmark import (
     BENCHMARK_TASKS,
     BenchmarkResult,
@@ -262,12 +264,15 @@ class TestBenchmarkRunnerInternals:
 
 class TestBenchmarkModelDetection:
     def test_detect_available_models_cloud_providers(self, monkeypatch):
-        import httpx
-
         def fake_get(*args, **kwargs):
             raise httpx.ConnectError("offline")
 
         monkeypatch.setattr(httpx, "get", fake_get)
+        monkeypatch.setattr(
+            native_auth,
+            "codex_login_status_sync",
+            lambda command="codex": (False, ""),
+        )
         monkeypatch.setenv("OPENAI_API_KEY", "sk-openai")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant")
         monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or")
@@ -287,15 +292,33 @@ class TestBenchmarkModelDetection:
         assert "zai:glm-5.1" in models
 
     def test_detect_available_models_gemini_alias_dedupes(self, monkeypatch):
-        import httpx
-
         def fake_get(*args, **kwargs):
             raise httpx.ConnectError("offline")
 
         monkeypatch.setattr(httpx, "get", fake_get)
+        monkeypatch.setattr(
+            native_auth,
+            "codex_login_status_sync",
+            lambda command="codex": (False, ""),
+        )
         monkeypatch.setenv("GOOGLE_API_KEY", "AIza-google")
         monkeypatch.setenv("GEMINI_API_KEY", "AIza-gemini")
 
         models = detect_available_models(ForgeGodConfig())
 
         assert models.count("gemini:gemini-3-flash") == 1
+
+    def test_detect_available_models_openai_codex(self, monkeypatch):
+        def fake_get(*args, **kwargs):
+            raise httpx.ConnectError("offline")
+
+        monkeypatch.setattr(httpx, "get", fake_get)
+        monkeypatch.setattr(
+            native_auth,
+            "codex_login_status_sync",
+            lambda command="codex": (True, "Logged in"),
+        )
+
+        models = detect_available_models(ForgeGodConfig())
+
+        assert "openai-codex:gpt-5.4" in models

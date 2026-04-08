@@ -21,9 +21,11 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
+auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
 console = Console()
 
 app.add_typer(design_app, name="design")
+app.add_typer(auth_app, name="auth")
 
 # ── Mascot — The One-Eyed Triangle ──
 _VER = __version__
@@ -58,6 +60,21 @@ def _print_banner(mini: bool = False):
         console.print(_build_banner())
 
 
+def _detect_runtime_model_defaults():
+    """Detect usable auth surfaces and return recommended model defaults."""
+    from forgegod.benchmark import detect_available_models
+    from forgegod.config import ForgeGodConfig, recommend_model_defaults
+
+    models = detect_available_models(ForgeGodConfig())
+    providers = sorted({model.split(":", 1)[0] for model in models})
+    ollama_available = any(model.startswith("ollama:") for model in models)
+    recommended = recommend_model_defaults(
+        providers,
+        ollama_available=ollama_available,
+    )
+    return models, providers, ollama_available, recommended
+
+
 @app.callback(invoke_without_command=True)
 def main(
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
@@ -89,13 +106,18 @@ def init(
     # Quick mode: silent auto-detect (original behavior)
     import os
 
-    from forgegod.config import init_project
+    from forgegod.config import init_project, recommend_model_defaults
+    from forgegod.native_auth import codex_login_status_sync
 
     _print_banner()
     console.print("[bold]Initializing project...[/bold]")
     console.print()
 
     providers: list[str] = []
+    codex_logged_in, _ = codex_login_status_sync()
+    if codex_logged_in:
+        providers.append("openai-codex")
+        console.print("  [green]+[/green] OpenAI Codex subscription detected")
     if os.environ.get("OPENAI_API_KEY"):
         providers.append("openai")
         console.print("  [green]+[/green] OpenAI API key detected")
@@ -114,7 +136,10 @@ def init(
     if os.environ.get("MOONSHOT_API_KEY"):
         providers.append("kimi")
         console.print("  [green]+[/green] Moonshot / Kimi API key detected")
-    if os.environ.get("ZAI_API_KEY"):
+    if os.environ.get("ZAI_CODING_API_KEY"):
+        providers.append("zai")
+        console.print("  [green]+[/green] Z.AI Coding Plan key detected")
+    elif os.environ.get("ZAI_API_KEY"):
         providers.append("zai")
         console.print("  [green]+[/green] Z.AI / GLM API key detected")
 
@@ -136,17 +161,24 @@ def init(
         console.print()
         console.print("[yellow]No API keys or Ollama found.[/yellow]")
         console.print("Set at least one:")
+        console.print("  forgegod auth login openai-codex")
         console.print("  export OPENAI_API_KEY=sk-...")
         console.print("  export ANTHROPIC_API_KEY=sk-ant-...")
         console.print("  export MOONSHOT_API_KEY=sk-...")
+        console.print("  export ZAI_CODING_API_KEY=...")
         console.print("  export ZAI_API_KEY=...")
         console.print("  or: ollama serve  (for free local mode)")
         console.print()
 
-    project_dir = init_project(path)
+    recommended_models = recommend_model_defaults(
+        providers,
+        ollama_available=ollama_available,
+    )
+    project_dir = init_project(path, model_defaults=recommended_models)
 
     console.print()
     console.print(f"[green]Initialized at {project_dir}[/green]")
+    console.print("[dim]Applied auth-aware model defaults for detected providers.[/dim]")
     console.print()
     console.print("[bold]Quick start:[/bold]")
     console.print('  forgegod run "Describe your task here"')
@@ -192,6 +224,127 @@ def design_pull(
     installed = install_design_md(path, preset, force=force)
     console.print(f"[green]Installed[/green] {installed}")
     console.print("[dim]ForgeGod will load DESIGN.md automatically for frontend tasks.[/dim]")
+
+
+@auth_app.command("status")
+def auth_status():
+    """Show which provider auth surfaces are currently usable."""
+    import os
+
+    from forgegod.native_auth import codex_login_status_sync
+
+    table = Table(title="ForgeGod Auth Status")
+    table.add_column("Surface", style="cyan")
+    table.add_column("Status")
+    table.add_column("Details", style="dim")
+
+    codex_logged_in, codex_status = codex_login_status_sync()
+    table.add_row(
+        "openai-codex",
+        "[green]ready[/green]" if codex_logged_in else "[yellow]not ready[/yellow]",
+        codex_status or "Run `codex login`",
+    )
+    table.add_row(
+        "openai-api",
+        (
+            "[green]ready[/green]"
+            if os.environ.get("OPENAI_API_KEY")
+            else "[yellow]not ready[/yellow]"
+        ),
+        "OPENAI_API_KEY" if os.environ.get("OPENAI_API_KEY") else "Set OPENAI_API_KEY",
+    )
+    table.add_row(
+        "zai-coding-plan",
+        (
+            "[green]ready[/green]"
+            if os.environ.get("ZAI_CODING_API_KEY") or os.environ.get("ZAI_API_KEY")
+            else "[yellow]not ready[/yellow]"
+        ),
+        (
+            "ZAI_CODING_API_KEY"
+            if os.environ.get("ZAI_CODING_API_KEY")
+            else "ZAI_API_KEY" if os.environ.get("ZAI_API_KEY") else "Set ZAI_CODING_API_KEY"
+        ),
+    )
+    table.add_row(
+        "openrouter",
+        (
+            "[green]ready[/green]"
+            if os.environ.get("OPENROUTER_API_KEY")
+            else "[yellow]not ready[/yellow]"
+        ),
+        (
+            "OPENROUTER_API_KEY"
+            if os.environ.get("OPENROUTER_API_KEY")
+            else "OAuth/API support planned; key works today"
+        ),
+    )
+    console.print(table)
+
+
+@auth_app.command("login")
+def auth_login(
+    provider: str = typer.Argument(..., help="Provider auth surface, e.g. openai-codex"),
+):
+    """Start an official login flow when ForgeGod can delegate to it."""
+    import subprocess
+
+    from forgegod.native_auth import find_command
+
+    if provider != "openai-codex":
+        raise typer.BadParameter(
+            "Only `openai-codex` login is wired today. "
+            "Z.AI uses Coding Plan API keys inside ForgeGod."
+        )
+
+    codex = find_command("codex")
+    if not codex:
+        raise typer.BadParameter("Codex CLI not found on PATH.")
+
+    subprocess.run([codex, "login"], check=False)
+
+
+@auth_app.command("sync")
+def auth_sync(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+):
+    """Rewrite model defaults based on detected native auth surfaces."""
+    import toml
+
+    from forgegod.config import init_project
+
+    _, providers, ollama_available, recommended = _detect_runtime_model_defaults()
+    project_dir = init_project(path, model_defaults=recommended)
+    config_path = project_dir / "config.toml"
+    data = toml.loads(config_path.read_text(encoding="utf-8"))
+    data["models"] = recommended.model_dump()
+    budget = data.setdefault("budget", {})
+    if providers and not ollama_available:
+        if budget.get("mode") in {"local-only", "halt"}:
+            budget["mode"] = "normal"
+        if float(budget.get("daily_limit_usd", 0) or 0) <= 0:
+            budget["daily_limit_usd"] = 5.0
+    config_path.write_text(toml.dumps(data), encoding="utf-8")
+
+    table = Table(title=f"ForgeGod Model Sync ({Path(path).resolve()})")
+    table.add_column("Role", style="cyan")
+    table.add_column("Model", style="dim")
+    for role, model in recommended.model_dump().items():
+        table.add_row(role, model)
+    console.print(table)
+    if providers and not ollama_available:
+        console.print(
+            "[dim]Budget sync:[/dim] cloud-ready config ensured "
+            f"(mode={budget.get('mode')}, daily_limit_usd={budget.get('daily_limit_usd')})."
+        )
+
+    if "openai-codex" in providers and recommended.coder.startswith("openai-codex"):
+        console.print(
+            "[yellow]Note:[/yellow] OpenAI Codex subscription is strongest today "
+            "for planner/reviewer/adversary flows; coder-loop use remains experimental."
+        )
+    elif not providers and not ollama_available:
+        console.print("[yellow]No providers or Ollama detected.[/yellow]")
 
 
 @app.command()
@@ -523,7 +676,8 @@ def contribute(
         from forgegod.planner import Planner
         from forgegod.router import ModelRouter
 
-        init_project(repo_path)
+        _, _, _, recommended = _detect_runtime_model_defaults()
+        init_project(repo_path, model_defaults=recommended)
         config = load_config(repo_path)
         out_path = output or (repo_path / ".forgegod" / "contribute_prd.json")
         out_path.parent.mkdir(parents=True, exist_ok=True)

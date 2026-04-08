@@ -251,11 +251,17 @@ class Agent:
                     # Small models often describe what they'd do instead
                     # of calling tools. If no files modified yet and we're
                     # early in the loop, nudge the agent to use tools.
+                    needs_codex_tool_nudge = (
+                        usage.provider == "openai-codex"
+                        and self.role == "coder"
+                        and not self.files_modified
+                        and self._turn <= 3
+                    )
                     if (
                         not self.files_modified
                         and self._turn <= 5
                         and self.tool_calls_count > 0
-                    ):
+                    ) or needs_codex_tool_nudge:
                         logger.warning(
                             "Agent responded without tool calls but "
                             "hasn't modified any files — nudging to continue"
@@ -270,6 +276,9 @@ class Agent:
                                 "[CONTINUATION REQUIRED] You described what to "
                                 "do but didn't use any file modification tools. "
                                 "Your task requires actual code changes.\n\n"
+                                "When running behind OpenAI Codex subscription mode, "
+                                "you must use ForgeGod tool_calls instead of Codex's "
+                                "own built-in tooling.\n\n"
                                 "Use `write_file` to create new files or "
                                 "`edit_file` to modify existing files. "
                                 "DO NOT describe changes — execute them with "

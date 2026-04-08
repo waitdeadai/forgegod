@@ -129,6 +129,15 @@ class GeminiConfig(BaseModel):
     timeout: float = 120.0
 
 
+class OpenAICodexConfig(BaseModel):
+    """OpenAI Codex CLI subscription-backed provider settings."""
+
+    command: str = "codex"
+    timeout: float = 180.0
+    sandbox: str = "read-only"
+    ephemeral: bool = True
+
+
 class KimiConfig(BaseModel):
     """Moonshot / Kimi provider settings."""
 
@@ -172,6 +181,7 @@ class ForgeGodConfig(BaseModel):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     terse: TerseConfig = Field(default_factory=TerseConfig)
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
+    openai_codex: OpenAICodexConfig = Field(default_factory=OpenAICodexConfig)
     kimi: KimiConfig = Field(default_factory=KimiConfig)
     zai: ZAIConfig = Field(default_factory=ZAIConfig)
     recon: ReconConfig = Field(default_factory=ReconConfig)
@@ -179,6 +189,100 @@ class ForgeGodConfig(BaseModel):
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR
     project_dir: Path = DEFAULT_PROJECT_DIR
+
+
+def recommend_model_defaults(
+    providers: list[str] | set[str] | None = None,
+    *,
+    ollama_available: bool = True,
+) -> ModelsConfig:
+    """Choose sane default models for the currently available auth surfaces."""
+    provider_set = set(providers or [])
+    recommended = ModelsConfig()
+
+    def pick(candidates: list[str]) -> str | None:
+        for spec in candidates:
+            provider, _ = spec.split(":", 1)
+            if provider == "ollama":
+                if ollama_available:
+                    return spec
+            elif provider in provider_set:
+                return spec
+        return None
+
+    planner = pick([
+        "openai-codex:gpt-5.4",
+        "openai:gpt-4o-mini",
+        "zai:glm-5.1",
+        "anthropic:claude-sonnet-4-6-20250514",
+        "kimi:kimi-k2.5",
+        "gemini:gemini-2.5-flash",
+        "deepseek:deepseek-chat",
+        "openrouter:meta-llama/llama-3.3-70b-instruct",
+        "ollama:qwen3-coder-next",
+    ])
+    if planner:
+        recommended.planner = planner
+
+    if ollama_available:
+        recommended.coder = "ollama:qwen3-coder-next"
+    else:
+        coder = pick([
+            "zai:glm-5.1",
+            "openai-codex:gpt-5.4",
+            "openai:o4-mini",
+            "anthropic:claude-sonnet-4-6-20250514",
+            "kimi:kimi-k2.5",
+            "deepseek:deepseek-chat",
+            "gemini:gemini-2.5-flash",
+            "openrouter:meta-llama/llama-3.3-70b-instruct",
+        ])
+        if coder:
+            recommended.coder = coder
+
+    reviewer = pick([
+        "openai-codex:gpt-5.4",
+        "openai:o4-mini",
+        "zai:glm-5.1",
+        "anthropic:claude-sonnet-4-6-20250514",
+        "kimi:kimi-k2.5",
+        "deepseek:deepseek-reasoner",
+        "gemini:gemini-2.5-flash",
+        "openrouter:meta-llama/llama-3.3-70b-instruct",
+        "ollama:qwen3-coder-next",
+    ])
+    if reviewer:
+        recommended.reviewer = reviewer
+
+    sentinel = pick([
+        "openai-codex:gpt-5.4",
+        "openai:gpt-4o",
+        "zai:glm-5.1",
+        "anthropic:claude-opus-4-6-20250610",
+        "kimi:kimi-k2.5",
+        "gemini:gemini-2.5-pro",
+        "deepseek:deepseek-reasoner",
+        "openrouter:meta-llama/llama-3.3-70b-instruct",
+        "ollama:qwen3-coder-next",
+    ])
+    if sentinel:
+        recommended.sentinel = sentinel
+        recommended.escalation = sentinel
+
+    researcher = pick([
+        "gemini:gemini-2.5-flash",
+        "openai-codex:gpt-5.4",
+        "openai:gpt-4o-mini",
+        "zai:glm-5.1",
+        "deepseek:deepseek-chat",
+        "kimi:kimi-k2.5",
+        "openrouter:meta-llama/llama-3.3-70b-instruct",
+        "ollama:qwen3-coder-next",
+    ])
+    if researcher:
+        recommended.researcher = researcher
+
+    return recommended
 
 
 def load_config(project_root: Path | None = None) -> ForgeGodConfig:
@@ -219,7 +323,11 @@ def load_config(project_root: Path | None = None) -> ForgeGodConfig:
     return config
 
 
-def init_project(project_root: Path | None = None) -> Path:
+def init_project(
+    project_root: Path | None = None,
+    *,
+    model_defaults: ModelsConfig | None = None,
+) -> Path:
     """Initialize .forgegod/ directory with default config."""
     if project_root is None:
         project_root = Path.cwd()
@@ -230,6 +338,8 @@ def init_project(project_root: Path | None = None) -> Path:
     config_path = project_dir / DEFAULT_CONFIG_FILENAME
     if not config_path.exists():
         default = ForgeGodConfig()
+        if model_defaults is not None:
+            default.models = model_defaults
         config_path.write_text(
             toml.dumps(default.model_dump(exclude={"global_dir", "project_dir"}))
         )

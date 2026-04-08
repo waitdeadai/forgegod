@@ -160,6 +160,8 @@ def _check_ollama(project: Path) -> HealthCheck:
 
 def _check_api_keys() -> HealthCheck:
     """Check if any API keys are set."""
+    from forgegod.native_auth import codex_login_status_sync
+
     keys = {
         "OPENAI_API_KEY": "OpenAI",
         "ANTHROPIC_API_KEY": "Anthropic",
@@ -168,10 +170,14 @@ def _check_api_keys() -> HealthCheck:
         "GEMINI_API_KEY": "Gemini",
         "DEEPSEEK_API_KEY": "DeepSeek",
         "MOONSHOT_API_KEY": "Kimi",
+        "ZAI_CODING_API_KEY": "Z.AI Coding Plan",
         "ZAI_API_KEY": "Z.AI",
     }
 
     found = []
+    codex_logged_in, _ = codex_login_status_sync()
+    if codex_logged_in:
+        found.append("OpenAI Codex")
     for env_var, name in keys.items():
         if os.environ.get(env_var):
             found.append(name)
@@ -193,8 +199,9 @@ def _check_api_keys() -> HealthCheck:
     return HealthCheck(
         t("doctor_api_keys"), False, "No API keys found",
         fix=(
-            "Run: forgegod init (or set OPENAI_API_KEY / ANTHROPIC_API_KEY / "
-            "MOONSHOT_API_KEY / ZAI_API_KEY)"
+            "Run: forgegod init (or use `forgegod auth login openai-codex`, set "
+            "OPENAI_API_KEY / ANTHROPIC_API_KEY / MOONSHOT_API_KEY / "
+            "ZAI_CODING_API_KEY / ZAI_API_KEY)"
         ),
     )
 

@@ -12,6 +12,7 @@ from forgegod.config import (
     _env_overrides,
     init_project,
     load_config,
+    recommend_model_defaults,
 )
 from forgegod.models import BudgetMode
 
@@ -26,6 +27,8 @@ def test_default_config():
     assert config.loop.auto_push_success is False
     assert config.security.sandbox_backend == "auto"
     assert config.security.sandbox_image == "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
+    assert config.openai_codex.command == "codex"
+    assert config.openai_codex.sandbox == "read-only"
     assert config.zai.use_coding_plan is True
     assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
 
@@ -67,6 +70,27 @@ def test_load_config_defaults():
         config = load_config(Path(tmpdir))
         assert config.models.planner == "openai:gpt-4o-mini"
         assert config.ollama.host == "http://localhost:11434"
+
+
+def test_recommend_model_defaults_openai_codex_only():
+    models = recommend_model_defaults(["openai-codex"], ollama_available=False)
+    assert models.planner == "openai-codex:gpt-5.4"
+    assert models.reviewer == "openai-codex:gpt-5.4"
+    assert models.sentinel == "openai-codex:gpt-5.4"
+
+
+def test_recommend_model_defaults_prefers_zai_when_no_local():
+    models = recommend_model_defaults(["zai"], ollama_available=False)
+    assert models.coder == "zai:glm-5.1"
+    assert models.planner == "zai:glm-5.1"
+
+
+def test_init_project_writes_model_defaults():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        models = recommend_model_defaults(["openai-codex"], ollama_available=False)
+        project_dir = init_project(Path(tmpdir), model_defaults=models)
+        data = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
+        assert data["models"]["planner"] == "openai-codex:gpt-5.4"
 
 
 def test_load_config_from_toml():

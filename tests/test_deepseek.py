@@ -94,7 +94,7 @@ class TestCostCalculationWithCache:
     def test_basic_cost_no_cache(self, router):
         """Cost calculation without cache tokens works normally."""
         usage = {"input_tokens": 1000, "output_tokens": 500}
-        cost = router._calculate_cost("gpt-4o", usage)
+        cost = router._calculate_cost("openai", "gpt-4o", usage)
         # gpt-4o: $2.50/M input, $10.00/M output
         expected = (1000 / 1_000_000) * 2.50 + (500 / 1_000_000) * 10.00
         assert abs(cost - round(expected, 6)) < 0.0001
@@ -107,7 +107,7 @@ class TestCostCalculationWithCache:
             "cache_read_tokens": 800,
             "cache_creation_tokens": 0,
         }
-        cost = router._calculate_cost("claude-sonnet-4-6-20250514", usage)
+        cost = router._calculate_cost("anthropic", "claude-sonnet-4-6-20250514", usage)
         # Claude Sonnet: $3.00/M input, $15.00/M output
         # 200 regular + 800 cache_read at 10% = 200*3.00 + 800*0.30 per M
         regular = (200 / 1_000_000) * 3.00
@@ -124,7 +124,7 @@ class TestCostCalculationWithCache:
             "cache_read_tokens": 0,
             "cache_creation_tokens": 500,
         }
-        cost = router._calculate_cost("claude-sonnet-4-6-20250514", usage)
+        cost = router._calculate_cost("anthropic", "claude-sonnet-4-6-20250514", usage)
         # 500 regular + 500 cache_creation at 125%
         regular = (500 / 1_000_000) * 3.00
         creation = (500 / 1_000_000) * 3.00 * 1.25
@@ -135,12 +135,12 @@ class TestCostCalculationWithCache:
     def test_cost_zero_for_local_model(self, router):
         """Local models should have zero cost."""
         usage = {"input_tokens": 10000, "output_tokens": 5000}
-        cost = router._calculate_cost("qwen3-coder-next", usage)
+        cost = router._calculate_cost("ollama", "qwen3-coder-next", usage)
         assert cost == 0.0
 
     def test_cost_deepseek_much_cheaper(self, router):
         """DeepSeek should be significantly cheaper than GPT-4o for same usage."""
         usage = {"input_tokens": 100000, "output_tokens": 50000}
-        ds_cost = router._calculate_cost("deepseek-chat", usage)
-        gpt_cost = router._calculate_cost("gpt-4o", usage)
+        ds_cost = router._calculate_cost("deepseek", "deepseek-chat", usage)
+        gpt_cost = router._calculate_cost("openai", "gpt-4o", usage)
         assert ds_cost < gpt_cost / 5  # At least 5x cheaper

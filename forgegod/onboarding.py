@@ -55,13 +55,14 @@ class OnboardingWizard:
         console.print()
         console.print(f"  [cyan]1.[/cyan] {t('opt_local')}")
         console.print(f"  [cyan]2.[/cyan] {t('opt_openai')}")
-        console.print(f"  [cyan]3.[/cyan] {t('opt_anthropic')}")
-        console.print(f"  [cyan]4.[/cyan] {t('opt_openrouter')}")
-        console.print(f"  [cyan]5.[/cyan] {t('opt_gemini')}")
-        console.print(f"  [cyan]6.[/cyan] {t('opt_deepseek')}")
-        console.print(f"  [cyan]7.[/cyan] {t('opt_kimi')}")
-        console.print(f"  [cyan]8.[/cyan] {t('opt_zai')}")
-        console.print(f"  [cyan]9.[/cyan] {t('opt_multi')}")
+        console.print(f"  [cyan]3.[/cyan] {t('opt_openai_codex')}")
+        console.print(f"  [cyan]4.[/cyan] {t('opt_anthropic')}")
+        console.print(f"  [cyan]5.[/cyan] {t('opt_openrouter')}")
+        console.print(f"  [cyan]6.[/cyan] {t('opt_gemini')}")
+        console.print(f"  [cyan]7.[/cyan] {t('opt_deepseek')}")
+        console.print(f"  [cyan]8.[/cyan] {t('opt_kimi')}")
+        console.print(f"  [cyan]9.[/cyan] {t('opt_zai')}")
+        console.print(f"  [cyan]10.[/cyan] {t('opt_multi')}")
         console.print()
 
         choice = typer.prompt("Select", default="1")
@@ -71,18 +72,20 @@ class OnboardingWizard:
         elif choice == "2":
             self._setup_api_key("openai", "OPENAI_API_KEY", "https://platform.openai.com/api-keys")
         elif choice == "3":
-            self._setup_api_key("anthropic", "ANTHROPIC_API_KEY", "https://console.anthropic.com/settings/keys")
+            self._setup_openai_codex()
         elif choice == "4":
-            self._setup_api_key("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys")
+            self._setup_api_key("anthropic", "ANTHROPIC_API_KEY", "https://console.anthropic.com/settings/keys")
         elif choice == "5":
-            self._setup_gemini_key()
+            self._setup_api_key("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys")
         elif choice == "6":
-            self._setup_api_key("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys")
+            self._setup_gemini_key()
         elif choice == "7":
-            self._setup_api_key("kimi", "MOONSHOT_API_KEY", "https://platform.moonshot.ai/console/api-keys")
+            self._setup_api_key("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys")
         elif choice == "8":
-            self._setup_api_key("zai", "ZAI_API_KEY", "https://docs.z.ai/api-reference/introduction")
+            self._setup_api_key("kimi", "MOONSHOT_API_KEY", "https://platform.moonshot.ai/console/api-keys")
         elif choice == "9":
+            self._setup_api_key("zai", "ZAI_CODING_API_KEY", "https://docs.z.ai/devpack/quick-start")
+        elif choice == "10":
             self._setup_ollama()
             for provider, env_var, url in [
                 ("openai", "OPENAI_API_KEY", "https://platform.openai.com/api-keys"),
@@ -90,11 +93,13 @@ class OnboardingWizard:
                 ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/keys"),
                 ("deepseek", "DEEPSEEK_API_KEY", "https://platform.deepseek.com/api_keys"),
                 ("kimi", "MOONSHOT_API_KEY", "https://platform.moonshot.ai/console/api-keys"),
-                ("zai", "ZAI_API_KEY", "https://docs.z.ai/api-reference/introduction"),
+                ("zai", "ZAI_CODING_API_KEY", "https://docs.z.ai/devpack/quick-start"),
             ]:
                 add = typer.confirm(f"  Add {provider}?", default=False)
                 if add:
                     self._setup_api_key(provider, env_var, url)
+            if typer.confirm("  Add OpenAI Codex subscription?", default=False):
+                self._setup_openai_codex()
             if typer.confirm("  Add Google Gemini?", default=False):
                 self._setup_gemini_key()
 
@@ -123,6 +128,33 @@ class OnboardingWizard:
         console.print("  Then run: [bold]ollama serve[/bold]")
         console.print("  And pull a model: [bold]ollama pull qwen3.5:9b[/bold]")
         console.print()
+
+    def _setup_openai_codex(self) -> None:
+        """Check or start Codex CLI login for ChatGPT-backed access."""
+        import subprocess
+
+        from forgegod.native_auth import codex_login_status_sync, find_command
+
+        logged_in, _ = codex_login_status_sync()
+        if logged_in:
+            console.print("  [green]+[/green] OpenAI Codex subscription already linked")
+            self._providers.append("openai-codex")
+            return
+
+        codex = find_command("codex")
+        if not codex:
+            console.print("  [red]-[/red] Codex CLI not found on PATH")
+            console.print("  Install Codex CLI first, then rerun onboarding.")
+            return
+
+        console.print("\n  Opening official Codex login flow...")
+        subprocess.run([codex, "login"], check=False)
+        logged_in, _ = codex_login_status_sync()
+        if logged_in:
+            self._providers.append("openai-codex")
+            console.print("  [green]+[/green] OpenAI Codex subscription linked")
+        else:
+            console.print("  [yellow]![/yellow] Codex login not completed")
 
     def _setup_api_key(self, provider: str, env_var: str, url: str) -> None:
         """Prompt for API key, validate, save to .env."""
@@ -206,6 +238,13 @@ class OnboardingWizard:
         for provider in self._providers:
             if provider == "ollama":
                 continue
+            if provider == "openai-codex":
+                from forgegod.native_auth import codex_login_status_sync
+
+                logged_in, _ = codex_login_status_sync()
+                if logged_in:
+                    console.print(f"  [green]+[/green] {t('verify_ok')} (OpenAI Codex)")
+                    return
             if provider == "openai" and os.environ.get("OPENAI_API_KEY"):
                 try:
                     import httpx
@@ -222,13 +261,20 @@ class OnboardingWizard:
                         console.print(f"  [red]-[/red] {t('error_key_invalid', url='https://platform.openai.com/api-keys')}")
                 except Exception:
                     pass
-            if provider == "zai" and os.environ.get("ZAI_API_KEY"):
+            zai_key = os.environ.get("ZAI_CODING_API_KEY") or os.environ.get("ZAI_API_KEY")
+            if provider == "zai" and zai_key:
                 try:
                     import httpx
 
                     resp = httpx.get(
-                        "https://api.z.ai/api/paas/v4/models",
-                        headers={"Authorization": f"Bearer {os.environ['ZAI_API_KEY']}"},
+                        (
+                            "https://api.z.ai/api/coding/paas/v4/models"
+                            if os.environ.get("ZAI_CODING_API_KEY")
+                            else "https://api.z.ai/api/paas/v4/models"
+                        ),
+                        headers={
+                            "Authorization": f"Bearer {zai_key}"
+                        },
                         timeout=10,
                     )
                     if resp.status_code == 200:
@@ -267,9 +313,13 @@ class OnboardingWizard:
         # Write config.toml if it doesn't exist
         config_path = self.project_path / ".forgegod" / "config.toml"
         if not config_path.exists():
-            from forgegod.config import init_project
+            from forgegod.config import init_project, recommend_model_defaults
 
-            init_project(self.project_path)
+            recommended = recommend_model_defaults(
+                self._providers,
+                ollama_available=self._ollama_available,
+            )
+            init_project(self.project_path, model_defaults=recommended)
 
         console.print()
         console.print(Panel(

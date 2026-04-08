@@ -172,6 +172,48 @@ an explicit Coding Plan path, detect it in onboarding/doctor/benchmark flows,
 and treat `glm-5.1` as the default benchmarkable model until repo-local
 benchmarks justify a different default.
 
+## Native Auth Addendum - OpenAI Codex + Z.AI Coding Plan
+
+Verified on `2026-04-08` before wiring native subscription-oriented auth into ForgeGod CLI:
+
+- OpenAI's help material states that Codex is available on supported ChatGPT
+  plans and can be accessed through the Codex CLI, IDE extension, or Codex in
+  ChatGPT. That supports using ChatGPT-backed Codex login as a native auth
+  surface inside ForgeGod instead of pretending the only supported OpenAI path
+  is API keys:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI's billing guidance also says API usage and ChatGPT subscriptions are
+  billed separately. That supports treating `openai-codex` as a different auth
+  and billing surface from `OPENAI_API_KEY`, including zero in-repo cost
+  accounting for subscription-backed calls:
+  - https://help.openai.com/en/articles/8156019
+- OpenClaw's provider docs explicitly treat OpenAI Codex as an auth surface
+  distinct from plain OpenAI API keys, which reinforces the design choice to
+  model native auth surfaces separately from upstream provider families:
+  - https://docs.openclaw.ai/concepts/model-providers
+- Z.AI's devpack quick-start docs show a Coding Plan path for external coding
+  tools with a dedicated API key and base URL. That supports making
+  `ZAI_CODING_API_KEY` first-class instead of forcing users through a generic
+  OpenAI-compatible custom endpoint:
+  - https://docs.z.ai/devpack/quick-start
+  - https://docs.z.ai/devpack/tool/openclaw
+- OpenRouter's official docs remain credit/API based rather than a subscription
+  auth surface, so it should not be marketed as "native subscription" support
+  in ForgeGod today:
+  - https://openrouter.ai/docs/api-reference/overview
+- Alibaba / Qwen Coding Plan docs currently frame that surface around supported
+  coding tools rather than generic autonomous third-party loops. That supports
+  delaying any "native subscription" claim there until ForgeGod has a clearly
+  sanctioned integration path:
+  - https://www.alibabacloud.com/help/en/model-studio/claude-code-coding-plan
+  - https://qwen.ai/docs/qwen-code/getting-started
+
+Operational conclusion for ForgeGod: implement native auth now for OpenAI
+Codex and Z.AI Coding Plan inside ForgeGod CLI, keep usage inside ForgeGod once
+the one-time provider login is complete, and avoid claiming native subscription
+support for OpenRouter or Alibaba until there is an official, reproducible path
+that fits ForgeGod's autonomous workflow model.
+
 ## Workflow Research Addendum - DESIGN.md + Contribution Mode
 
 Verified on `2026-04-08` before adding frontend and contribution workflows:

@@ -176,7 +176,7 @@ class TestCostCalculation:
 
         with timed() as t:
             for i in range(n):
-                router._calculate_cost("gpt-4o-mini", {
+                router._calculate_cost("openai", "gpt-4o-mini", {
                     "input_tokens": 1000 + i,
                     "output_tokens": 500 + i,
                 })
@@ -184,7 +184,7 @@ class TestCostCalculation:
         # Verify a known calculation
         # gpt-4o-mini: $0.15/Mtok in, $0.60/Mtok out
         expected = (1000 / 1_000_000) * 0.15 + (500 / 1_000_000) * 0.60
-        actual = router._calculate_cost("gpt-4o-mini", {
+        actual = router._calculate_cost("openai", "gpt-4o-mini", {
             "input_tokens": 1000, "output_tokens": 500,
         })
         assert abs(actual - expected) < 1e-8

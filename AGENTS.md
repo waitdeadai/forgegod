@@ -12,10 +12,12 @@ This file is the repo-local operating contract for coding agents working on Forg
 ## Verified Baseline (2026-04-08)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider code paths: `8` (`openai`, `anthropic`, `gemini`, `ollama`, `openrouter`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `439`
-- Core suite: `python -m pytest -m "not stress" -q` -> `355 passed, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `439 passed`
+- Provider families: `8`
+- Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
+- Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
+- Tests collected: `448`
+- Core suite: `python -m pytest -m "not stress" -q` -> `364 passed, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `448 passed`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests` -> passes
 - Build status: `python -m build` passes
@@ -25,6 +27,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Agent runtime is workspace-scoped. Under agent execution, filesystem, shell, git, skills, and MCP stdio startup resolve against `config.project_dir.parent`, and filesystem tools reject paths that escape that root.
 - Parallel worktree mode now scopes each worker agent to its assigned worktree by rebasing `config.project_dir` for that worker.
 - Security config is now materially enforced: `sandbox_mode`, `sandbox_backend`, `sandbox_image`, `blocked_paths`, `audit_commands`, `redact_secrets`, and `max_rules_file_chars` are wired into runtime paths. Standard mode stays local with guardrails; strict mode uses a real Docker sandbox backend or blocks execution if no backend is available.
+- ForgeGod now supports native subscription-backed OpenAI access inside the ForgeGod CLI through `forgegod auth login openai-codex` and `forgegod auth sync`. Z.AI's Coding Plan path is also first-class via `ZAI_CODING_API_KEY`.
+- `forgegod init`, onboarding, and `forgegod auth sync` now write auth-aware model defaults so planner/reviewer/adversary flows can run without hand-editing `config.toml` when the user has OpenAI Codex or Z.AI but no OpenAI API key.
+- OpenAI Codex subscription routing is verified for planner/reviewer/adversary workflows. Coder-loop use is available, but it remains experimental and should be benchmarked per repo before making it the default remote coder.
 - If a repo root contains `DESIGN.md`, ForgeGod now injects it into the agent prompt as the frontend design source of truth.
 - ForgeGod now ships `forgegod design` for importing `DESIGN.md` presets and `forgegod contribute` for contribution-aware planning/autonomous work that reads `CONTRIBUTING.md` plus repo rules.
 - Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.

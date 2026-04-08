@@ -28,13 +28,13 @@
 
 ---
 
-ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, Kimi via Moonshot y Z.AI GLM) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, o usá modelos en la nube cuando los necesites.
+ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, Kimi via Moonshot y Z.AI GLM) en un único motor de código autónomo. Enruta tareas al modelo correcto, corre 24/7 desde un PRD, aprende de cada resultado, y mejora su propia estrategia. Ejecutalo localmente por $0 con Ollama, usá API keys cuando haga falta, o conectá autenticación nativa de OpenAI Codex y Z.AI Coding Plan dentro del CLI de ForgeGod.
 
 ```bash
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` proveedores, `439` tests recolectados, `355` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `448` tests recolectados, `364` tests no-stress pasando, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ## Inicio Rápido (Sin Saber Programar)
 
@@ -95,6 +95,13 @@ pip install forgegod
 
 # Inicializar un proyecto
 forgegod init --lang es
+
+# Ver superficies de auth nativas
+forgegod auth status
+
+# Vincular la suscripción de OpenAI Codex y sincronizar defaults
+forgegod auth login openai-codex
+forgegod auth sync
 
 # Tarea única
 forgegod run "Agregá un endpoint /health a server.py con uptime e info de versión"
@@ -213,6 +220,8 @@ Ejecutá el tuyo: `forgegod benchmark`
 
 ForgeGod usa config TOML con prioridad de 3 niveles: variables de entorno > proyecto > global.
 
+`forgegod init` y `forgegod auth sync` escriben defaults sensibles a la auth detectada. El ejemplo de abajo muestra la forma del archivo, no la única combinación recomendada.
+
 ```toml
 # .forgegod/config.toml
 
@@ -236,11 +245,14 @@ model = "qwen3-coder-next"
 
 ```bash
 export OPENAI_API_KEY="sk-..."
+forgegod auth login openai-codex           # Auth nativa OpenAI con ChatGPT
 export ANTHROPIC_API_KEY="sk-ant-..."     # Opcional
 export OPENROUTER_API_KEY="sk-or-..."     # Opcional
 export GOOGLE_API_KEY="AIza..."           # Opcional (Gemini)
 export DEEPSEEK_API_KEY="sk-..."          # Opcional
 export MOONSHOT_API_KEY="sk-..."          # Opcional (Kimi / Moonshot)
+export ZAI_CODING_API_KEY="..."           # Opcional (Z.AI Coding Plan)
+export ZAI_API_KEY="..."                  # Opcional (Z.AI API general)
 ```
 
 O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
@@ -250,14 +262,18 @@ O usá el archivo `.forgegod/.env` — `forgegod init` lo crea automáticamente.
 | Proveedor | Modelos | Costo | Setup |
 |:----------|:--------|:------|:------|
 | **Ollama** | qwen3-coder-next, devstral, cualquiera | **$0** | `ollama serve` |
-| OpenAI | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
+| OpenAI API | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
+| Suscripción OpenAI Codex | gpt-5.4 vía superficie Codex | Incluida en planes ChatGPT soportados | `forgegod auth login openai-codex` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |
 | DeepSeek | deepseek-chat, deepseek-reasoner | $ | `DEEPSEEK_API_KEY` |
 | Kimi (Moonshot directo) | kimi-k2.5, kimi-k2-thinking | $$ | `MOONSHOT_API_KEY` |
+| Z.AI / GLM | glm-5.1, glm-5, glm-4.7 | $$ | `ZAI_CODING_API_KEY` o `ZAI_API_KEY` |
 | OpenRouter | 200+ modelos | varía | `OPENROUTER_API_KEY` |
 
 El soporte de Kimi usa la API OpenAI-compatible oficial de Moonshot y hoy es experimental dentro de ForgeGod. Correlalo con tus benchmarks antes de convertirlo en modelo por defecto.
+El soporte por suscripción de OpenAI Codex hoy es más fuerte para planner/reviewer/adversary. También puede usarse como superficie de ruteo para código, pero el loop de coder sigue siendo experimental y conviene benchmarkearlo antes de dejarlo como coder remoto por defecto.
+OpenRouter sigue funcionando con keys/créditos. Alibaba/Qwen Coding Plan sigue en evaluación porque la documentación oficial actual lo acota a coding tools soportadas, no a loops autónomos genéricos.
 
 ## Seguridad
 

@@ -745,6 +745,8 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
     """Auto-detect which models are available."""
     import os
 
+    from forgegod.native_auth import codex_login_status_sync
+
     models: list[str] = []
 
     def add_model(model: str) -> None:
@@ -767,6 +769,9 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
     # Check cloud providers
     if os.environ.get("OPENAI_API_KEY"):
         add_model("openai:gpt-4o-mini")
+    codex_logged_in, _ = codex_login_status_sync()
+    if codex_logged_in:
+        add_model("openai-codex:gpt-5.4")
     if os.environ.get("ANTHROPIC_API_KEY"):
         add_model("anthropic:claude-haiku-4-5-20251001")
     if os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"):
@@ -775,7 +780,7 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
         add_model("deepseek:deepseek-chat")
     if os.environ.get("MOONSHOT_API_KEY"):
         add_model("kimi:kimi-k2.5")
-    if os.environ.get("ZAI_API_KEY"):
+    if os.environ.get("ZAI_CODING_API_KEY") or os.environ.get("ZAI_API_KEY"):
         add_model("zai:glm-5.1")
     if os.environ.get("OPENROUTER_API_KEY"):
         add_model("openrouter:meta-llama/llama-3.3-70b-instruct")

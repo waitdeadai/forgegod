@@ -14,19 +14,20 @@ This document is the current system of record for day-to-day work in this reposi
 - Python: `3.13.5`
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider code paths present in `forgegod/router.py`: `8`
-- Tests collected: `439`
+- Provider families: `8`
+- Route surfaces present in `forgegod/router.py`: `9`
+- Tests collected: `448`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-08 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `355 passed, 84 deselected in 14.90s` |
+| `python -m pytest -m "not stress" -q` | `364 passed, 84 deselected in 20.55s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 68.09s` |
-| `python -m pytest tests -q` | `439 passed in 75.82s` |
-| `python -m pytest --collect-only -q` | `439 tests collected in 0.36s` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 101.62s` |
+| `python -m pytest tests -q` | `448 passed in 114.32s` |
+| `python -m pytest --collect-only -q` | `448 tests collected in 0.23s` |
 | `python -m ruff check forgegod tests` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
@@ -36,6 +37,9 @@ This document is the current system of record for day-to-day work in this reposi
 - `forgegod loop` is safer than the previous audited baseline: auto-commit and auto-push are now opt-in config flags, not default behavior.
 - The benchmark runner no longer calls `Agent(..., project_dir=...)`; that constructor path is fixed, and quoted validation commands are parsed safely.
 - Worktree support now scopes worker agents to their assigned worktree by rebasing `config.project_dir` per worker.
+- ForgeGod now exposes native auth management in the ForgeGod CLI itself: `forgegod auth status`, `forgegod auth login openai-codex`, and `forgegod auth sync`.
+- OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
+- Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.
 - Filesystem tools are repository-scoped under agent execution. Paths that escape the active workspace root are rejected, and configured `blocked_paths` are enforced.
 - Security configuration is now materially wired through the tool layer: shell execution honors `sandbox_mode`, `sandbox_backend`, and `sandbox_image`; outputs honor `redact_secrets`; command execution can be audited; and rules loading respects `max_rules_file_chars`.
 - Standard mode remains a host-local guarded workflow: isolated process dirs, workspace scoping, blocked shell operators, and command policy checks.
@@ -70,3 +74,4 @@ This document is the current system of record for day-to-day work in this reposi
 2. Add lifecycle tooling for strict sandbox images and Docker readiness checks in onboarding/doctor flows.
 3. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
 4. Add explicit tests for worktree isolation and loop auto-commit flag behavior so those guarantees stay locked in.
+5. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, or keep preferring Z.AI / API-backed providers for remote coding tasks.
