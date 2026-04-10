@@ -21,6 +21,7 @@ def test_default_config():
     config = ForgeGodConfig()
     assert config.models.coder == "ollama:qwen3-coder-next"
     assert config.harness.profile == "adversarial"
+    assert config.harness.preferred_provider == "auto"
     assert config.budget.daily_limit_usd == 5.0
     assert config.budget.mode == BudgetMode.NORMAL
     assert config.loop.max_iterations == 100
@@ -32,6 +33,9 @@ def test_default_config():
     assert config.security.sandbox_image == "auto"
     assert config.openai_codex.command == "codex"
     assert config.openai_codex.sandbox == "read-only"
+    assert config.openai.reasoning_effort == "medium"
+    assert config.openai.verbosity == "medium"
+    assert config.openai.parallel_tool_calls is True
     assert config.zai.use_coding_plan is True
     assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
 
@@ -72,7 +76,7 @@ def test_init_project():
 def test_load_config_defaults():
     with tempfile.TemporaryDirectory() as tmpdir:
         config = load_config(Path(tmpdir))
-        assert config.models.planner == "openai:gpt-4o-mini"
+        assert config.models.planner == "openai:gpt-5.4"
         assert config.ollama.host == "http://localhost:11434"
 
 
@@ -113,6 +117,21 @@ def test_recommend_model_defaults_single_model_unifies_roles():
     assert models.researcher == "zai:glm-5.1"
 
 
+def test_recommend_model_defaults_openai_preference_biases_openai_surfaces():
+    models = recommend_model_defaults(
+        ["zai", "openai", "openai-codex"],
+        ollama_available=False,
+        codex_automation_supported=True,
+        preferred_provider="openai",
+    )
+    assert models.planner == "openai:gpt-5.4"
+    assert models.coder == "openai:gpt-5.4-mini"
+    assert models.reviewer == "openai-codex:gpt-5.4"
+    assert models.sentinel == "openai:gpt-5.4"
+    assert models.escalation == "openai:gpt-5.4"
+    assert models.researcher == "openai:gpt-5.4-mini"
+
+
 def test_init_project_writes_model_defaults():
     with tempfile.TemporaryDirectory() as tmpdir:
         models = recommend_model_defaults(
@@ -124,10 +143,12 @@ def test_init_project_writes_model_defaults():
             Path(tmpdir),
             model_defaults=models,
             harness_profile="single-model",
+            preferred_provider="openai",
         )
         data = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
         assert data["models"]["planner"] == "openai-codex:gpt-5.4"
         assert data["harness"]["profile"] == "single-model"
+        assert data["harness"]["preferred_provider"] == "openai"
 
 
 def test_load_config_from_toml():

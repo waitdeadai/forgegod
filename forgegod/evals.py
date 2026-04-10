@@ -573,10 +573,10 @@ class HarnessEvalRunner:
         sandbox_mode: str,
     ) -> None:
         config = self.config.model_copy(deep=True)
-        config.models.coder = "openai:gpt-4o-mini"
-        config.models.reviewer = "openai:gpt-4o-mini"
-        config.models.sentinel = "openai:gpt-4o-mini"
-        config.models.escalation = "openai:gpt-4o-mini"
+        config.models.coder = "openai:gpt-5.4-mini"
+        config.models.reviewer = "openai:gpt-5.4-mini"
+        config.models.sentinel = "openai:gpt-5.4-mini"
+        config.models.escalation = "openai:gpt-5.4-mini"
         config.openai.base_url = base_url
         config.review.enabled = False
         config.review.always_review_run = False

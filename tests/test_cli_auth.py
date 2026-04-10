@@ -113,12 +113,14 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, 
     updated = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
     assert updated["models"] == recommended.model_dump()
     assert updated["harness"]["profile"] == "adversarial"
+    assert updated["harness"]["preferred_provider"] == "auto"
     assert updated["budget"]["mode"] == "normal"
     assert updated["budget"]["daily_limit_usd"] == 5.0
     visible = printed.getvalue()
     assert "zai:glm-5.1" in visible
     assert "openai-codex:gpt-5.4" in visible
     assert "cloud-ready config ensured" in visible
+    assert "Provider preference:" in visible
 
 
 def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch, printed):
@@ -205,6 +207,43 @@ def test_auth_sync_single_model_profile(tmp_path, monkeypatch, printed):
         (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
     )
     assert updated["harness"]["profile"] == "single-model"
+    assert updated["harness"]["preferred_provider"] == "auto"
     visible = printed.getvalue()
     assert "Harness profile:" in visible
     assert "single-model" in visible
+
+
+def test_auth_sync_openai_preference(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="openai:gpt-5.4",
+        coder="openai:gpt-5.4-mini",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai:gpt-5.4",
+        escalation="openai:gpt-5.4",
+        researcher="openai:gpt-5.4-mini",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["openai:gpt-5.4-mini", "openai-codex:gpt-5.4", "zai:glm-5.1"],
+            ["openai", "openai-codex", "zai"],
+            False,
+            recommended,
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "sync", "--path", str(tmp_path), "--prefer-provider", "openai"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    updated = toml.loads(
+        (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
+    )
+    assert updated["harness"]["preferred_provider"] == "openai"
+    assert updated["models"]["planner"] == "openai:gpt-5.4"
+    normalized = " ".join(printed.getvalue().split())
+    assert "Provider preference:" in normalized
+    assert "openai" in normalized

@@ -768,7 +768,7 @@ def detect_available_models(config: ForgeGodConfig) -> list[str]:
 
     # Check cloud providers
     if os.environ.get("OPENAI_API_KEY"):
-        add_model("openai:gpt-4o-mini")
+        add_model("openai:gpt-5.4-mini")
     codex_logged_in, _ = codex_login_status_sync()
     if codex_logged_in:
         add_model("openai-codex:gpt-5.4")

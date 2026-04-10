@@ -544,6 +544,40 @@ workflow behavior for `chat`, `run`, `loop`, `parallel worktree`, and
 separate opt-in integration smoke so the eval surface stays fast, repeatable,
 and release-gating friendly.
 
+## OpenAI-First Harness Addendum - API + Codex Subscription
+
+Verified on `2026-04-10` before strengthening ForgeGod's OpenAI-compatible
+harness strategy:
+
+- OpenAI's current model guidance positions GPT-5.4 as the flagship general
+  model family, with GPT-5.4-mini as the lower-cost/faster sibling. That
+  supports using GPT-5.4 for planner/sentinel-grade API roles and GPT-5.4-mini
+  for cost-sensitive build/research roles when a user wants to stay on OpenAI:
+  - https://developers.openai.com/api/docs/models
+- OpenAI's Codex best-practices guidance reinforces that coding-agent quality
+  depends on harness structure, clear task boundaries, and review loops rather
+  than simply picking one frontier model and using it everywhere:
+  - https://developers.openai.com/codex/learn/best-practices
+- OpenAI's ChatGPT-plan/Codex guidance documents Codex as a subscription-backed
+  auth surface available through the Codex CLI and related products. That
+  supports keeping `openai-codex` as a first-class ForgeGod route surface
+  instead of pretending every OpenAI integration must go through API keys:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI's billing guidance is explicit that ChatGPT subscriptions and API
+  usage are separate billing surfaces. That supports documenting ForgeGod's
+  OpenAI-first mode as "API + Codex subscription" rather than collapsing them
+  into one ambiguous provider story:
+  - https://help.openai.com/en/articles/8156019
+
+Operational conclusion for ForgeGod: keep both OpenAI surfaces first-class.
+For users who want one-vendor routing, ForgeGod should support an explicit
+OpenAI-first adversarial profile: GPT-5.4 / GPT-5.4-mini on the API side for
+planner/researcher/coder roles, plus `openai-codex:gpt-5.4` as the reviewer
+or adversary surface when the Codex subscription auth path is linked. That is
+stronger and more honest than forcing everything into either API-only or
+subscription-only narratives, and it keeps the repo provider-agnostic because
+the preference is explicit config, not hard-coded architecture.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

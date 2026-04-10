@@ -95,17 +95,19 @@ def recommend_provider_choice(
 
 
 class OnboardingWizard:
-    """Interactive 4-step setup wizard."""
+    """Interactive guided setup wizard."""
 
     def __init__(
         self,
         project_path: Path,
         lang: str = "en",
         harness_profile: str = "adversarial",
+        preferred_provider: str = "auto",
     ):
         self.project_path = Path(project_path).resolve()
         self.lang = lang
         self._harness_profile = harness_profile
+        self._preferred_provider = preferred_provider
         self._providers: list[str] = []
         self._ollama_available = False
         self._ollama_models: list[str] = []
@@ -123,6 +125,7 @@ class OnboardingWizard:
         self._step_welcome()
         self._step_provider()
         self._step_harness_profile()
+        self._step_provider_preference()
         self._step_verify()
         self._step_done()
         return {
@@ -283,6 +286,26 @@ class OnboardingWizard:
         choice = typer.prompt("Profile", default=default_choice)
         self._harness_profile = "single-model" if choice == "2" else "adversarial"
 
+    def _step_provider_preference(self) -> None:
+        """Step 4: choose whether to bias auto-routing toward OpenAI surfaces."""
+        print_brand_panel(
+            t("provider_pref_prompt"),
+            t("provider_pref_body"),
+            border_style="forge.secondary",
+        )
+        console.print(
+            f"  [forge.primary]1.[/forge.primary] {t('provider_pref_auto')} "
+            f"[forge.muted]({t('provider_recommended')})[/forge.muted]"
+        )
+        console.print(
+            f"  [forge.primary]2.[/forge.primary] {t('provider_pref_openai')}"
+        )
+        console.print()
+
+        default_choice = "2" if self._preferred_provider == "openai" else "1"
+        choice = typer.prompt("Provider preference", default=default_choice)
+        self._preferred_provider = "openai" if choice == "2" else "auto"
+
     def _print_provider_guidance(self) -> None:
         """Show friendly recommendations and what ForgeGod already detected."""
         recommended = next(
@@ -419,7 +442,7 @@ class OnboardingWizard:
         console.print("  [forge.success]+[/forge.success] Gemini key saved for this repo")
 
     def _step_verify(self) -> None:
-        """Step 4: Verification smoke test."""
+        """Verification smoke test."""
         if not self._providers:
             console.print(f"\n[forge.warn]{t('no_providers')}[/forge.warn]")
             return
@@ -516,7 +539,7 @@ class OnboardingWizard:
         )
 
     def _step_done(self) -> None:
-        """Step 5: Save .env and show success."""
+        """Save .env and show success."""
         if self._env_vars:
             env_path = self.project_path / ".forgegod" / ".env"
             env_path.parent.mkdir(parents=True, exist_ok=True)
@@ -539,11 +562,13 @@ class OnboardingWizard:
             self._providers,
             ollama_available=self._ollama_available,
             profile=self._harness_profile,
+            preferred_provider=self._preferred_provider,
         )
         project_dir = init_project(
             self.project_path,
             model_defaults=recommended,
             harness_profile=self._harness_profile,
+            preferred_provider=self._preferred_provider,
         )
         config_path = project_dir / "config.toml"
         try:
@@ -552,6 +577,7 @@ class OnboardingWizard:
             data = toml.loads(config_path.read_text(encoding="utf-8"))
             data["models"] = recommended.model_dump()
             data.setdefault("harness", {})["profile"] = self._harness_profile
+            data["harness"]["preferred_provider"] = self._preferred_provider
             config_path.write_text(toml.dumps(data), encoding="utf-8")
         except Exception:
             pass
@@ -562,6 +588,7 @@ class OnboardingWizard:
                 (
                     f"[forge.success]{t('success')}[/forge.success]\n\n"
                     f"{t('harness_selected', profile=self._harness_profile)}\n"
+                    f"{t('provider_pref_selected', provider=self._preferred_provider)}\n"
                     f"{t('try_it')}"
                 ),
                 border_style="forge.primary",

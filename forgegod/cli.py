@@ -90,6 +90,7 @@ def _detect_runtime_model_defaults(
     project_path: Path | None = None,
     *,
     profile: str = "adversarial",
+    preferred_provider: str = "auto",
 ):
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
@@ -106,6 +107,7 @@ def _detect_runtime_model_defaults(
         providers,
         ollama_available=ollama_available,
         profile=profile,
+        preferred_provider=preferred_provider,
     )
     return models, providers, ollama_available, recommended
 
@@ -119,6 +121,7 @@ def _ensure_project_bootstrap(
     project_path: Path | None = None,
     *,
     profile: str = "adversarial",
+    preferred_provider: str = "auto",
     announce: bool = True,
 ) -> bool:
     from forgegod.config import init_project
@@ -130,11 +133,13 @@ def _ensure_project_bootstrap(
     _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
         root,
         profile=profile,
+        preferred_provider=preferred_provider,
     )
     project_dir = init_project(
         root,
         model_defaults=recommended,
         harness_profile=profile,
+        preferred_provider=preferred_provider,
     )
 
     if announce:
@@ -453,6 +458,11 @@ def init(
         "--profile",
         help="Harness profile: adversarial or single-model",
     ),
+    prefer_provider: str = typer.Option(
+        "auto",
+        "--prefer-provider",
+        help="Provider preference: auto or openai",
+    ),
 ):
     """Initialize a ForgeGod project — interactive wizard or quick auto-detect."""
     from forgegod.i18n import set_lang
@@ -463,7 +473,12 @@ def init(
         # Interactive wizard (default for new users)
         from forgegod.onboarding import OnboardingWizard
 
-        wizard = OnboardingWizard(project_path=path, lang=lang, harness_profile=profile)
+        wizard = OnboardingWizard(
+            project_path=path,
+            lang=lang,
+            harness_profile=profile,
+            preferred_provider=prefer_provider,
+        )
         wizard.run()
         return
 
@@ -538,16 +553,19 @@ def init(
         providers,
         ollama_available=ollama_available,
         profile=profile,
+        preferred_provider=prefer_provider,
     )
     project_dir = init_project(
         path,
         model_defaults=recommended_models,
         harness_profile=profile,
+        preferred_provider=prefer_provider,
     )
 
     console.print()
     console.print(f"[green]Initialized at {project_dir}[/green]")
     console.print("[dim]Applied auth-aware model defaults for detected providers.[/dim]")
+    console.print(f"[dim]Provider preference: {prefer_provider}[/dim]")
     console.print()
     console.print("[bold]Quick start:[/bold]")
     console.print('  forgegod run "Describe your task here"')
@@ -695,6 +713,11 @@ def auth_sync(
         "--profile",
         help="Harness profile: adversarial or single-model",
     ),
+    prefer_provider: str = typer.Option(
+        "auto",
+        "--prefer-provider",
+        help="Provider preference: auto or openai",
+    ),
 ):
     """Rewrite model defaults based on detected native auth surfaces."""
     import toml
@@ -704,16 +727,19 @@ def auth_sync(
     _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
         path,
         profile=profile,
+        preferred_provider=prefer_provider,
     )
     project_dir = init_project(
         path,
         model_defaults=recommended,
         harness_profile=profile,
+        preferred_provider=prefer_provider,
     )
     config_path = project_dir / "config.toml"
     data = toml.loads(config_path.read_text(encoding="utf-8"))
     data["models"] = recommended.model_dump()
     data.setdefault("harness", {})["profile"] = profile
+    data["harness"]["preferred_provider"] = prefer_provider
     budget = data.setdefault("budget", {})
     if providers and not ollama_available:
         if budget.get("mode") in {"local-only", "halt"}:
@@ -729,6 +755,7 @@ def auth_sync(
         table.add_row(role, model)
     console.print(table)
     console.print(f"[dim]Harness profile:[/dim] {profile}")
+    console.print(f"[dim]Provider preference:[/dim] {prefer_provider}")
     if providers and not ollama_available:
         console.print(
             "[dim]Budget sync:[/dim] cloud-ready config ensured "
@@ -1470,7 +1497,7 @@ def evals(
 def benchmark(
     models: Optional[str] = typer.Option(
         None, "--models", "-m",
-        help="Comma-separated models (e.g. 'ollama:qwen3.5:9b,openai:gpt-4o-mini')",
+        help="Comma-separated models (e.g. 'ollama:qwen3.5:9b,openai:gpt-5.4-mini')",
     ),
     tiers: Optional[str] = typer.Option(
         None, "--tiers", "-t",

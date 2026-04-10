@@ -531,6 +531,67 @@ class TestOpenAICompatConfig:
                 None,
             )
 
+    @pytest.mark.asyncio
+    async def test_openai_gpt5_uses_reasoning_verbosity_and_parallel_tools(self, monkeypatch):
+        captured: dict[str, object] = {}
+
+        class FakeCompletions:
+            async def create(self, **kwargs):
+                captured["kwargs"] = kwargs
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="ok", tool_calls=[]),
+                        )
+                    ],
+                    usage=SimpleNamespace(
+                        prompt_tokens=12,
+                        completion_tokens=8,
+                        completion_tokens_details=SimpleNamespace(reasoning_tokens=3),
+                    ),
+                )
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                captured["client_kwargs"] = kwargs
+                self.chat = SimpleNamespace(completions=FakeCompletions())
+
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-openai")
+        monkeypatch.setattr("openai.AsyncOpenAI", FakeClient)
+
+        config = ForgeGodConfig()
+        config.openai.reasoning_effort = "low"
+        config.openai.verbosity = "low"
+        config.openai.parallel_tool_calls = True
+        router = ModelRouter(config)
+
+        text, usage = await router._call_openai(
+            "gpt-5.4-mini",
+            "Say hi",
+            "system",
+            False,
+            64,
+            0.2,
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "read_file",
+                        "description": "Read a file",
+                        "parameters": {"type": "object", "properties": {}},
+                    },
+                }
+            ],
+        )
+
+        assert text == "ok"
+        assert usage["reasoning_tokens"] == 3
+        assert captured["kwargs"]["model"] == "gpt-5.4-mini"
+        assert captured["kwargs"]["reasoning_effort"] == "low"
+        assert captured["kwargs"]["verbosity"] == "low"
+        assert captured["kwargs"]["parallel_tool_calls"] is True
+        assert "tools" in captured["kwargs"]
+
 
 class TestHTTP2Fallback:
     def test_get_client_falls_back_when_h2_extra_missing(self, monkeypatch):

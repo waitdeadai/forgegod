@@ -283,7 +283,7 @@ class TestBenchmarkModelDetection:
 
         models = detect_available_models(ForgeGodConfig())
 
-        assert "openai:gpt-4o-mini" in models
+        assert "openai:gpt-5.4-mini" in models
         assert "anthropic:claude-haiku-4-5-20251001" in models
         assert "openrouter:meta-llama/llama-3.3-70b-instruct" in models
         assert "gemini:gemini-3-flash" in models

@@ -555,6 +555,7 @@ class ModelRouter:
         import openai
 
         is_reasoning = model in self._REASONING_MODELS
+        is_gpt5_family = model.startswith("gpt-5")
         base_url = self.config.openai.base_url
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
@@ -593,6 +594,12 @@ class ModelRouter:
             kwargs["response_format"] = {"type": "json_object"}
         if tools:
             kwargs["tools"] = tools
+            if self.config.openai.parallel_tool_calls:
+                kwargs["parallel_tool_calls"] = True
+        if is_reasoning or is_gpt5_family:
+            kwargs["reasoning_effort"] = self.config.openai.reasoning_effort
+        if is_gpt5_family:
+            kwargs["verbosity"] = self.config.openai.verbosity
 
         client = openai.AsyncOpenAI(
             api_key=api_key,
@@ -619,8 +626,8 @@ class ModelRouter:
             "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
             "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
         }
-        # Reasoning models report reasoning tokens separately
-        if is_reasoning and resp.usage and hasattr(resp.usage, "completion_tokens_details"):
+        # Reasoning-capable OpenAI models can report reasoning tokens separately.
+        if resp.usage and hasattr(resp.usage, "completion_tokens_details"):
             details = resp.usage.completion_tokens_details
             if details and hasattr(details, "reasoning_tokens"):
                 usage_data["reasoning_tokens"] = details.reasoning_tokens

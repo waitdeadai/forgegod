@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `538` collected tests, `453` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, and permission/approval flags. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `541` collected tests, `456` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, and OpenAI-first provider preference. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -86,7 +86,7 @@ You don't need to be a developer to use ForgeGod. If you can describe what you w
 
 1. Install ForgeGod: `pip install forgegod`
 2. Run: `forgegod auth login openai-codex`
-3. Run: `forgegod auth sync --profile adversarial`
+3. Run: `forgegod auth sync --profile adversarial --prefer-provider openai`
 4. Start the session: `forgegod`
 5. Say what you want naturally, for example: `Build a REST API with user authentication`
 
@@ -96,7 +96,7 @@ ForgeGod stays the entrypoint. It delegates the one-time login to the official C
 
 1. Export `ZAI_CODING_API_KEY=...`
 2. Install ForgeGod: `pip install forgegod`
-3. Run: `forgegod auth sync --profile adversarial`
+3. Run: `forgegod auth sync --profile adversarial --prefer-provider openai`
 4. Start the session: `forgegod`
 5. Say what you want naturally, for example: `Build a REST API with user authentication`
 
@@ -118,6 +118,26 @@ and run `python scripts/smoke_glm_codex_harness.py` before high-stakes use.
 This harness is research-backed and works in ForgeGod today. The `ZAI_CODING_API_KEY`
 path should still be treated as experimental and at-your-own-risk until Z.AI
 explicitly recognizes ForgeGod as a supported coding tool.
+
+### OpenAI-First Harness: API Builder + Codex Reviewer
+
+If you want ForgeGod to stay inside OpenAI surfaces, apply an explicit
+OpenAI-first preference:
+
+- `planner = openai:gpt-5.4`
+- `coder = openai:gpt-5.4-mini`
+- `reviewer = openai-codex:gpt-5.4`
+- `sentinel = openai:gpt-5.4`
+- `escalation = openai:gpt-5.4`
+- `researcher = openai:gpt-5.4-mini`
+
+```bash
+forgegod auth sync --profile adversarial --prefer-provider openai
+```
+
+That keeps the adversarial split, but biases the harness toward OpenAI API plus
+Codex subscription when both are connected. ChatGPT/Codex subscription access
+and OpenAI API billing remain separate surfaces.
 
 If you want a simpler setup, ForgeGod also supports `single-model` mode during
 `forgegod init` and `forgegod auth sync --profile single-model`. That pins all
@@ -161,7 +181,7 @@ forgegod auth status
 
 # Link ChatGPT-backed OpenAI Codex subscription, then sync config defaults
 forgegod auth login openai-codex
-forgegod auth sync --profile adversarial
+forgegod auth sync --profile adversarial --prefer-provider openai
 
 # Talk to ForgeGod in natural language
 forgegod
@@ -214,7 +234,7 @@ ForgeGod auto-detects your environment on first run:
 2. Checks if Ollama is running locally
 3. Detects your project language, test framework, and linter
 4. Picks auth-aware model defaults for each role based on what's available
-5. Lets you choose `adversarial` (recommended) or `single-model`
+5. Lets you choose `adversarial` (recommended) or `single-model`, plus `auto` or `openai` provider preference
 6. Creates `.forgegod/config.toml` with sensible defaults
 
 No manual setup required. Just run `forgegod` and go.
@@ -328,11 +348,12 @@ Fresh `forgegod init` and `forgegod auth sync` write auth-aware defaults. The ex
 # .forgegod/config.toml
 
 [models]
-planner = "openai:gpt-4o-mini"        # Cheap planning
+planner = "openai:gpt-5.4"            # Frontier planning
 coder = "ollama:qwen3-coder-next"     # Free local coding
-reviewer = "openai:o4-mini"           # Quality gate
-sentinel = "openai:gpt-4o"            # Frontier sampling
-escalation = "openai:gpt-4o"          # Fallback for hard problems
+reviewer = "openai:gpt-5.4"           # Quality gate
+sentinel = "openai:gpt-5.4"           # Frontier sampling
+escalation = "openai:gpt-5.4"         # Fallback for hard problems
+researcher = "openai:gpt-5.4-mini"    # Recon / web synthesis
 
 [budget]
 daily_limit_usd = 5.00
@@ -378,7 +399,7 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 | Provider | Models | Cost | Setup |
 |:---------|:-------|:-----|:------|
 | **Ollama** | qwen3-coder-next, devstral, any | **$0** | `ollama serve` |
-| OpenAI API | gpt-4o, gpt-4o-mini, o3, o4-mini | $$ | `OPENAI_API_KEY` |
+| OpenAI API | gpt-5.4, gpt-5.4-mini, gpt-5.4-nano, o3, o4-mini | $$ | `OPENAI_API_KEY` |
 | OpenAI Codex subscription | gpt-5.4 via Codex auth surface | Included in supported ChatGPT plans | `forgegod auth login openai-codex` |
 | Anthropic | claude-sonnet-4-6, claude-opus-4-6 | $$$ | `ANTHROPIC_API_KEY` |
 | Google Gemini | gemini-2.5-pro, gemini-3-flash | $$ | `GOOGLE_API_KEY` |

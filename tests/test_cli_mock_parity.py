@@ -24,10 +24,10 @@ def _write_config(
     sandbox_mode: str = "standard",
 ) -> None:
     config = ForgeGodConfig()
-    config.models.coder = "openai:gpt-4o-mini"
-    config.models.reviewer = "openai:gpt-4o-mini"
-    config.models.sentinel = "openai:gpt-4o-mini"
-    config.models.escalation = "openai:gpt-4o-mini"
+    config.models.coder = "openai:gpt-5.4-mini"
+    config.models.reviewer = "openai:gpt-5.4-mini"
+    config.models.sentinel = "openai:gpt-5.4-mini"
+    config.models.escalation = "openai:gpt-5.4-mini"
     config.openai.base_url = base_url
     config.review.always_review_run = False
     config.review.enabled = False
@@ -234,7 +234,7 @@ def test_cli_mock_parity_roundtrips(
         assert target.read_text(encoding="utf-8") == expected_contents
 
     first_payload = started.server.requests[0]
-    assert first_payload["model"] == "gpt-4o-mini"
+    assert first_payload["model"] == "gpt-5.4-mini"
     assert "tools" in first_payload
 
 

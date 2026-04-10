@@ -5,9 +5,9 @@ Stripped: WAITDEAD-specific generators, component extraction, domain constitutio
 Kept: Reflexion loop, AST validation, code extraction, memory spine.
 
 The loop:
-  Attempt 1: Local model (qwen3-coder-next) → validate → if fail:
-  Attempt 2: Cloud model (gpt-4o-mini) → validate → if fail:
-  Attempt 3: Frontier model (o4-mini/sonnet) → validate → accept best
+  Attempt 1: Local model (qwen3-coder-next) -> validate -> if fail:
+  Attempt 2: Cloud model (gpt-5.4-mini) -> validate -> if fail:
+  Attempt 3: Frontier reviewer/sentinel -> validate -> accept best
 """
 
 from __future__ import annotations

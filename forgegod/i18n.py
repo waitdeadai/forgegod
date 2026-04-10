@@ -27,8 +27,16 @@ STRINGS: dict[str, dict[str, str]] = {
         "harness_adversarial": "Adversarial harness (builder + reviewer split)",
         "harness_single": "Single-model harness (one model for every role)",
         "harness_selected": "Selected harness profile: {profile}",
+        "provider_pref_prompt": "Should ForgeGod stay provider-agnostic or bias toward OpenAI?",
+        "provider_pref_body": (
+            "Auto keeps the general best available split. OpenAI-first prefers "
+            "OpenAI API + Codex when both are connected."
+        ),
+        "provider_pref_auto": "Auto routing across all connected providers",
+        "provider_pref_openai": "OpenAI-first (API builder + Codex reviewer when available)",
+        "provider_pref_selected": "Provider preference: {provider}",
         "opt_local": "Free local mode (Ollama - $0, runs on your machine)",
-        "opt_openai": "OpenAI API key (GPT-4o, o4-mini)",
+        "opt_openai": "OpenAI API key (GPT-5.4, GPT-5.4-mini)",
         "opt_openai_codex": "OpenAI ChatGPT subscription via Codex login",
         "opt_anthropic": "Anthropic API key (Claude)",
         "opt_openrouter": "OpenRouter API key (300+ models)",
@@ -130,8 +138,16 @@ STRINGS: dict[str, dict[str, str]] = {
         "harness_adversarial": "Harness adversarial (builder + reviewer separados)",
         "harness_single": "Harness single-model (un modelo para todos los roles)",
         "harness_selected": "Perfil de harness elegido: {profile}",
+        "provider_pref_prompt": "Queres que ForgeGod siga agnostico o que priorice OpenAI?",
+        "provider_pref_body": (
+            "Auto mantiene el mejor split general disponible. OpenAI-first prioriza "
+            "OpenAI API + Codex cuando ambos estan conectados."
+        ),
+        "provider_pref_auto": "Auto entre todos los proveedores conectados",
+        "provider_pref_openai": "OpenAI-first (API builder + Codex reviewer si estan disponibles)",
+        "provider_pref_selected": "Preferencia de proveedor: {provider}",
         "opt_local": "Modo local gratuito (Ollama - $0, corre en tu maquina)",
-        "opt_openai": "Clave API de OpenAI (GPT-4o, o4-mini)",
+        "opt_openai": "Clave API de OpenAI (GPT-5.4, GPT-5.4-mini)",
         "opt_openai_codex": "Suscripcion ChatGPT de OpenAI via login de Codex",
         "opt_anthropic": "Clave API de Anthropic (Claude)",
         "opt_openrouter": "Clave API de OpenRouter (300+ modelos)",

@@ -20,6 +20,11 @@ DEFAULT_CONFIG_FILENAME = "config.toml"
 # Per-million-token costs (input, output) in USD
 MODEL_COSTS: dict[str, tuple[float, float]] = {
     # OpenAI
+    "gpt-5.4": (1.25, 10.00),
+    "gpt-5.4-mini": (0.25, 2.00),
+    "gpt-5.4-nano": (0.05, 0.40),
+    "gpt-5-mini": (0.25, 2.00),
+    "gpt-5-nano": (0.05, 0.40),
     "gpt-4o": (2.50, 10.00),
     "gpt-4o-mini": (0.15, 0.60),
     "o3": (2.00, 8.00),
@@ -55,18 +60,19 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
 
 
 class ModelsConfig(BaseModel):
-    planner: str = "openai:gpt-4o-mini"
+    planner: str = "openai:gpt-5.4"
     coder: str = "ollama:qwen3-coder-next"
-    reviewer: str = "openai:o4-mini"
-    sentinel: str = "openai:gpt-4o"
-    escalation: str = "openai:gpt-4o"
-    researcher: str = "gemini:gemini-2.5-flash"  # Recon: fast + cheap for search synthesis
+    reviewer: str = "openai:gpt-5.4"
+    sentinel: str = "openai:gpt-5.4"
+    escalation: str = "openai:gpt-5.4"
+    researcher: str = "openai:gpt-5.4-mini"
 
 
 class HarnessConfig(BaseModel):
     """Harness profile selection for role routing."""
 
     profile: str = "adversarial"  # adversarial | single-model
+    preferred_provider: str = "auto"  # auto | openai
 
 
 class BudgetConfig(BaseModel):
@@ -149,6 +155,9 @@ class OpenAIConfig(BaseModel):
 
     timeout: float = 120.0
     base_url: str = "https://api.openai.com/v1"
+    reasoning_effort: str = "medium"
+    verbosity: str = "medium"
+    parallel_tool_calls: bool = True
 
 
 class OpenAICodexConfig(BaseModel):
@@ -222,6 +231,7 @@ def recommend_model_defaults(
     ollama_available: bool = True,
     codex_automation_supported: bool | None = None,
     profile: str = "adversarial",
+    preferred_provider: str = "auto",
 ) -> ModelsConfig:
     """Choose sane default models for the currently available auth surfaces."""
     if codex_automation_supported is None:
@@ -232,8 +242,21 @@ def recommend_model_defaults(
     provider_set = set(providers or [])
     recommended = ModelsConfig()
 
-    def pick(candidates: list[str]) -> str | None:
+    def prioritize(candidates: list[str]) -> list[str]:
+        if preferred_provider != "openai":
+            return candidates
+        preferred: list[str] = []
+        fallback: list[str] = []
         for spec in candidates:
+            provider, _ = spec.split(":", 1)
+            if provider in {"openai", "openai-codex"}:
+                preferred.append(spec)
+            else:
+                fallback.append(spec)
+        return preferred + fallback
+
+    def pick(candidates: list[str]) -> str | None:
+        for spec in prioritize(candidates):
             provider, _ = spec.split(":", 1)
             if provider == "openai-codex" and not codex_automation_supported:
                 continue
@@ -247,8 +270,9 @@ def recommend_model_defaults(
     if profile == "single-model":
         unified = pick([
             "zai:glm-5.1",
+            "openai:gpt-5.4",
             "openai-codex:gpt-5.4",
-            "openai:o4-mini",
+            "openai:gpt-5.4-mini",
             "anthropic:claude-sonnet-4-6-20250514",
             "kimi:kimi-k2.5",
             "gemini:gemini-2.5-flash",
@@ -266,9 +290,10 @@ def recommend_model_defaults(
         return recommended
 
     planner = pick([
-        "openai-codex:gpt-5.4",
-        "openai:gpt-4o-mini",
         "zai:glm-5.1",
+        "openai:gpt-5.4",
+        "openai-codex:gpt-5.4",
+        "openai:gpt-5.4-mini",
         "anthropic:claude-sonnet-4-6-20250514",
         "kimi:kimi-k2.5",
         "gemini:gemini-2.5-flash",
@@ -280,9 +305,10 @@ def recommend_model_defaults(
         recommended.planner = planner
 
     coder = pick([
+        "openai:gpt-5.4-mini",
+        "openai:gpt-5.4",
         "zai:glm-5.1",
         "openai-codex:gpt-5.4",
-        "openai:o4-mini",
         "anthropic:claude-sonnet-4-6-20250514",
         "kimi:kimi-k2.5",
         "deepseek:deepseek-chat",
@@ -295,7 +321,8 @@ def recommend_model_defaults(
 
     reviewer = pick([
         "openai-codex:gpt-5.4",
-        "openai:o4-mini",
+        "openai:gpt-5.4",
+        "openai:gpt-5.4-mini",
         "zai:glm-5.1",
         "anthropic:claude-sonnet-4-6-20250514",
         "kimi:kimi-k2.5",
@@ -308,8 +335,9 @@ def recommend_model_defaults(
         recommended.reviewer = reviewer
 
     sentinel = pick([
+        "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
-        "openai:gpt-4o",
+        "openai:gpt-5.4-mini",
         "zai:glm-5.1",
         "anthropic:claude-opus-4-6-20250610",
         "kimi:kimi-k2.5",
@@ -323,10 +351,11 @@ def recommend_model_defaults(
         recommended.escalation = sentinel
 
     researcher = pick([
-        "gemini:gemini-2.5-flash",
+        "openai:gpt-5.4-mini",
+        "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
-        "openai:gpt-4o-mini",
         "zai:glm-5.1",
+        "gemini:gemini-2.5-flash",
         "deepseek:deepseek-chat",
         "kimi:kimi-k2.5",
         "openrouter:meta-llama/llama-3.3-70b-instruct",
@@ -381,6 +410,7 @@ def init_project(
     *,
     model_defaults: ModelsConfig | None = None,
     harness_profile: str | None = None,
+    preferred_provider: str | None = None,
 ) -> Path:
     """Initialize .forgegod/ directory with default config."""
     if project_root is None:
@@ -396,6 +426,8 @@ def init_project(
             default.models = model_defaults
         if harness_profile is not None:
             default.harness.profile = harness_profile
+        if preferred_provider is not None:
+            default.harness.preferred_provider = preferred_provider
         config_path.write_text(
             toml.dumps(
                 default.model_dump(
