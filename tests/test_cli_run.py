@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import pytest
 from typer.testing import CliRunner
 
 from forgegod.cli import _safe_console_text, app
+from forgegod.cli_ux import RunNarrator
 from forgegod.config import ForgeGodConfig
 from forgegod.models import AgentResult, ModelUsage, ReviewResult, ReviewVerdict
 
@@ -91,3 +93,26 @@ def test_run_blocks_when_reviewer_requests_revision(monkeypatch, tmp_path):
     joined = "\n".join(printed)
     assert "Reviewer blocked completion" in joined
     assert "Missing acceptance proof" in joined
+
+
+@pytest.mark.asyncio
+async def test_run_narrator_reports_human_activity(monkeypatch):
+    printed: list[str] = []
+
+    monkeypatch.setattr(
+        "forgegod.cli_ux.console.print",
+        lambda *args, **_kwargs: printed.extend(_capture_print_arg(arg) for arg in args),
+    )
+
+    narrator = RunNarrator()
+    await narrator("task_started")
+    await narrator(
+        "tool_batch_started",
+        tools=[{"name": "read_file", "arguments": {"path": "src/app.py"}}],
+    )
+    await narrator("task_completed", files_modified=["src/app.py"])
+
+    joined = "\n".join(printed)
+    assert "plain language" in joined
+    assert "Inspecting the repository" in joined
+    assert "finished the patch" in joined

@@ -13,6 +13,7 @@ from forgegod.doctor import (
     run_doctor,
 )
 from forgegod.i18n import STRINGS, get_lang, set_lang, t
+from forgegod.onboarding import recommend_provider_choice
 
 
 class TestI18n:
@@ -202,3 +203,23 @@ class TestDotenvLoading:
         from forgegod.config import _load_dotenv
 
         _load_dotenv(tmp_path / "nonexistent.env")  # Should not raise
+
+
+class TestOnboardingRecommendations:
+    def test_recommend_provider_choice_prefers_linked_codex(self):
+        choice = recommend_provider_choice(
+            {"openai-codex", "openai"},
+            ollama_available=True,
+            codex_supported=True,
+            codex_installed=True,
+        )
+        assert choice == "3"
+
+    def test_recommend_provider_choice_prefers_zai_when_detected(self):
+        choice = recommend_provider_choice(
+            {"zai", "openai"},
+            ollama_available=False,
+            codex_supported=False,
+            codex_installed=False,
+        )
+        assert choice == "9"

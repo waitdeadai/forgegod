@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-08): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `503` collected tests, `418` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-09): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `525` collected tests, `440` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -64,6 +64,7 @@ Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) —
 - **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
 - **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
 - **DESIGN.md Native** — Import a design preset, drop `DESIGN.md` in repo root, and frontend tasks inherit that design language automatically.
+- **Natural-Language CLI** — ForgeGod now explains what it is doing in plain language while it works, and the CLI surfaces share the same branded cyan/white/yellow UX instead of raw transport noise.
 - **Contribution Mode** — Read `CONTRIBUTING.md`, inspect the repo, surface approachable issues, and plan or execute contribution-sized changes with repo-specific guardrails.
 - **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
 - **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.

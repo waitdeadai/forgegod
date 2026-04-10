@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from forgegod.budget import BudgetTracker
+from forgegod.cli_ux import emit_cli_event
 from forgegod.config import ForgeGodConfig
 from forgegod.memory import Memory
 from forgegod.models import AgentResult, BudgetMode, ModelUsage, ToolCall, ToolResult
@@ -156,6 +157,7 @@ class Agent:
         max_turns: int = 200,
         max_tool_calls: int = 1000,
         tool_approver: Any | None = None,
+        event_callback: Any | None = None,
     ):
         self.config = config
         self.router = router or ModelRouter(config)
@@ -164,6 +166,7 @@ class Agent:
         self.max_turns = max_turns
         self.max_tool_calls = max_tool_calls
         self.tool_approver = tool_approver
+        self.event_callback = event_callback
 
         # Build system prompt — static content first for prompt caching
         if system_prompt:
@@ -274,8 +277,15 @@ class Agent:
         ]
 
         try:
+            await self._emit_event(
+                "task_started",
+                role=self.role,
+                task=task[:400],
+                requires_code_changes=requires_code_changes,
+            )
             while self._turn < self.max_turns:
                 self._turn += 1
+                await self._emit_event("turn_started", turn=self._turn, role=self.role)
                 await self._run_hooks("pre_turn", {"turn": self._turn})
 
                 # Budget check
@@ -295,6 +305,12 @@ class Agent:
                     tools=self._tool_defs,
                     max_tokens=4096,
                     temperature=0.3,
+                )
+                await self._emit_event(
+                    "model_response",
+                    turn=self._turn,
+                    provider=usage.provider,
+                    model=usage.model,
                 )
                 self._accumulate_usage(usage)
                 self.budget.record(usage, role=self.role)
@@ -360,6 +376,11 @@ class Agent:
                             "Agent attempted completion before satisfying closure gates: %s",
                             "; ".join(blockers),
                         )
+                        await self._emit_event(
+                            "completion_blocked",
+                            blockers=blockers,
+                            turn=self._turn,
+                        )
                         self.messages.append({
                             "role": "assistant",
                             "content": response_text,
@@ -384,6 +405,11 @@ class Agent:
                         success=True,
                         output=response_text,
                         elapsed=time.time() - start,
+                    )
+                    await self._emit_event(
+                        "task_completed",
+                        files_modified=result.files_modified,
+                        verification_commands=result.verification_commands,
                     )
                     await self._record_episode(task_id, task, result)
                     return result
@@ -414,6 +440,14 @@ class Agent:
                 self.messages.append(assistant_msg)
 
                 # Execute tool calls — parallel for read-only, sequential for writes
+                await self._emit_event(
+                    "tool_batch_started",
+                    tools=[
+                        {"name": tc.name, "arguments": tc.arguments}
+                        for tc in tool_calls
+                    ],
+                    turn=self._turn,
+                )
                 results = await self._execute_tool_batch(tool_calls)
 
                 for tc, result in zip(tool_calls, results):
@@ -467,6 +501,11 @@ class Agent:
                         )
                         if permission_blocker:
                             logger.warning(permission_blocker)
+                            await self._emit_event(
+                                "task_failed",
+                                error=permission_blocker,
+                                output=permission_blocker,
+                            )
                             failed = self._build_result(
                                 success=False,
                                 output=permission_blocker,
@@ -503,6 +542,11 @@ class Agent:
                         output=self._auto_closeout_report(),
                         elapsed=time.time() - start,
                     )
+                    await self._emit_event(
+                        "task_completed",
+                        files_modified=result.files_modified,
+                        verification_commands=result.verification_commands,
+                    )
                     await self._record_episode(task_id, task, result)
                     return result
 
@@ -521,6 +565,12 @@ class Agent:
                     requires_code_changes=requires_code_changes
                 ),
             )
+            await self._emit_event(
+                "task_failed",
+                error=result.error,
+                output=result.output,
+                blockers=result.completion_blockers,
+            )
             await self._record_episode(task_id, task, result)
             return result
 
@@ -535,8 +585,18 @@ class Agent:
                     requires_code_changes=requires_code_changes
                 ),
             )
+            await self._emit_event(
+                "task_failed",
+                error=result.error,
+                output=result.output,
+                blockers=result.completion_blockers,
+            )
             await self._record_episode(task_id, task, result)
             return result
+
+    async def _emit_event(self, event: str, **payload: Any) -> None:
+        """Emit a user-facing runtime event if a callback is configured."""
+        await emit_cli_event(self.event_callback, event, **payload)
 
     async def _record_episode(self, task_id: str, task: str, result: AgentResult):
         """Record completed task as an episode in memory."""

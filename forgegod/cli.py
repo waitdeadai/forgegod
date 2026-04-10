@@ -4,16 +4,24 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from pathlib import Path
 from typing import Optional
 
 import typer
-from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from forgegod import __version__
+from forgegod.cli_ux import (
+    LoopNarrator,
+    RunNarrator,
+    build_banner_text,
+    configure_cli_logging,
+    console,
+)
+from forgegod.cli_ux import (
+    safe_console_text as _ux_safe_console_text,
+)
 
 app = typer.Typer(
     name="forgegod",
@@ -22,7 +30,6 @@ app = typer.Typer(
 )
 design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
-console = Console()
 
 app.add_typer(design_app, name="design")
 app.add_typer(auth_app, name="auth")
@@ -33,31 +40,12 @@ _VER = __version__
 
 def _safe_console_text(text: str) -> str:
     """Best-effort console-safe text for legacy Windows encodings."""
-    if not isinstance(text, str):
-        return text
-    encoding = getattr(getattr(console, "file", None), "encoding", None) or "utf-8"
-    return text.encode(encoding, errors="replace").decode(encoding, errors="replace")
+    return _ux_safe_console_text(text, active_console=console)
 
 
 def _build_banner():
     """Build the full mascot banner using Rich Text (avoids markup escaping)."""
-    from rich.text import Text
-
-    t = Text()
-    t.append("        .-=========-.\n", style="yellow")
-    t.append("      .'             '.\n", style="yellow")
-    t.append("            /\\\n", style="cyan")
-    t.append("           /  \\\n", style="cyan")
-    t.append("          / (", style="cyan")
-    t.append("1", style="bold white")
-    t.append(") \\\n", style="cyan")
-    t.append("         /      \\\n", style="cyan")
-    t.append("        /________\\\n", style="cyan")
-    t.append("\n")
-    t.append("   F O R G E G O D", style="bold cyan")
-    t.append(f"  v{_VER}\n", style="dim")
-    t.append("   Autonomous coding engine\n", style="dim")
-    return t
+    return build_banner_text(_VER)
 
 
 def _print_banner(mini: bool = False):
@@ -488,9 +476,11 @@ def run(
 
     _print_banner(mini=True)
     config = load_config()
-    log_fmt = "%(asctime)s %(levelname)s %(name)s — %(message)s"
-    log_level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(level=log_level, format=log_fmt)
+    configure_cli_logging(
+        verbose=verbose,
+        log_file=config.project_dir / "logs" / "run.log",
+        stream=verbose,
+    )
     if model:
         config.models.coder = model
     config.review.always_review_run = review
@@ -511,9 +501,15 @@ def run(
         from forgegod.router import ModelRouter
 
         router = ModelRouter(config)
+        narrator = RunNarrator()
         try:
             approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
-            agent = Agent(router=router, config=config, tool_approver=approver)
+            agent = Agent(
+                router=router,
+                config=config,
+                tool_approver=approver,
+                event_callback=narrator,
+            )
             result = await agent.run(task)
 
             if not result.success:
@@ -638,17 +634,11 @@ def loop(
         console.print("Create one with: forgegod plan <task>")
         raise typer.Exit(1)
 
-    # Configure logging to both console and file
     log_file = config.project_dir / "logs" / "loop.log"
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    logging_level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=logging_level,
-        format="%(asctime)s %(levelname)s %(name)s — %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(str(log_file), mode="a"),
-        ],
+    configure_cli_logging(
+        verbose=verbose,
+        log_file=log_file,
+        stream=verbose,
     )
 
     async def _loop():
@@ -657,8 +647,15 @@ def loop(
 
         router = ModelRouter(config)
         approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
+        narrator = LoopNarrator()
         try:
-            ralph = RalphLoop.from_prd_file(prd, config, router=router, tool_approver=approver)
+            ralph = RalphLoop.from_prd_file(
+                prd,
+                config,
+                router=router,
+                tool_approver=approver,
+                event_callback=narrator,
+            )
 
             if dry_run:
                 state = await ralph.run(dry_run=True)

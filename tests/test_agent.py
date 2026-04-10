@@ -534,3 +534,35 @@ class TestCompletionEvidence:
         assert result.verification_commands == ["python -m pytest -q"]
         assert result.reviewed_final_diff is True
         assert router.calls == 4
+
+    @pytest.mark.asyncio
+    async def test_agent_emits_user_facing_events(self, tmp_path):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter(["Architecture looks stable and the repo is readable."])
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+
+        events: list[tuple[str, dict]] = []
+
+        async def record_event(event: str, **payload):
+            events.append((event, payload))
+
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=3,
+            event_callback=record_event,
+        )
+        agent.memory = None
+
+        result = await agent.run("Explain the current architecture")
+        agent.budget.close()
+
+        assert result.success is True
+        event_names = [name for name, _ in events]
+        assert event_names[:3] == ["task_started", "turn_started", "model_response"]
+        assert "task_completed" in event_names

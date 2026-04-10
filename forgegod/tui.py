@@ -1,16 +1,14 @@
-"""ForgeGod TUI — Rich-based terminal dashboard."""
+"""ForgeGod TUI: branded Rich terminal dashboard."""
 
 from __future__ import annotations
 
-from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from forgegod.cli_ux import console
 from forgegod.models import BudgetMode, BudgetStatus, LoopState, LoopStatus
-
-console = Console()
 
 
 def render_status(
@@ -29,32 +27,35 @@ def render_status(
         Layout(name="right"),
     )
 
-    # Header
     layout["header"].update(
         Panel(
-            Text("ForgeGod", style="bold green", justify="center"),
-            subtitle="Multi-model autonomous coding engine",
-            style="green",
+            Text("FORGEGOD", style="forge.primary", justify="center"),
+            subtitle="Autonomous coding engine",
+            border_style="forge.secondary",
         )
     )
 
-    # Left: Loop status
     if loop_state:
         layout["left"].update(_loop_panel(loop_state))
     else:
-        layout["left"].update(Panel("No loop running", title="Loop"))
+        layout["left"].update(
+            Panel("No loop running", title="Loop", border_style="forge.primary")
+        )
 
-    # Right: Budget + models
     right_layout = Layout()
     right_layout.split_column(
         Layout(name="budget", ratio=1),
         Layout(name="models", ratio=1),
     )
     right_layout["budget"].update(
-        _budget_panel(budget) if budget else Panel("No budget data", title="Budget")
+        _budget_panel(budget)
+        if budget
+        else Panel("No budget data", title="Budget", border_style="forge.secondary")
     )
     right_layout["models"].update(
-        _model_panel(model_breakdown) if model_breakdown else Panel("No model data", title="Models")
+        _model_panel(model_breakdown)
+        if model_breakdown
+        else Panel("No model data", title="Models", border_style="forge.secondary")
     )
     layout["right"].update(right_layout)
 
@@ -63,13 +64,7 @@ def render_status(
 
 def render_cost_table(budget: BudgetStatus, breakdown: dict[str, dict]):
     """Render cost breakdown table."""
-    # Budget summary
-    mode_color = {
-        BudgetMode.NORMAL: "green",
-        BudgetMode.THROTTLE: "yellow",
-        BudgetMode.LOCAL_ONLY: "cyan",
-        BudgetMode.HALT: "red",
-    }.get(budget.mode, "white")
+    mode_color = _mode_color(budget.mode)
 
     console.print(f"\n  Mode: [{mode_color}]{budget.mode.value}[/]")
     console.print(f"  Today: ${budget.spent_today_usd:.4f} / ${budget.daily_limit_usd:.2f}")
@@ -77,15 +72,16 @@ def render_cost_table(budget: BudgetStatus, breakdown: dict[str, dict]):
     console.print(f"  Total all-time: ${budget.spent_total_usd:.4f}")
     console.print(f"  Calls today: {budget.calls_today}")
 
-    # Model breakdown
     if breakdown:
         table = Table(title="\nModel Breakdown (Today)")
-        table.add_column("Model", style="cyan")
+        table.add_column("Model", style="forge.primary")
         table.add_column("Calls", justify="right")
-        table.add_column("Cost", justify="right", style="green")
+        table.add_column("Cost", justify="right", style="forge.secondary")
 
         sorted_models = sorted(
-            breakdown.items(), key=lambda x: x[1].get("cost", 0), reverse=True,
+            breakdown.items(),
+            key=lambda item: item[1].get("cost", 0),
+            reverse=True,
         )
         for model, data in sorted_models:
             table.add_row(model, str(data.get("calls", 0)), f"${data.get('cost', 0):.4f}")
@@ -95,14 +91,23 @@ def render_cost_table(budget: BudgetStatus, breakdown: dict[str, dict]):
         console.print("\n  No model usage today.")
 
 
+def _mode_color(mode: BudgetMode) -> str:
+    return {
+        BudgetMode.NORMAL: "forge.primary",
+        BudgetMode.THROTTLE: "forge.secondary",
+        BudgetMode.LOCAL_ONLY: "forge.highlight",
+        BudgetMode.HALT: "forge.error",
+    }.get(mode, "forge.muted")
+
+
 def _loop_panel(state: LoopState) -> Panel:
     """Build loop status panel."""
     status_color = {
-        LoopStatus.RUNNING: "green",
-        LoopStatus.PAUSED: "yellow",
-        LoopStatus.KILLED: "red",
-        LoopStatus.IDLE: "dim",
-    }.get(state.status, "white")
+        LoopStatus.RUNNING: "forge.primary",
+        LoopStatus.PAUSED: "forge.secondary",
+        LoopStatus.KILLED: "forge.error",
+        LoopStatus.IDLE: "forge.muted",
+    }.get(state.status, "forge.muted")
 
     lines = [
         f"Status: [{status_color}]{state.status.value}[/]",
@@ -123,25 +128,21 @@ def _loop_panel(state: LoopState) -> Panel:
 
 def _budget_panel(budget: BudgetStatus) -> Panel:
     """Build budget panel."""
-    mode_color = {
-        BudgetMode.NORMAL: "green",
-        BudgetMode.THROTTLE: "yellow",
-        BudgetMode.LOCAL_ONLY: "cyan",
-        BudgetMode.HALT: "red",
-    }.get(budget.mode, "white")
-
+    mode_color = _mode_color(budget.mode)
+    pct = 0.0
     if budget.daily_limit_usd > 0:
         pct = budget.spent_today_usd / budget.daily_limit_usd * 100
-    else:
-        pct = 0
     bar_width = 20
     filled = int(pct / 100 * bar_width)
-    bar = f"[green]{'=' * filled}[/][dim]{'-' * (bar_width - filled)}[/]"
+    bar = (
+        f"[forge.primary]{'=' * filled}[/]"
+        f"[forge.muted]{'-' * (bar_width - filled)}[/]"
+    )
 
     lines = [
         f"Mode: [{mode_color}]{budget.mode.value}[/]",
         f"Today: ${budget.spent_today_usd:.4f} / ${budget.daily_limit_usd:.2f}",
-        f"[{bar}] {pct:.0f}%",
+        f"{bar} {pct:.0f}%",
         f"Calls: {budget.calls_today}",
     ]
     return Panel("\n".join(lines), title="Budget", border_style=mode_color)
@@ -150,12 +151,16 @@ def _budget_panel(budget: BudgetStatus) -> Panel:
 def _model_panel(breakdown: dict[str, dict]) -> Panel:
     """Build model usage panel."""
     if not breakdown:
-        return Panel("No usage today", title="Models")
+        return Panel("No usage today", title="Models", border_style="forge.secondary")
 
     lines = []
-    for model, data in sorted(breakdown.items(), key=lambda x: x[1].get("cost", 0), reverse=True):
+    for model, data in sorted(
+        breakdown.items(),
+        key=lambda item: item[1].get("cost", 0),
+        reverse=True,
+    ):
         calls = data.get("calls", 0)
         cost = data.get("cost", 0)
         lines.append(f"  {model}: {calls} calls, ${cost:.4f}")
 
-    return Panel("\n".join(lines), title="Models")
+    return Panel("\n".join(lines), title="Models", border_style="forge.secondary")

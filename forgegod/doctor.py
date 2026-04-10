@@ -1,7 +1,4 @@
-"""ForgeGod Doctor — diagnostic health check (Claude Code pattern).
-
-Runs 6 checks and reports PASS/FAIL with actionable fix instructions.
-"""
+"""ForgeGod doctor: diagnostic health check with actionable fixes."""
 
 from __future__ import annotations
 
@@ -10,13 +7,11 @@ import shutil
 import sys
 from pathlib import Path
 
-from rich.console import Console
 from rich.table import Table
 
+from forgegod.cli_ux import console
 from forgegod.i18n import t
 from forgegod.sandbox import diagnose_strict_sandbox
-
-console = Console()
 
 
 class HealthCheck:
@@ -34,43 +29,29 @@ def run_doctor(project_path: Path | None = None) -> list[HealthCheck]:
     checks: list[HealthCheck] = []
     project = Path(project_path or ".").resolve()
 
-    # 1. Python version >= 3.11
     checks.append(_check_python())
-
-    # 2. Config file exists + valid
     checks.append(_check_config(project))
-
-    # 3. Ollama reachable (if configured)
     checks.append(_check_ollama(project))
-
-    # 4. API keys valid
     checks.append(_check_api_keys())
-
-    # 5. Git installed + repo
     checks.append(_check_git(project))
-
-    # 6. Strict sandbox readiness
     checks.append(_check_strict_sandbox(project))
-
-    # 7. Test runner detected
     checks.append(_check_test_runner(project))
-
     return checks
 
 
 def print_doctor_results(checks: list[HealthCheck]) -> None:
     """Print health check results as Rich table."""
     table = Table(title=t("doctor_title"))
-    table.add_column("Check", style="cyan")
+    table.add_column("Check", style="forge.primary")
     table.add_column("Status", justify="center")
-    table.add_column("Detail", style="dim")
+    table.add_column("Detail", style="forge.muted")
 
     issues = 0
     for check in checks:
         if check.passed:
-            status = f"[green]{t('doctor_pass')}[/green]"
+            status = f"[forge.success]{t('doctor_pass')}[/forge.success]"
         else:
-            status = f"[red]{t('doctor_fail')}[/red]"
+            status = f"[forge.error]{t('doctor_fail')}[/forge.error]"
             issues += 1
 
         detail = check.detail
@@ -83,19 +64,21 @@ def print_doctor_results(checks: list[HealthCheck]) -> None:
     console.print()
 
     if issues == 0:
-        console.print(f"[bold green]{t('doctor_all_ok')}[/bold green]")
+        console.print(f"[forge.success]{t('doctor_all_ok')}[/forge.success]")
     else:
-        console.print(f"[yellow]{t('doctor_has_issues', count=str(issues))}[/yellow]")
+        console.print(f"[forge.warn]{t('doctor_has_issues', count=str(issues))}[/forge.warn]")
 
 
 def _check_python() -> HealthCheck:
     """Check Python version >= 3.11."""
-    v = sys.version_info
-    version_str = f"{v.major}.{v.minor}.{v.micro}"
-    if v >= (3, 11):
+    version = sys.version_info
+    version_str = f"{version.major}.{version.minor}.{version.micro}"
+    if version >= (3, 11):
         return HealthCheck(t("doctor_python"), True, version_str)
     return HealthCheck(
-        t("doctor_python"), False, version_str,
+        t("doctor_python"),
+        False,
+        version_str,
         fix="Install Python 3.11+: https://python.org/downloads/",
     )
 
@@ -104,27 +87,25 @@ def _check_config(project: Path) -> HealthCheck:
     """Check config file exists and is valid TOML."""
     config_path = project / ".forgegod" / "config.toml"
     if not config_path.exists():
-        return HealthCheck(
-            t("doctor_config"), False, "Not found",
-            fix="Run: forgegod init",
-        )
+        return HealthCheck(t("doctor_config"), False, "Not found", fix="Run: forgegod init")
     try:
         import toml
 
         toml.load(config_path)
         return HealthCheck(t("doctor_config"), True, str(config_path))
-    except Exception as e:
+    except Exception as exc:
         return HealthCheck(
-            t("doctor_config"), False, f"Invalid: {e}",
+            t("doctor_config"),
+            False,
+            f"Invalid: {exc}",
             fix="Delete .forgegod/config.toml and run: forgegod init",
         )
 
 
 def _check_ollama(project: Path) -> HealthCheck:
     """Check if Ollama is reachable."""
-    # Check if Ollama is configured
     config_path = project / ".forgegod" / "config.toml"
-    uses_ollama = True  # Default assumption
+    uses_ollama = True
 
     if config_path.exists():
         try:
@@ -134,9 +115,8 @@ def _check_ollama(project: Path) -> HealthCheck:
             budget_mode = config.get("budget", {}).get("mode", "")
             if budget_mode in ("local-only", "throttle"):
                 uses_ollama = True
-            # Check if any model uses ollama
             models = config.get("models", {})
-            uses_ollama = any("ollama:" in str(v) for v in models.values()) or uses_ollama
+            uses_ollama = any("ollama:" in str(value) for value in models.values()) or uses_ollama
         except Exception:
             pass
 
@@ -149,15 +129,14 @@ def _check_ollama(project: Path) -> HealthCheck:
         resp = httpx.get("http://localhost:11434/api/tags", timeout=3)
         if resp.status_code == 200:
             models = resp.json().get("models", [])
-            return HealthCheck(
-                t("doctor_ollama"), True,
-                f"Running ({len(models)} models)",
-            )
+            return HealthCheck(t("doctor_ollama"), True, f"Running ({len(models)} models)")
     except Exception:
         pass
 
     return HealthCheck(
-        t("doctor_ollama"), False, "Not reachable",
+        t("doctor_ollama"),
+        False,
+        "Not reachable",
         fix="Start Ollama: ollama serve",
     )
 
@@ -189,7 +168,6 @@ def _check_api_keys() -> HealthCheck:
     if found:
         return HealthCheck(t("doctor_api_keys"), True, ", ".join(found))
 
-    # Check .env file
     env_path = Path(".forgegod/.env")
     if env_path.exists():
         content = env_path.read_text(encoding="utf-8")
@@ -201,7 +179,9 @@ def _check_api_keys() -> HealthCheck:
         return HealthCheck(t("doctor_api_keys"), True, f"{', '.join(found)} (from .env)")
 
     return HealthCheck(
-        t("doctor_api_keys"), False, "No API keys found",
+        t("doctor_api_keys"),
+        False,
+        "No API keys found",
         fix=(
             "Run: forgegod init (or use `forgegod auth login openai-codex`, set "
             "OPENAI_API_KEY / ANTHROPIC_API_KEY / MOONSHOT_API_KEY / "
@@ -214,17 +194,16 @@ def _check_git(project: Path) -> HealthCheck:
     """Check git is installed and project has a repo."""
     if not shutil.which("git"):
         return HealthCheck(
-            t("doctor_git"), False, "git not found",
+            t("doctor_git"),
+            False,
+            "git not found",
             fix="Install git: https://git-scm.com/downloads",
         )
 
     if (project / ".git").exists():
         return HealthCheck(t("doctor_git"), True, "Repo detected")
 
-    return HealthCheck(
-        t("doctor_git"), False, "No git repo",
-        fix="Run: git init",
-    )
+    return HealthCheck(t("doctor_git"), False, "No git repo", fix="Run: git init")
 
 
 def _check_test_runner(project: Path) -> HealthCheck:
@@ -244,7 +223,9 @@ def _check_test_runner(project: Path) -> HealthCheck:
         return HealthCheck(t("doctor_tests"), True, ", ".join(runners))
 
     return HealthCheck(
-        t("doctor_tests"), False, "No test runner found",
+        t("doctor_tests"),
+        False,
+        "No test runner found",
         fix="Install: pip install pytest",
     )
 
@@ -263,29 +244,28 @@ def _check_strict_sandbox(project: Path) -> HealthCheck:
         import toml
 
         config = toml.load(config_path)
-    except Exception as e:
+    except Exception as exc:
         return HealthCheck(
             t("doctor_sandbox"),
             False,
-            f"Could not read sandbox config: {e}",
-            fix="Fix .forgegod/config.toml or rerun `forgegod init`.",
+            f"Could not read sandbox config: {exc}",
+            fix="Fix .forgegod/config.toml before enabling strict sandbox.",
         )
 
-    security = config.get("security", {})
-    if security.get("sandbox_mode", "standard") != "strict":
+    sandbox_mode = str(config.get("security", {}).get("sandbox_mode", "standard"))
+    if sandbox_mode != "strict":
         return HealthCheck(
             t("doctor_sandbox"),
             True,
-            "Config is not using strict mode; Docker sandbox prerequisites are optional",
+            f"Strict sandbox optional (current mode: {sandbox_mode})",
         )
 
-    readiness = diagnose_strict_sandbox(
-        type("SecurityConfig", (), security)(),
-        workspace_root=project,
-    )
+    diagnosis = diagnose_strict_sandbox(project)
+    if diagnosis.ready:
+        return HealthCheck(t("doctor_sandbox"), True, diagnosis.detail)
     return HealthCheck(
         t("doctor_sandbox"),
-        readiness.ready,
-        readiness.detail,
-        readiness.fix,
+        False,
+        diagnosis.detail,
+        fix=diagnosis.fix,
     )

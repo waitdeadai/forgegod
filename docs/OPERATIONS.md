@@ -23,18 +23,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `521`
+- Tests collected: `525`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
-| Command | Observed result on 2026-04-08 |
+| Command | Observed result on 2026-04-09 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `436 passed, 1 skipped, 84 deselected in 65.52s` |
+| `python -m pytest -m "not stress" -q` | `440 passed, 1 skipped, 84 deselected in 39.37s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
 | `python scripts/run_stress_tests.py --markdown` | `84 passed in 109.14s` |
-| `python -m pytest tests -q` | `520 passed, 1 skipped in 102.65s` |
-| `python -m pytest --collect-only -q` | `521 tests collected in 0.30s` |
+| `python -m pytest tests -q` | `524 passed, 1 skipped in 130.22s` |
+| `python -m pytest --collect-only -q` | `525 tests collected` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -50,6 +50,9 @@ This document is the current system of record for day-to-day work in this reposi
 - Parallel loop execution now runs through `WorktreePool` instead of a shared workspace, scopes worker agents to their assigned worktree, requires at least one git commit before `--workers > 1`, and can patch newly created files back into the main workspace.
 - The public `git_worktree_create` tool now matches that same runtime contract, so worktree behavior is no longer split between two different implementations.
 - ForgeGod now exposes native auth management in the ForgeGod CLI itself: `forgegod auth status`, `forgegod auth login openai-codex`, and `forgegod auth sync`.
+- ForgeGod CLI now has a shared branded console surface in cyan/white/yellow instead of separate utilitarian consoles across onboarding, doctor, and status views.
+- `forgegod run` and `forgegod loop` now narrate progress in plain language through runtime events instead of leaking successful transport chatter as the main user-facing output.
+- `forgegod init` onboarding now detects linked providers up front, recommends a setup path, explains repo-local secret storage, and keeps model connection guidance inside ForgeGod CLI instead of pushing users straight into manual shell editing.
 - OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.
 - Agent completion is now harder to fake locally: implementation tasks must show

@@ -16,10 +16,9 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from rich.console import Console
-
 from forgegod.agent import Agent
 from forgegod.budget import BudgetTracker
+from forgegod.cli_ux import console, emit_cli_event
 from forgegod.config import ForgeGodConfig
 from forgegod.memory import Memory
 from forgegod.models import (
@@ -37,7 +36,6 @@ from forgegod.terse import TERSE_STORY_INSTRUCTIONS
 from forgegod.worktree import WorktreePool
 
 logger = logging.getLogger("forgegod.loop")
-console = Console()
 
 
 class RalphLoop:
@@ -64,6 +62,7 @@ class RalphLoop:
         budget: BudgetTracker | None = None,
         max_iterations: int | None = None,
         tool_approver=None,
+        event_callback=None,
     ):
         self.config = config
         self.prd = prd
@@ -71,6 +70,7 @@ class RalphLoop:
         self.budget = budget or BudgetTracker(config)
         self.max_iterations = max_iterations or config.loop.max_iterations
         self.tool_approver = tool_approver
+        self.event_callback = event_callback
 
         # Reviewer (SOTA: sample-based quality gate)
         self.reviewer = Reviewer(config=config, router=self.router)
@@ -142,6 +142,11 @@ class RalphLoop:
         logger.info(
             f"Ralph loop started: {len(self.prd.stories)} stories, "
             f"max {self.max_iterations} iterations"
+        )
+        await self._emit_event(
+            "loop_started",
+            story_count=len(self.prd.stories),
+            max_iterations=self.max_iterations,
         )
 
         workers = self.config.loop.parallel_workers
@@ -231,6 +236,12 @@ class RalphLoop:
             logger.info(f"Working on in parallel: [{story.id}] {story.title}")
             story.status = StoryStatus.IN_PROGRESS
             story.iterations += 1
+            await self._emit_event(
+                "story_started",
+                story_id=story.id,
+                story_title=story.title,
+                parallel=True,
+            )
 
         self.state.current_story_id = ",".join(story.id for story in ready)
         self._save_state()
@@ -285,6 +296,12 @@ class RalphLoop:
         logger.info(f"Working on: [{story.id}] {story.title}")
         story.status = StoryStatus.IN_PROGRESS
         story.iterations += 1
+        await self._emit_event(
+            "story_started",
+            story_id=story.id,
+            story_title=story.title,
+            parallel=False,
+        )
         self.state.current_story_id = story.id
         self._save_state()
         self._save_prd()
@@ -300,6 +317,12 @@ class RalphLoop:
             role="coder",
             max_turns=100,
             tool_approver=self.tool_approver,
+            event_callback=lambda event, **payload: self._emit_event(
+                event,
+                story_id=story.id,
+                story_title=story.title,
+                **payload,
+            ),
         )
 
         # 6. Execute (with dead-man's switch timeout)
@@ -330,6 +353,14 @@ class RalphLoop:
             story.status = StoryStatus.BLOCKED
             story.error_log.append(error_text)
             self.state.stories_failed += 1
+            asyncio.create_task(
+                self._emit_event(
+                    "story_blocked",
+                    story_id=story.id,
+                    story_title=story.title,
+                    reason=error_text,
+                )
+            )
             if timeout:
                 logger.warning(f"Story [{story.id}] BLOCKED (timeout)")
             else:
@@ -339,6 +370,14 @@ class RalphLoop:
         else:
             story.status = StoryStatus.TODO
             story.error_log.append(error_text)
+            asyncio.create_task(
+                self._emit_event(
+                    "story_retry",
+                    story_id=story.id,
+                    story_title=story.title,
+                    reason=error_text,
+                )
+            )
             if timeout:
                 logger.warning(f"Story [{story.id}] timed out, will retry")
             else:
@@ -448,6 +487,13 @@ class RalphLoop:
             self.state.stories_completed += 1
             self.state.total_cost_usd += result.total_usage.cost_usd
             self._append_learning(story, result.output)
+            await self._emit_event(
+                "story_done",
+                story_id=story.id,
+                story_title=story.title,
+                files_modified=result.files_modified,
+                verification_commands=result.verification_commands,
+            )
             logger.info(
                 f"Story [{story.id}] DONE — {result.tool_calls_count} tool calls, "
                 f"${result.total_usage.cost_usd:.4f}"
@@ -509,6 +555,10 @@ class RalphLoop:
         self.state.current_story_id = ""
         self._save_state()
         self._save_prd()
+
+    async def _emit_event(self, event: str, **payload) -> None:
+        """Emit a user-facing loop event if a callback is configured."""
+        await emit_cli_event(self.event_callback, event, **payload)
 
     def _get_ready_stories(self, max_count: int = 1) -> list[Story]:
         """Get stories ready to execute (TODO + all dependencies satisfied).

@@ -417,6 +417,39 @@ Operational conclusion for ForgeGod:
 - Give the execution agent the checked-in repo docs so it follows the same
   source-of-truth artifacts that planning already uses.
 
+## CLI UX Addendum - claw-code, Crush, and Claude Code
+
+Verified on `2026-04-09` before refining ForgeGod's user-facing CLI layer:
+
+- `claw-code` keeps operational trust high by making doctor/preflight, explicit
+  permission flags, and parity coverage part of the main CLI contract instead
+  of hiding them as support docs:
+  - https://github.com/ultraworkers/claw-code
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/PARITY.md
+- `crush` positions the CLI itself as the product surface: multiple providers,
+  polished terminal UX, conversational entrypoints, and a user-facing workflow
+  that feels like a tool, not a debug log:
+  - https://github.com/charmbracelet/crush
+  - https://raw.githubusercontent.com/charmbracelet/crush/main/README.md
+- Claude Code's interactive-mode and CLI docs reinforce two important UX
+  patterns: users work in natural language, and the CLI should expose
+  configurable interaction surfaces instead of raw transport details:
+  - https://code.claude.com/docs/en/interactive-mode
+  - https://code.claude.com/docs/en/cli-reference
+  - https://code.claude.com/docs/en/settings
+
+Operational conclusion for ForgeGod:
+
+- Keep doctor, permissions, and auth setup as first-class CLI surfaces.
+- Suppress successful HTTP transport chatter from the main UX path and narrate
+  work in plain language at the task/story level instead.
+- Use one shared branded console surface so onboarding, doctor, status, run,
+  and loop feel like the same product.
+- Guide provider setup inside ForgeGod: detect what is already linked,
+  recommend a path, explain where secrets are stored, and avoid sending users
+  straight to manual shell edits when the CLI can own the flow safely.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

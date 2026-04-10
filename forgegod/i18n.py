@@ -1,4 +1,4 @@
-"""ForgeGod i18n — lightweight translation support (en + es-419)."""
+"""ForgeGod i18n: lightweight translation support (en + es-419)."""
 
 from __future__ import annotations
 
@@ -10,13 +10,22 @@ STRINGS: dict[str, dict[str, str]] = {
         # Onboarding wizard
         "welcome": "Let's set up ForgeGod in 2 minutes",
         "provider_prompt": "How do you want to run AI models?",
-        "opt_local": "Free local mode (Ollama — $0, runs on your machine)",
+        "provider_recommended": "Recommended path",
+        "provider_detected": "What ForgeGod already found",
+        "provider_storage_note": (
+            "ForgeGod stores new keys in repo-local .forgegod/.env, "
+            "not in your global shell profile."
+        ),
+        "provider_friendly_hint": (
+            "Pick the path you want. ForgeGod will verify it before relying on it."
+        ),
+        "opt_local": "Free local mode (Ollama - $0, runs on your machine)",
         "opt_openai": "OpenAI API key (GPT-4o, o4-mini)",
         "opt_openai_codex": "OpenAI ChatGPT subscription via Codex login",
         "opt_anthropic": "Anthropic API key (Claude)",
         "opt_openrouter": "OpenRouter API key (300+ models)",
         "opt_gemini": "Google Gemini API key (Gemini 2.5 Pro, Gemini 3 Flash)",
-        "opt_deepseek": "DeepSeek API key (V3.2 — 22x cheaper, 74% SWE-bench)",
+        "opt_deepseek": "DeepSeek API key (V3.2 - 22x cheaper, 74% SWE-bench)",
         "opt_kimi": "Moonshot / Kimi API key (Kimi K2.5, Kimi K2 Thinking)",
         "opt_zai": "Z.AI API key (GLM-5.1, GLM Coding Plan / API)",
         "opt_multi": "I have multiple providers",
@@ -54,7 +63,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "loop_started": "Ralph Loop started. Press Ctrl+C to stop.",
         "loop_stopped": "Loop stopped by user.",
         "loop_complete": "All stories complete!",
-        "dry_run_header": "DRY RUN MODE — No agents will be executed.",
+        "dry_run_header": "DRY RUN MODE - No agents will be executed.",
         "story_order": "Story Execution Order:",
         "dry_run_done": "Dry run complete.",
         # Doctor
@@ -89,97 +98,106 @@ STRINGS: dict[str, dict[str, str]] = {
         "bench_no_models": "No models available. Run 'forgegod init' first.",
         "bench_detecting": "Auto-detecting available models...",
         # Terse / Caveman mode
-        "terse_enabled": "Caveman mode enabled — ultra-terse prompts",
+        "terse_enabled": "Caveman mode enabled - ultra-terse prompts",
         "terse_savings": "Terse savings: {pct}% ({tokens} tokens saved)",
     },
     "es": {
         # Onboarding wizard
         "welcome": "Configuremos ForgeGod en 2 minutos",
-        "provider_prompt": "¿Cómo querés ejecutar los modelos de IA?",
-        "opt_local": "Modo local gratuito (Ollama — $0, corre en tu máquina)",
+        "provider_prompt": "Como queres ejecutar los modelos de IA?",
+        "provider_recommended": "Camino recomendado",
+        "provider_detected": "Lo que ForgeGod ya encontro",
+        "provider_storage_note": (
+            "ForgeGod guarda claves nuevas en .forgegod/.env del repo, "
+            "no en tu perfil global de shell."
+        ),
+        "provider_friendly_hint": (
+            "Elegi el camino que quieras. ForgeGod lo verifica antes de depender de el."
+        ),
+        "opt_local": "Modo local gratuito (Ollama - $0, corre en tu maquina)",
         "opt_openai": "Clave API de OpenAI (GPT-4o, o4-mini)",
-        "opt_openai_codex": "Suscripción ChatGPT de OpenAI vía login de Codex",
+        "opt_openai_codex": "Suscripcion ChatGPT de OpenAI via login de Codex",
         "opt_anthropic": "Clave API de Anthropic (Claude)",
         "opt_openrouter": "Clave API de OpenRouter (300+ modelos)",
         "opt_gemini": "Clave API de Google Gemini (Gemini 2.5 Pro, Gemini 3 Flash)",
-        "opt_deepseek": "Clave API de DeepSeek (V3.2 — 22x más barato, 74% SWE-bench)",
+        "opt_deepseek": "Clave API de DeepSeek (V3.2 - 22x mas barato, 74% SWE-bench)",
         "opt_kimi": "Clave API de Moonshot / Kimi (Kimi K2.5, Kimi K2 Thinking)",
         "opt_zai": "Clave API de Z.AI (GLM-5.1, Coding Plan / API)",
         "opt_multi": "Tengo varios proveedores",
-        "enter_key": "Pegá tu clave API",
-        "verifying": "Verificando conexión...",
-        "verify_ok": "¡Conexión verificada!",
-        "verify_fail": "La conexión falló",
+        "enter_key": "Pega tu clave API",
+        "verifying": "Verificando conexion...",
+        "verify_ok": "Conexion verificada!",
+        "verify_fail": "La conexion fallo",
         "saving_env": "Guardando en .forgegod/.env...",
-        "success": "¡Listo!",
-        "try_it": 'Probalo: forgegod run "Agregá un endpoint de hello world"',
+        "success": "Listo!",
+        "try_it": 'Probalo: forgegod run "Agrega un endpoint de hello world"',
         "init_done": "Inicializado en {path}",
-        "quick_start": "Inicio rápido:",
-        "run_hint": '  forgegod run "Describí tu tarea acá"',
+        "quick_start": "Inicio rapido:",
+        "run_hint": '  forgegod run "Describi tu tarea aca"',
         "local_only_hint": (
-            "Corriendo en modo local ($0). Agregá claves API para modelos en la nube."
+            "Corriendo en modo local ($0). Agrega claves API para modelos en la nube."
         ),
         # Errors
         "no_providers": "No se encontraron claves API ni Ollama.",
-        "set_one": "Configurá al menos uno:",
-        "error_ollama_down": "Ollama no está corriendo. Inicialo con: ollama serve",
+        "set_one": "Configura al menos uno:",
+        "error_ollama_down": "Ollama no esta corriendo. Inicialo con: ollama serve",
         "error_ollama_no_model": (
             "Modelo '{model}' no encontrado en Ollama. Descargalo con: ollama pull {model}"
         ),
-        "error_key_invalid": "Clave API inválida. Revisala en: {url}",
+        "error_key_invalid": "Clave API invalida. Revisala en: {url}",
         "error_key_missing": "No hay clave API configurada para {provider}.",
         "error_rate_limit": (
-            "Límite de tasa de {provider}. Reintentando en {seconds}s... (intento {n}/{max})"
+            "Limite de tasa de {provider}. Reintentando en {seconds}s... (intento {n}/{max})"
         ),
         "error_rate_persist": (
-            "Si continúa, considerá cambiar a modo local: forgegod init --quick"
+            "Si continua, considera cambiar a modo local: forgegod init --quick"
         ),
         "error_timeout": (
-            "La solicitud expiró. El modelo puede estar cargando. Reintentá en un momento."
+            "La solicitud expiro. El modelo puede estar cargando. Reintenta en un momento."
         ),
         "error_all_failed": "Todos los modelos fallaron para rol={role}.",
         # CLI commands
         "task_done": "Tarea completada",
         "task_fail": "Tarea fallida",
-        "loop_started": "Ralph Loop iniciado. Presioná Ctrl+C para detener.",
+        "loop_started": "Ralph Loop iniciado. Presiona Ctrl+C para detener.",
         "loop_stopped": "Loop detenido por el usuario.",
-        "loop_complete": "¡Todas las historias completadas!",
-        "dry_run_header": "MODO PRUEBA — No se ejecutarán agentes.",
-        "story_order": "Orden de Ejecución de Historias:",
+        "loop_complete": "Todas las historias completadas!",
+        "dry_run_header": "MODO PRUEBA - No se ejecutaran agentes.",
+        "story_order": "Orden de ejecucion de historias:",
         "dry_run_done": "Prueba completada.",
         # Doctor
-        "doctor_title": "Chequeo de Salud de ForgeGod",
+        "doctor_title": "Chequeo de salud de ForgeGod",
         "doctor_pass": "OK",
         "doctor_fail": "ERROR",
         "doctor_warn": "AVISO",
         "doctor_python": "Python >= 3.11",
-        "doctor_config": "Archivo de configuración",
+        "doctor_config": "Archivo de configuracion",
         "doctor_ollama": "Ollama accesible",
-        "doctor_api_keys": "Claves API válidas",
+        "doctor_api_keys": "Claves API validas",
         "doctor_git": "Git instalado",
         "doctor_sandbox": "Sandbox strict listo",
         "doctor_tests": "Test runner detectado",
-        "doctor_all_ok": "¡Todos los chequeos pasaron!",
-        "doctor_has_issues": "{count} problema(s) encontrado(s). Corregílos arriba.",
+        "doctor_all_ok": "Todos los chequeos pasaron!",
+        "doctor_has_issues": "{count} problema(s) encontrado(s). Corregilos arriba.",
         # Benchmark
         "bench_running": "Ejecutando benchmark...",
-        "bench_done": "¡Benchmark completo!",
+        "bench_done": "Benchmark completo!",
         "bench_task": "Tarea {n}/{total}: {name}",
         "bench_attempt": "Intento {n}/2",
         "bench_model": "Modelo: {model}",
-        "bench_results_title": "Resultados del Benchmark",
-        "bench_composite": "Puntaje Compuesto",
+        "bench_results_title": "Resultados del benchmark",
+        "bench_composite": "Puntaje compuesto",
         "bench_correctness": "Correctitud",
         "bench_quality": "Calidad",
         "bench_speed": "Velocidad",
         "bench_cost": "Costo",
-        "bench_self_repair": "Auto-Reparación",
+        "bench_self_repair": "Auto-reparacion",
         "bench_saved": "Resultados guardados en {path}",
         "bench_readme_updated": "Leaderboard insertado en README.md",
-        "bench_no_models": "No hay modelos disponibles. Ejecutá 'forgegod init' primero.",
+        "bench_no_models": "No hay modelos disponibles. Ejecuta 'forgegod init' primero.",
         "bench_detecting": "Auto-detectando modelos disponibles...",
         # Terse / Caveman mode
-        "terse_enabled": "Modo cavernícola activado — prompts ultra-concisos",
+        "terse_enabled": "Modo cavernicola activado - prompts ultra-concisos",
         "terse_savings": "Ahorro terse: {pct}% ({tokens} tokens ahorrados)",
     },
 }
@@ -190,7 +208,6 @@ _lang = "en"
 def detect_lang() -> str:
     """Detect language from system locale. Returns 'es' for es_* locales, else 'en'."""
     try:
-        # getdefaultlocale() deprecated in 3.15 — use getlocale() first
         loc = locale.getlocale()[0] or ""
         if not loc or loc == "C":
             loc = os.environ.get("LANG", os.environ.get("LC_ALL", ""))

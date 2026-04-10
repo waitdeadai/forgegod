@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-08): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `503` tests recolectados, `418` tests no-stress pasando por defecto mÃ¡s `1` test opt-in de integraciÃ³n Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Leé [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-09): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `525` tests recolectados, `440` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
