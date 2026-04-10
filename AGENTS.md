@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `525`
-- Core suite: `python -m pytest -m "not stress" -q` -> `440 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `524 passed, 1 skipped`
+- Tests collected: `527`
+- Core suite: `python -m pytest -m "not stress" -q` -> `442 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `526 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -31,6 +31,7 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Security config is now materially enforced: `sandbox_mode`, `sandbox_backend`, `sandbox_image`, `blocked_paths`, `audit_commands`, `redact_secrets`, and `max_rules_file_chars` are wired into runtime paths. Standard mode stays local with guardrails; strict mode uses a real Docker sandbox backend or blocks execution if no backend is available.
 - ForgeGod now supports native subscription-backed OpenAI access inside the ForgeGod CLI through `forgegod auth login openai-codex` and `forgegod auth sync`. Z.AI's Coding Plan path is also first-class via `ZAI_CODING_API_KEY`.
 - `forgegod init`, onboarding, and `forgegod auth sync` now write auth-aware model defaults so planner/reviewer/adversary flows can run without hand-editing `config.toml` when the user has OpenAI Codex or Z.AI but no OpenAI API key.
+- Those same flows now expose an explicit harness choice too: `adversarial` is the recommended multi-model path, and `single-model` collapses every role onto one detected model when the user wants the simpler setup.
 - OpenAI Codex subscription routing is verified for planner/reviewer/adversary workflows. Coder-loop use is available, but it remains experimental and should be benchmarked per repo before making it the default remote coder.
 - HTTP client initialization now degrades cleanly when optional HTTP/2 extras
   are absent. ForgeGod logs once and falls back to HTTP/1.1 instead of failing

@@ -11,6 +11,7 @@ from rich.panel import Panel
 
 from forgegod import __version__
 from forgegod.cli_ux import build_banner_text, console, print_brand_panel
+from forgegod.config import init_project, recommend_model_defaults
 from forgegod.i18n import t
 from forgegod.native_auth import (
     codex_automation_status,
@@ -96,9 +97,15 @@ def recommend_provider_choice(
 class OnboardingWizard:
     """Interactive 4-step setup wizard."""
 
-    def __init__(self, project_path: Path, lang: str = "en"):
+    def __init__(
+        self,
+        project_path: Path,
+        lang: str = "en",
+        harness_profile: str = "adversarial",
+    ):
         self.project_path = Path(project_path).resolve()
         self.lang = lang
+        self._harness_profile = harness_profile
         self._providers: list[str] = []
         self._ollama_available = False
         self._ollama_models: list[str] = []
@@ -115,6 +122,7 @@ class OnboardingWizard:
         self._probe_current_environment()
         self._step_welcome()
         self._step_provider()
+        self._step_harness_profile()
         self._step_verify()
         self._step_done()
         return {
@@ -255,6 +263,26 @@ class OnboardingWizard:
         elif choice == "10":
             self._setup_multi_provider()
 
+    def _step_harness_profile(self) -> None:
+        """Step 3: choose adversarial vs single-model harness."""
+        print_brand_panel(
+            t("harness_prompt"),
+            t("harness_recommended_body"),
+            border_style="forge.secondary",
+        )
+        console.print(
+            f"  [forge.primary]1.[/forge.primary] {t('harness_adversarial')} "
+            f"[forge.muted]({t('provider_recommended')})[/forge.muted]"
+        )
+        console.print(
+            f"  [forge.primary]2.[/forge.primary] {t('harness_single')}"
+        )
+        console.print()
+
+        default_choice = "1" if self._harness_profile != "single-model" else "2"
+        choice = typer.prompt("Profile", default=default_choice)
+        self._harness_profile = "single-model" if choice == "2" else "adversarial"
+
     def _print_provider_guidance(self) -> None:
         """Show friendly recommendations and what ForgeGod already detected."""
         recommended = next(
@@ -391,7 +419,7 @@ class OnboardingWizard:
         console.print("  [forge.success]+[/forge.success] Gemini key saved for this repo")
 
     def _step_verify(self) -> None:
-        """Step 3: Verification smoke test."""
+        """Step 4: Verification smoke test."""
         if not self._providers:
             console.print(f"\n[forge.warn]{t('no_providers')}[/forge.warn]")
             return
@@ -488,7 +516,7 @@ class OnboardingWizard:
         )
 
     def _step_done(self) -> None:
-        """Step 4: Save .env and show success."""
+        """Step 5: Save .env and show success."""
         if self._env_vars:
             env_path = self.project_path / ".forgegod" / ".env"
             env_path.parent.mkdir(parents=True, exist_ok=True)
@@ -507,20 +535,35 @@ class OnboardingWizard:
             env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
             console.print(f"\n  [forge.muted]{t('saving_env')}[/forge.muted]")
 
-        config_path = self.project_path / ".forgegod" / "config.toml"
-        if not config_path.exists():
-            from forgegod.config import init_project, recommend_model_defaults
+        recommended = recommend_model_defaults(
+            self._providers,
+            ollama_available=self._ollama_available,
+            profile=self._harness_profile,
+        )
+        project_dir = init_project(
+            self.project_path,
+            model_defaults=recommended,
+            harness_profile=self._harness_profile,
+        )
+        config_path = project_dir / "config.toml"
+        try:
+            import toml
 
-            recommended = recommend_model_defaults(
-                self._providers,
-                ollama_available=self._ollama_available,
-            )
-            init_project(self.project_path, model_defaults=recommended)
+            data = toml.loads(config_path.read_text(encoding="utf-8"))
+            data["models"] = recommended.model_dump()
+            data.setdefault("harness", {})["profile"] = self._harness_profile
+            config_path.write_text(toml.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
 
         console.print()
         console.print(
             Panel(
-                f"[forge.success]{t('success')}[/forge.success]\n\n{t('try_it')}",
+                (
+                    f"[forge.success]{t('success')}[/forge.success]\n\n"
+                    f"{t('harness_selected', profile=self._harness_profile)}\n"
+                    f"{t('try_it')}"
+                ),
                 border_style="forge.primary",
             )
         )

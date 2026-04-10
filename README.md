@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-09): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `525` collected tests, `440` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-09): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `527` collected tests, `442` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -78,14 +78,14 @@ You don't need to be a developer to use ForgeGod. If you can describe what you w
 1. Install Ollama: https://ollama.com/download
 2. Pull a model: `ollama pull qwen3.5:9b`
 3. Install ForgeGod: `pip install forgegod`
-4. Run: `forgegod init` (interactive wizard guides you)
+4. Run: `forgegod init` (interactive wizard guides you and lets you pick `adversarial` or `single-model`)
 5. Try it: `forgegod run "Create a simple website with a contact form"`
 
 ### Option B: OpenAI Native Subscription Mode
 
 1. Install ForgeGod: `pip install forgegod`
 2. Run: `forgegod auth login openai-codex`
-3. Run: `forgegod auth sync`
+3. Run: `forgegod auth sync --profile adversarial`
 4. Try it: `forgegod plan "Build a REST API with user authentication"`
 
 ForgeGod stays the entrypoint. It delegates the one-time login to the official Codex auth flow, then keeps day-to-day usage inside ForgeGod CLI.
@@ -94,7 +94,7 @@ ForgeGod stays the entrypoint. It delegates the one-time login to the official C
 
 1. Export `ZAI_CODING_API_KEY=...`
 2. Install ForgeGod: `pip install forgegod`
-3. Run: `forgegod auth sync`
+3. Run: `forgegod auth sync --profile adversarial`
 4. Try it: `forgegod run "Build a REST API with user authentication"`
 
 ### Recommended Experimental Harness: GLM-5.1 + Codex
@@ -116,6 +116,10 @@ This harness is research-backed and works in ForgeGod today. The `ZAI_CODING_API
 path should still be treated as experimental and at-your-own-risk until Z.AI
 explicitly recognizes ForgeGod as a supported coding tool.
 
+If you want a simpler setup, ForgeGod also supports `single-model` mode during
+`forgegod init` and `forgegod auth sync --profile single-model`. That pins all
+roles to one detected model instead of using the recommended adversarial split.
+
 ### Something not working?
 
 Run `forgegod doctor` — it checks your setup and tells you exactly what to fix.
@@ -134,12 +138,16 @@ pip install forgegod
 # Initialize a project
 forgegod init
 
+# Or force one harness style explicitly
+forgegod init --profile adversarial
+forgegod init --profile single-model
+
 # Check native auth surfaces
 forgegod auth status
 
 # Link ChatGPT-backed OpenAI Codex subscription, then sync config defaults
 forgegod auth login openai-codex
-forgegod auth sync
+forgegod auth sync --profile adversarial
 
 # Single task
 forgegod run "Add a /health endpoint to server.py with uptime and version info"
@@ -182,11 +190,14 @@ ForgeGod auto-detects your environment on first run:
 2. Checks if Ollama is running locally
 3. Detects your project language, test framework, and linter
 4. Picks auth-aware model defaults for each role based on what's available
-5. Creates `.forgegod/config.toml` with sensible defaults
+5. Lets you choose `adversarial` (recommended) or `single-model`
+6. Creates `.forgegod/config.toml` with sensible defaults
 
 No manual setup required. Just run `forgegod init` and go.
 
-If you add a new provider later, run `forgegod auth sync` to rewrite model defaults from detected auth surfaces.
+If you add a new provider later, run `forgegod auth sync --profile adversarial`
+or `forgegod auth sync --profile single-model` to rewrite model defaults from
+detected auth surfaces.
 
 ## How the Ralph Loop Works
 

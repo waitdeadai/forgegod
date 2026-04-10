@@ -23,18 +23,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `525`
+- Tests collected: `527`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-09 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `440 passed, 1 skipped, 84 deselected in 39.37s` |
+| `python -m pytest -m "not stress" -q` | `442 passed, 1 skipped, 84 deselected in 58.47s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
 | `python scripts/run_stress_tests.py --markdown` | `84 passed in 109.14s` |
-| `python -m pytest tests -q` | `524 passed, 1 skipped in 130.22s` |
-| `python -m pytest --collect-only -q` | `525 tests collected` |
+| `python -m pytest tests -q` | `526 passed, 1 skipped in 169.41s` |
+| `python -m pytest --collect-only -q` | `527 tests collected` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -55,6 +55,7 @@ This document is the current system of record for day-to-day work in this reposi
 - `forgegod init` onboarding now detects linked providers up front, recommends a setup path, explains repo-local secret storage, and keeps model connection guidance inside ForgeGod CLI instead of pushing users straight into manual shell editing.
 - OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.
+- `forgegod init`, onboarding, and `forgegod auth sync` now also expose a harness profile choice: `adversarial` is the recommended split-model setup, while `single-model` intentionally pins every role to one detected model for users who prefer a simpler loop.
 - Agent completion is now harder to fake locally: implementation tasks must show
   post-edit verification evidence plus a reviewed final diff before the core
   agent loop accepts completion, and `forgegod run --review` now treats

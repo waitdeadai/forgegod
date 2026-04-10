@@ -19,6 +19,14 @@ STRINGS: dict[str, dict[str, str]] = {
         "provider_friendly_hint": (
             "Pick the path you want. ForgeGod will verify it before relying on it."
         ),
+        "harness_prompt": "How should ForgeGod route work across models?",
+        "harness_recommended_body": (
+            "Adversarial mode splits builder and reviewer roles across the best "
+            "available models. Single-model mode keeps one model on every role."
+        ),
+        "harness_adversarial": "Adversarial harness (builder + reviewer split)",
+        "harness_single": "Single-model harness (one model for every role)",
+        "harness_selected": "Selected harness profile: {profile}",
         "opt_local": "Free local mode (Ollama - $0, runs on your machine)",
         "opt_openai": "OpenAI API key (GPT-4o, o4-mini)",
         "opt_openai_codex": "OpenAI ChatGPT subscription via Codex login",
@@ -114,6 +122,14 @@ STRINGS: dict[str, dict[str, str]] = {
         "provider_friendly_hint": (
             "Elegi el camino que quieras. ForgeGod lo verifica antes de depender de el."
         ),
+        "harness_prompt": "Como queres que ForgeGod reparta el trabajo entre modelos?",
+        "harness_recommended_body": (
+            "El modo adversarial separa builder y reviewer entre los mejores "
+            "modelos disponibles. El modo single-model usa un solo modelo para todo."
+        ),
+        "harness_adversarial": "Harness adversarial (builder + reviewer separados)",
+        "harness_single": "Harness single-model (un modelo para todos los roles)",
+        "harness_selected": "Perfil de harness elegido: {profile}",
         "opt_local": "Modo local gratuito (Ollama - $0, corre en tu maquina)",
         "opt_openai": "Clave API de OpenAI (GPT-4o, o4-mini)",
         "opt_openai_codex": "Suscripcion ChatGPT de OpenAI via login de Codex",

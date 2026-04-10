@@ -20,6 +20,7 @@ from forgegod.models import BudgetMode
 def test_default_config():
     config = ForgeGodConfig()
     assert config.models.coder == "ollama:qwen3-coder-next"
+    assert config.harness.profile == "adversarial"
     assert config.budget.daily_limit_usd == 5.0
     assert config.budget.mode == BudgetMode.NORMAL
     assert config.loop.max_iterations == 100
@@ -97,6 +98,21 @@ def test_recommend_model_defaults_prefers_zai_over_ollama_when_cloud_ready():
     assert models.coder == "zai:glm-5.1"
 
 
+def test_recommend_model_defaults_single_model_unifies_roles():
+    models = recommend_model_defaults(
+        ["zai", "openai-codex"],
+        ollama_available=False,
+        codex_automation_supported=True,
+        profile="single-model",
+    )
+    assert models.planner == "zai:glm-5.1"
+    assert models.coder == "zai:glm-5.1"
+    assert models.reviewer == "zai:glm-5.1"
+    assert models.sentinel == "zai:glm-5.1"
+    assert models.escalation == "zai:glm-5.1"
+    assert models.researcher == "zai:glm-5.1"
+
+
 def test_init_project_writes_model_defaults():
     with tempfile.TemporaryDirectory() as tmpdir:
         models = recommend_model_defaults(
@@ -104,9 +120,14 @@ def test_init_project_writes_model_defaults():
             ollama_available=False,
             codex_automation_supported=True,
         )
-        project_dir = init_project(Path(tmpdir), model_defaults=models)
+        project_dir = init_project(
+            Path(tmpdir),
+            model_defaults=models,
+            harness_profile="single-model",
+        )
         data = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
         assert data["models"]["planner"] == "openai-codex:gpt-5.4"
+        assert data["harness"]["profile"] == "single-model"
 
 
 def test_load_config_from_toml():

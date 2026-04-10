@@ -81,7 +81,7 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "forgegod.cli._detect_runtime_model_defaults",
-        lambda *_args: (
+        lambda *_args, **_kwargs: (
             ["openai-codex:gpt-5.4", "zai:glm-5.1"],
             ["openai-codex", "zai"],
             False,
@@ -94,6 +94,7 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
     assert result.exit_code == 0, result.stdout
     updated = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
     assert updated["models"] == recommended.model_dump()
+    assert updated["harness"]["profile"] == "adversarial"
     assert updated["budget"]["mode"] == "normal"
     assert updated["budget"]["daily_limit_usd"] == 5.0
     assert "zai:glm-5.1" in result.stdout
@@ -113,7 +114,7 @@ def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "forgegod.cli._detect_runtime_model_defaults",
-        lambda *_args: (
+        lambda *_args, **_kwargs: (
             ["openai-codex:gpt-5.4"],
             ["openai-codex"],
             False,
@@ -139,7 +140,7 @@ def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monke
 
     monkeypatch.setattr(
         "forgegod.cli._detect_runtime_model_defaults",
-        lambda *_args: (
+        lambda *_args, **_kwargs: (
             ["openai-codex:gpt-5.4", "zai:glm-5.1"],
             ["openai-codex", "zai"],
             False,
@@ -152,3 +153,37 @@ def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monke
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(result.stdout.split())
     assert "did not choose it as a default automation backend" in normalized
+
+
+def test_auth_sync_single_model_profile(tmp_path, monkeypatch):
+    recommended = ModelsConfig(
+        planner="zai:glm-5.1",
+        coder="zai:glm-5.1",
+        reviewer="zai:glm-5.1",
+        sentinel="zai:glm-5.1",
+        escalation="zai:glm-5.1",
+        researcher="zai:glm-5.1",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["zai:glm-5.1"],
+            ["zai"],
+            False,
+            recommended,
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "sync", "--path", str(tmp_path), "--profile", "single-model"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    updated = toml.loads(
+        (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
+    )
+    assert updated["harness"]["profile"] == "single-model"
+    assert "Harness profile:" in result.stdout
+    assert "single-model" in result.stdout

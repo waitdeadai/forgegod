@@ -77,7 +77,11 @@ def _build_tool_approver():
     return _approver
 
 
-def _detect_runtime_model_defaults(project_path: Path | None = None):
+def _detect_runtime_model_defaults(
+    project_path: Path | None = None,
+    *,
+    profile: str = "adversarial",
+):
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
     from forgegod.config import ForgeGodConfig, _load_dotenv, recommend_model_defaults
@@ -92,6 +96,7 @@ def _detect_runtime_model_defaults(project_path: Path | None = None):
     recommended = recommend_model_defaults(
         providers,
         ollama_available=ollama_available,
+        profile=profile,
     )
     return models, providers, ollama_available, recommended
 
@@ -110,6 +115,11 @@ def init(
     path: Path = typer.Argument(Path("."), help="Project root directory"),
     quick: bool = typer.Option(False, "--quick", "-q", help="Skip wizard, auto-detect only"),
     lang: str = typer.Option("auto", "--lang", "-l", help="Language: en, es, auto"),
+    profile: str = typer.Option(
+        "adversarial",
+        "--profile",
+        help="Harness profile: adversarial or single-model",
+    ),
 ):
     """Initialize a ForgeGod project — interactive wizard or quick auto-detect."""
     from forgegod.i18n import set_lang
@@ -120,7 +130,7 @@ def init(
         # Interactive wizard (default for new users)
         from forgegod.onboarding import OnboardingWizard
 
-        wizard = OnboardingWizard(project_path=path, lang=lang)
+        wizard = OnboardingWizard(project_path=path, lang=lang, harness_profile=profile)
         wizard.run()
         return
 
@@ -194,8 +204,13 @@ def init(
     recommended_models = recommend_model_defaults(
         providers,
         ollama_available=ollama_available,
+        profile=profile,
     )
-    project_dir = init_project(path, model_defaults=recommended_models)
+    project_dir = init_project(
+        path,
+        model_defaults=recommended_models,
+        harness_profile=profile,
+    )
 
     console.print()
     console.print(f"[green]Initialized at {project_dir}[/green]")
@@ -342,17 +357,30 @@ def auth_login(
 @auth_app.command("sync")
 def auth_sync(
     path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    profile: str = typer.Option(
+        "adversarial",
+        "--profile",
+        help="Harness profile: adversarial or single-model",
+    ),
 ):
     """Rewrite model defaults based on detected native auth surfaces."""
     import toml
 
     from forgegod.config import init_project
 
-    _, providers, ollama_available, recommended = _detect_runtime_model_defaults(path)
-    project_dir = init_project(path, model_defaults=recommended)
+    _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
+        path,
+        profile=profile,
+    )
+    project_dir = init_project(
+        path,
+        model_defaults=recommended,
+        harness_profile=profile,
+    )
     config_path = project_dir / "config.toml"
     data = toml.loads(config_path.read_text(encoding="utf-8"))
     data["models"] = recommended.model_dump()
+    data.setdefault("harness", {})["profile"] = profile
     budget = data.setdefault("budget", {})
     if providers and not ollama_available:
         if budget.get("mode") in {"local-only", "halt"}:
@@ -367,6 +395,7 @@ def auth_sync(
     for role, model in recommended.model_dump().items():
         table.add_row(role, model)
     console.print(table)
+    console.print(f"[dim]Harness profile:[/dim] {profile}")
     if providers and not ollama_available:
         console.print(
             "[dim]Budget sync:[/dim] cloud-ready config ensured "

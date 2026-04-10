@@ -63,6 +63,12 @@ class ModelsConfig(BaseModel):
     researcher: str = "gemini:gemini-2.5-flash"  # Recon: fast + cheap for search synthesis
 
 
+class HarnessConfig(BaseModel):
+    """Harness profile selection for role routing."""
+
+    profile: str = "adversarial"  # adversarial | single-model
+
+
 class BudgetConfig(BaseModel):
     daily_limit_usd: float = 5.0
     mode: BudgetMode = BudgetMode.NORMAL
@@ -189,6 +195,7 @@ class ForgeGodConfig(BaseModel):
     """Root configuration — merges global + project + env."""
 
     models: ModelsConfig = Field(default_factory=ModelsConfig)
+    harness: HarnessConfig = Field(default_factory=HarnessConfig)
     budget: BudgetConfig = Field(default_factory=BudgetConfig)
     loop: LoopConfig = Field(default_factory=LoopConfig)
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
@@ -214,6 +221,7 @@ def recommend_model_defaults(
     *,
     ollama_available: bool = True,
     codex_automation_supported: bool | None = None,
+    profile: str = "adversarial",
 ) -> ModelsConfig:
     """Choose sane default models for the currently available auth surfaces."""
     if codex_automation_supported is None:
@@ -235,6 +243,27 @@ def recommend_model_defaults(
             elif provider in provider_set:
                 return spec
         return None
+
+    if profile == "single-model":
+        unified = pick([
+            "zai:glm-5.1",
+            "openai-codex:gpt-5.4",
+            "openai:o4-mini",
+            "anthropic:claude-sonnet-4-6-20250514",
+            "kimi:kimi-k2.5",
+            "gemini:gemini-2.5-flash",
+            "deepseek:deepseek-chat",
+            "openrouter:meta-llama/llama-3.3-70b-instruct",
+            "ollama:qwen3-coder-next",
+        ])
+        if unified:
+            recommended.planner = unified
+            recommended.coder = unified
+            recommended.reviewer = unified
+            recommended.sentinel = unified
+            recommended.escalation = unified
+            recommended.researcher = unified
+        return recommended
 
     planner = pick([
         "openai-codex:gpt-5.4",
@@ -351,6 +380,7 @@ def init_project(
     project_root: Path | None = None,
     *,
     model_defaults: ModelsConfig | None = None,
+    harness_profile: str | None = None,
 ) -> Path:
     """Initialize .forgegod/ directory with default config."""
     if project_root is None:
@@ -364,6 +394,8 @@ def init_project(
         default = ForgeGodConfig()
         if model_defaults is not None:
             default.models = model_defaults
+        if harness_profile is not None:
+            default.harness.profile = harness_profile
         config_path.write_text(
             toml.dumps(
                 default.model_dump(

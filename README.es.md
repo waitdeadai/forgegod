@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-09): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `525` tests recolectados, `440` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-09): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `527` tests recolectados, `442` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -53,6 +53,11 @@ El camino con `ZAI_CODING_API_KEY` funciona hoy en ForgeGod, pero sigue siendo
 experimental hasta que Z.AI reconozca explícitamente a ForgeGod como coding
 tool soportada.
 
+Si querÃ©s una configuraciÃ³n mÃ¡s simple, ForgeGod tambiÃ©n soporta `single-model`
+durante `forgegod init` y `forgegod auth sync --profile single-model`. Eso
+fuerza todos los roles a un solo modelo detectado en lugar del split
+adversarial recomendado.
+
 ## Inicio Rápido (Sin Saber Programar)
 
 No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que querés en español, ForgeGod escribe el código.
@@ -62,7 +67,7 @@ No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que q
 1. Instalá Ollama: https://ollama.com/download
 2. Descargá un modelo: `ollama pull qwen3.5:9b`
 3. Instalá ForgeGod: `pip install forgegod`
-4. Ejecutá: `forgegod init --lang es` (el asistente te guía)
+4. Ejecutá: `forgegod init --lang es` (el asistente te guía y te deja elegir `adversarial` o `single-model`)
 5. Probalo: `forgegod run "Creá un sitio web simple con un formulario de contacto"`
 
 ### Opción B: Modo Nube (más rápido, ~$0.01/tarea)
@@ -113,12 +118,16 @@ pip install forgegod
 # Inicializar un proyecto
 forgegod init --lang es
 
+# O forzar un estilo de harness explícitamente
+forgegod init --lang es --profile adversarial
+forgegod init --lang es --profile single-model
+
 # Ver superficies de auth nativas
 forgegod auth status
 
 # Vincular la suscripción de OpenAI Codex y sincronizar defaults
 forgegod auth login openai-codex
-forgegod auth sync
+forgegod auth sync --profile adversarial
 
 # Tarea única
 forgegod run "Agregá un endpoint /health a server.py con uptime e info de versión"
@@ -238,7 +247,7 @@ Ejecutá el tuyo: `forgegod benchmark`
 
 ForgeGod usa config TOML con prioridad de 3 niveles: variables de entorno > proyecto > global.
 
-`forgegod init` y `forgegod auth sync` escriben defaults sensibles a la auth detectada. El ejemplo de abajo muestra la forma del archivo, no la única combinación recomendada.
+`forgegod init` y `forgegod auth sync` escriben defaults sensibles a la auth detectada y también guardan `harness.profile` como `adversarial` o `single-model`. El ejemplo de abajo muestra la forma del archivo, no la única combinación recomendada.
 
 ```toml
 # .forgegod/config.toml
