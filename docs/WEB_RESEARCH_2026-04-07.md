@@ -482,6 +482,38 @@ should preserve the same high-signal runtime controls that matter on `run`:
 and allow-tool overrides should all work without forcing users back to a quoted
 subcommand syntax.
 
+## Harness Evals Addendum
+
+Verified on `2026-04-10` before adding a first-class eval surface:
+
+- OpenAI's harness-engineering writeup is explicit that reliable coding-agent
+  progress comes from the harness, not just the model. That supports making
+  evals a first-class product surface instead of treating unit tests and
+  benchmarks as sufficient:
+  - https://openai.com/index/harness-engineering/
+- OpenAI's practical guide to building agents recommends starting with the
+  smallest workable agent system, then adding decomposition and checkpoints only
+  where the task structure demands it. That supports a narrow V1 eval corpus
+  focused on real user-facing CLI behavior before adding live-provider noise:
+  - https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf
+- OpenAI's evals guidance and agent-evals guidance both emphasize trace-aware
+  grading rather than relying only on downstream pass/fail outcomes. That
+  supports saving per-case request traces in ForgeGod's eval runner:
+  - https://platform.openai.com/docs/guides/evals
+  - https://platform.openai.com/docs/guides/agent-evals
+- OpenHands' distinction between host-local runtimes and stronger isolated
+  runtimes supports keeping harness evals separate from model benchmarks: a
+  harness should be able to prove CLI behavior and safety policy regardless of
+  whether the current backend is live cloud, local host, or stronger runtime:
+  - https://docs.openhands.dev/openhands/usage/runtimes/runtime-local
+  - https://docs.openhands.dev/openhands/usage/runtimes/runloop-runtime
+
+Operational conclusion for ForgeGod: `forgegod benchmark` should remain the
+coding/model comparison surface, while `forgegod evals` should become the
+deterministic harness/product behavior surface. Graduation decisions such as
+worktree exposure, strict-sandbox expansion, or Codex coder-loop status should
+use both, not either alone.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

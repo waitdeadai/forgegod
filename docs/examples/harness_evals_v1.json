@@ -1,0 +1,45 @@
+{
+  "name": "forgegod-harness-evals-v1",
+  "description": "Example custom manifest matching the built-in Harness Evals V1 surface.",
+  "cases": [
+    {
+      "id": "chat_natural_language_roundtrip",
+      "description": "Root chat handles a natural-language file question.",
+      "scenario": "cli_read_file_roundtrip",
+      "surface": "chat",
+      "setup": "hello",
+      "permission_mode": "read-only",
+      "tags": ["chat", "ux", "natural-language"],
+      "expectations": {
+        "exit_code": 0,
+        "request_count": 2,
+        "output_contains": [
+          "Talk to ForgeGod in natural language",
+          "The file says hello forgegod."
+        ],
+        "file_contains": {
+          "hello.txt": "hello forgegod"
+        },
+        "first_request_tools_include": ["read_file", "repo_map", "git_status"]
+      }
+    },
+    {
+      "id": "run_completion_gate_roundtrip",
+      "description": "Run mode writes code, verifies, diffs, and then completes.",
+      "scenario": "cli_completion_gate_roundtrip",
+      "surface": "run",
+      "setup": "git_src",
+      "permission_mode": "workspace-write",
+      "tags": ["run", "completion-gate", "verification"],
+      "expectations": {
+        "exit_code": 0,
+        "request_count": 4,
+        "output_contains": ["Implemented src/app.py and verified the change."],
+        "files_exist": ["src/app.py"],
+        "file_contains": {
+          "src/app.py": "print('forgegod')"
+        }
+      }
+    }
+  ]
+}

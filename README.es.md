@@ -38,7 +38,7 @@ ForgeGod orquesta mÃºltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `533` tests recolectados, `448` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo y flags de permisos/aprobacion. `forgegod run` queda como superficie explicita para scripts y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `537` tests recolectados, `452` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo y flags de permisos/aprobacion. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` como superficie deterministica de regresion del harness, y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -157,6 +157,10 @@ forgegod
 # Superficie explÃ­cita para scripts
 forgegod run "AgregÃ¡ un endpoint /health a server.py con uptime e info de versiÃ³n"
 
+# Evals deterministicas del harness
+forgegod evals
+forgegod evals --case chat_natural_language_roundtrip
+
 # Planificar un proyecto â†’ genera PRD
 forgegod plan "ConstruÃ­ una API REST para una app de tareas con auth, CRUD y tests"
 
@@ -176,6 +180,9 @@ forgegod cost
 
 # Benchmark de modelos
 forgegod benchmark
+
+# Evals del harness
+forgegod evals
 
 # Instalar un preset DESIGN.md para trabajo frontend
 forgegod design pull claude
@@ -327,6 +334,12 @@ O usÃ¡ el archivo `.forgegod/.env` â€” `forgegod init` lo crea automÃ¡t
 El soporte de Kimi usa la API OpenAI-compatible oficial de Moonshot y hoy es experimental dentro de ForgeGod. Correlalo con tus benchmarks antes de convertirlo en modelo por defecto.
 El soporte por suscripciÃ³n de OpenAI Codex hoy es mÃ¡s fuerte para planner/reviewer/adversary. TambiÃ©n puede usarse como superficie de ruteo para cÃ³digo, pero el loop de coder sigue siendo experimental y conviene benchmarkearlo antes de dejarlo como coder remoto por defecto.
 OpenRouter sigue funcionando con keys/crÃ©ditos. Alibaba/Qwen Coding Plan sigue en evaluaciÃ³n porque la documentaciÃ³n oficial actual lo acota a coding tools soportadas, no a loops autÃ³nomos genÃ©ricos.
+
+Regla practica del harness:
+
+- `forgegod benchmark` mide performance de codigo/modelos sobre tareas scaffold
+- `forgegod evals` mide a ForgeGod mismo: UX conversacional, aprobaciones,
+  denegaciones por permisos y disciplina del completion gate
 
 ## Seguridad
 

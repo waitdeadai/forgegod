@@ -23,24 +23,25 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `533`
+- Tests collected: `537`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-10 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `448 passed, 1 skipped, 84 deselected in 71.18s` |
+| `python -m pytest -m "not stress" -q` | `452 passed, 1 skipped, 84 deselected in 86.48s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 134.00s` |
-| `python -m pytest tests -q` | `532 passed, 1 skipped in 188.64s` |
-| `python -m pytest --collect-only -q` | `533 tests collected` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 153.30s` |
+| `python -m pytest tests -q` | `536 passed, 1 skipped in 229.60s` |
+| `python -m pytest --collect-only -q` | `537 tests collected` |
+| `python -m forgegod evals --case chat_natural_language_roundtrip --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `1/1 passing, score=1.000` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
 | `python scripts/run_mock_parity_harness.py` | `10 passed` |
 | `python scripts/run_cli_mock_parity_harness.py` | `12 passed` |
-| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `1 skipped`; local Docker daemon was not ready in this verification session |
+| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `1 passed` |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
 
 ## Current Reality Check
@@ -122,6 +123,10 @@ This document is the current system of record for day-to-day work in this reposi
 - ForgeGod now has deterministic CLI coverage for auth-aware provider selection
   in `forgegod auth sync`, including cloud-budget normalization and the Codex
   experimental-coder note.
+- ForgeGod now has a first-class deterministic harness eval surface:
+  `forgegod evals`. It sits above unit tests and parity harnesses, saves
+  per-case trace artifacts, and grades real CLI behavior for chat UX, terse
+  mode, approval flows, permission denials, and completion-gate discipline.
 - Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
   `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
   `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.
@@ -157,9 +162,9 @@ This document is the current system of record for day-to-day work in this reposi
 
 ## Recommended Next Work
 
-1. Decide whether `WorktreePool` should stay an internal primitive or graduate to a first-class CLI path, then give it parity-grade coverage if it does.
+1. Expand `forgegod evals` beyond `run`/chat into `loop`, worktree, and opt-in strict Docker scenarios so release decisions use one eval corpus instead of scattered ad hoc checks.
 2. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
 3. Expand the opt-in real Docker strict integration coverage beyond the happy-path bash roundtrip, for example into path-rewrite or git-safe read scenarios.
 4. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
 5. Add direct tests for loop auto-commit flags and any future worktree merge path so repaired loop behavior stays locked in.
-6. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, or keep preferring Z.AI / API-backed providers for remote coding tasks.
+6. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, using `forgegod evals` plus broader repo-local benchmarks instead of anecdotal runs.

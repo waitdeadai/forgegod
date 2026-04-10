@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `533` collected tests, `448` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, and permission/approval flags. `forgegod run` remains the explicit scripted surface, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `537` collected tests, `452` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, and permission/approval flags. `forgegod run` remains the explicit scripted surface, `forgegod evals` is the deterministic harness-regression surface, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -169,6 +169,10 @@ forgegod
 # Explicit scripted task surface
 forgegod run "Add a /health endpoint to server.py with uptime and version info"
 
+# Deterministic harness evals
+forgegod evals
+forgegod evals --case chat_natural_language_roundtrip
+
 # Plan a project → generates PRD
 forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
@@ -188,6 +192,9 @@ forgegod cost
 
 # Benchmark your models
 forgegod benchmark
+
+# Evaluate ForgeGod itself
+forgegod evals
 
 # Install a DESIGN.md preset for frontend work
 forgegod design pull claude
@@ -383,6 +390,12 @@ export FORGEGOD_BUDGET_DAILY_LIMIT_USD=10
 Kimi support uses Moonshot's official OpenAI-compatible API and is currently experimental in ForgeGod. Benchmark it on your workload before making it a default role.
 OpenAI Codex subscription support is strongest today for planner/reviewer/adversary flows. It also works as a ForgeGod route surface for coding, but coder-loop use remains experimental and should be benchmarked before you make it the default remote coder.
 OpenRouter still uses keys/credits. Alibaba/Qwen Coding Plan is still under evaluation because current official docs scope it to supported coding tools rather than generic autonomous loops.
+
+Harness rule of thumb:
+
+- `forgegod benchmark` measures coding/model performance on scaffold tasks
+- `forgegod evals` measures ForgeGod itself: chat UX, approval behavior,
+  permission denials, and completion-gate discipline
 
 ## Model Leaderboard
 

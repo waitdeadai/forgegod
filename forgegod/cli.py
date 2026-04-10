@@ -1376,6 +1376,97 @@ def doctor():
 
 
 @app.command()
+def evals(
+    manifest: Optional[Path] = typer.Option(
+        None,
+        "--manifest",
+        "-m",
+        help="Optional JSON manifest path. Defaults to ForgeGod's built-in harness evals.",
+    ),
+    case: list[str] | None = typer.Option(
+        None,
+        "--case",
+        help="Repeat to run only specific eval case IDs.",
+    ),
+    tag: list[str] | None = typer.Option(
+        None,
+        "--tag",
+        help="Repeat to run only cases that include one of these tags.",
+    ),
+    output: Path = typer.Option(
+        Path(".forgegod/evals/harness_evals_report.json"),
+        "--output",
+        "-o",
+        help="Output JSON report path.",
+    ),
+    traces_dir: Path = typer.Option(
+        Path(".forgegod/evals/traces"),
+        "--traces-dir",
+        help="Directory for per-case mock request traces.",
+    ),
+    list_cases: bool = typer.Option(
+        False,
+        "--list",
+        help="List available eval cases without running them.",
+    ),
+):
+    """Run deterministic harness evals for CLI surfaces and guardrails."""
+    from forgegod.config import load_config
+    from forgegod.evals import HarnessEvalRunner, load_eval_manifest
+
+    _print_banner(mini=True)
+    eval_manifest = load_eval_manifest(manifest)
+
+    if list_cases:
+        typer.echo(f"Harness eval cases - {eval_manifest.name}")
+        table = Table(title=f"Harness eval cases - {eval_manifest.name}")
+        table.add_column("Case", style="cyan")
+        table.add_column("Surface", style="white")
+        table.add_column("Tags", style="yellow")
+        table.add_column("Description", style="dim")
+        for eval_case in eval_manifest.cases:
+            table.add_row(
+                eval_case.id,
+                eval_case.surface,
+                ", ".join(eval_case.tags) or "-",
+                eval_case.description,
+            )
+            typer.echo(
+                f"{eval_case.id}\t{eval_case.surface}\t"
+                f"{', '.join(eval_case.tags) or '-'}\t{eval_case.description}"
+            )
+        console.print(table)
+        console.print(
+            "[dim]Available IDs:[/dim] "
+            + ", ".join(eval_case.id for eval_case in eval_manifest.cases)
+        )
+        raise typer.Exit()
+
+    runner = HarnessEvalRunner(load_config())
+    report = runner.run_manifest(
+        eval_manifest,
+        selected_case_ids=set(case or []),
+        selected_tags=set(tag or []),
+        output_path=output,
+        traces_dir=traces_dir,
+    )
+    typer.echo(
+        f"Harness evals complete ({report.passed_cases}/{report.total_cases} passing, "
+        f"score={report.score:.3f})"
+    )
+    typer.echo(f"Report: {output}")
+    typer.echo(f"Traces: {traces_dir}")
+    console.print(
+        f"\n[bold green]Harness evals complete[/bold green] "
+        f"({report.passed_cases}/{report.total_cases} passing, score={report.score:.3f})"
+    )
+    console.print(f"[dim]Report: {output}[/dim]")
+    console.print(f"[dim]Traces: {traces_dir}[/dim]")
+    if report.passed_cases != report.total_cases:
+        raise typer.Exit(1)
+
+
+@app.command()
 def benchmark(
     models: Optional[str] = typer.Option(
         None, "--models", "-m",
