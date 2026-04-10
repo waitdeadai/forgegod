@@ -16,7 +16,12 @@ import httpx
 
 from forgegod.config import MODEL_COSTS, ForgeGodConfig
 from forgegod.models import BudgetMode, ModelSpec, ModelUsage
-from forgegod.native_auth import codex_exec, codex_login_status, render_messages_as_prompt
+from forgegod.native_auth import (
+    codex_automation_status,
+    codex_exec,
+    codex_login_status,
+    render_messages_as_prompt,
+)
 
 logger = logging.getLogger("forgegod.router")
 
@@ -192,10 +197,12 @@ class ModelRouter:
         # Build fallback chain from role config
         chain = FALLBACK_CHAINS.get(role, ["coder", "escalation"])
         specs = []
+        seen_specs: set[str] = set()
         for r in chain:
             model_str = getattr(self.config.models, r, None)
-            if model_str:
+            if model_str and model_str not in seen_specs:
                 specs.append(ModelSpec.parse(model_str))
+                seen_specs.add(model_str)
 
         # Throttle mode: prepend local model
         if self.config.budget.mode == BudgetMode.THROTTLE:
@@ -511,6 +518,10 @@ class ModelRouter:
     ) -> tuple[str, dict]:
         """Call OpenAI Codex CLI with native ChatGPT subscription auth."""
         del max_tokens, temperature  # Controlled by Codex itself.
+
+        supported, detail = codex_automation_status()
+        if not supported:
+            raise RuntimeError(detail)
 
         logged_in, status_text = await codex_login_status(
             self.config.openai_codex.command

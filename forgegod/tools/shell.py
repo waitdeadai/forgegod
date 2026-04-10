@@ -70,6 +70,7 @@ STRICT_ALLOWED_EXECUTABLES = {
     "pytest", "ruff", "git", "rg",
     "ls", "dir", "cat", "type", "find", "findstr",
     "npm", "npx", "pnpm", "yarn", "bun",
+    "playwright",
     "uv", "poetry", "cargo", "go", "deno", "node",
     "make", "just",
 }
@@ -89,7 +90,7 @@ STRICT_DISALLOWED_SUBCOMMANDS = {
         "reset", "restore", "revert", "rm", "stash", "switch", "tag",
     },
     "npm": {
-        "add", "cache", "ci", "install", "link", "login", "logout",
+        "add", "cache", "ci", "config", "install", "link", "login", "logout",
         "publish", "remove", "uninstall", "update",
     },
     "npx": {"npm"},
@@ -113,6 +114,13 @@ STRICT_PYTHON_BLOCKLIST = {
     ("-m", "pip"),
     ("-m", "ensurepip"),
     ("-m", "venv"),
+}
+
+STRICT_SUBCOMMAND_ALIASES = {
+    "npm": {"i": "install"},
+    "pnpm": {"i": "install"},
+    "yarn": {"add": "add", "install": "install", "create": "create", "dlx": "dlx"},
+    "bun": {"add": "add", "install": "install", "create": "create", "x": "x"},
 }
 
 
@@ -185,6 +193,32 @@ def _first_non_flag(argv: list[str]) -> str:
     return ""
 
 
+def _canonical_subcommand(exe: str, argv: list[str]) -> str:
+    subcommand = _first_non_flag(argv)
+    return STRICT_SUBCOMMAND_ALIASES.get(exe, {}).get(subcommand, subcommand)
+
+
+def _strict_network_mode(argv: list[str]) -> str:
+    """Allow network only for package-manager bootstrap commands in strict mode."""
+    exe = Path(argv[0]).name.lower()
+    subcommand = _canonical_subcommand(exe, argv)
+
+    if exe in {"npm", "pnpm", "yarn", "bun"} and subcommand in {"install", "add", "create"}:
+        return "bridge"
+
+    if exe == "npx":
+        package = _first_non_flag(argv)
+        if package.startswith("create-"):
+            return "bridge"
+        if package == "playwright" and "install" in [arg.lower() for arg in argv[2:]]:
+            return "bridge"
+
+    if exe == "playwright" and "install" in [arg.lower() for arg in argv[1:]]:
+        return "bridge"
+
+    return "none"
+
+
 def _strict_policy_error(argv: list[str], workspace_root: Path) -> str | None:
     """Validate a strict-mode command before execution."""
     exe = Path(argv[0]).name.lower()
@@ -202,9 +236,10 @@ def _strict_policy_error(argv: list[str], workspace_root: Path) -> str | None:
                     return f"Python module not allowed in strict mode: {b}"
 
     blocked_subcommands = STRICT_DISALLOWED_SUBCOMMANDS.get(exe, set())
-    subcommand = _first_non_flag(argv)
+    subcommand = _canonical_subcommand(exe, argv)
     if subcommand in blocked_subcommands:
-        return f"Subcommand not allowed in strict mode: {exe} {subcommand}"
+        if _strict_network_mode(argv) != "bridge":
+            return f"Subcommand not allowed in strict mode: {exe} {subcommand}"
 
     path_error = _validate_arg_paths(argv, workspace_root)
     if path_error:
@@ -318,6 +353,7 @@ async def bash(command: str, timeout: int = 120) -> str:
                     sandbox_root=get_project_dir() / "sandbox",
                     timeout=timeout,
                     security=security,
+                    network_mode=_strict_network_mode(argv),
                 )
             except SandboxUnavailableError as e:
                 return _blocked_message(str(e), command)

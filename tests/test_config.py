@@ -28,7 +28,7 @@ def test_default_config():
     assert config.memory.enabled is True
     assert config.memory.extraction_enabled is True
     assert config.security.sandbox_backend == "auto"
-    assert config.security.sandbox_image == "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
+    assert config.security.sandbox_image == "auto"
     assert config.openai_codex.command == "codex"
     assert config.openai_codex.sandbox == "read-only"
     assert config.zai.use_coding_plan is True
@@ -76,7 +76,11 @@ def test_load_config_defaults():
 
 
 def test_recommend_model_defaults_openai_codex_only():
-    models = recommend_model_defaults(["openai-codex"], ollama_available=False)
+    models = recommend_model_defaults(
+        ["openai-codex"],
+        ollama_available=False,
+        codex_automation_supported=True,
+    )
     assert models.planner == "openai-codex:gpt-5.4"
     assert models.reviewer == "openai-codex:gpt-5.4"
     assert models.sentinel == "openai-codex:gpt-5.4"
@@ -88,9 +92,18 @@ def test_recommend_model_defaults_prefers_zai_when_no_local():
     assert models.planner == "zai:glm-5.1"
 
 
+def test_recommend_model_defaults_prefers_zai_over_ollama_when_cloud_ready():
+    models = recommend_model_defaults(["zai"], ollama_available=True)
+    assert models.coder == "zai:glm-5.1"
+
+
 def test_init_project_writes_model_defaults():
     with tempfile.TemporaryDirectory() as tmpdir:
-        models = recommend_model_defaults(["openai-codex"], ollama_available=False)
+        models = recommend_model_defaults(
+            ["openai-codex"],
+            ollama_available=False,
+            codex_automation_supported=True,
+        )
         project_dir = init_project(Path(tmpdir), model_defaults=models)
         data = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
         assert data["models"]["planner"] == "openai-codex:gpt-5.4"

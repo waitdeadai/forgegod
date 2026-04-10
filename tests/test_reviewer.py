@@ -31,12 +31,7 @@ class TestParseReview:
     @pytest.fixture
     def reviewer(self) -> Reviewer:
         """Create a reviewer with minimal config."""
-        config = ForgeGodConfig(
-            model="ollama:qwen3-coder-next",
-            review_enabled=True,
-            review_sample_rate=1,
-            review_always_review_run=False,
-        )
+        config = ForgeGodConfig()
         return Reviewer(config=config)
 
     def test_parse_valid_review_all_fields(self, reviewer: Reviewer) -> None:
@@ -70,31 +65,40 @@ class TestParseReview:
         assert result.suggestions == []
 
     def test_parse_invalid_json_fallback(self, reviewer: Reviewer) -> None:
-        """Test parsing invalid JSON falls back to APPROVE."""
+        """Test parsing invalid JSON fails safe to REVISE."""
         response = "not valid json {{{"
         result = reviewer._parse_review(response, "ollama:qwen3-coder-next")
-        assert result.verdict == ReviewVerdict.APPROVE
-        assert result.confidence == 0.3
+        assert result.verdict == ReviewVerdict.REVISE
+        assert result.confidence == 0.0
         assert "Failed to parse" in result.reasoning
+        assert result.issues == ["Review output was invalid or incomplete"]
 
     def test_parse_malformed_verdict_fallback(self, reviewer: Reviewer) -> None:
-        """Test parsing malformed verdict falls back to APPROVE."""
+        """Test parsing malformed verdict fails safe to REVISE."""
         response = '''{
             "verdict": "unknown",
             "confidence": 0.7,
             "reasoning": "Unknown verdict"
         }'''
         result = reviewer._parse_review(response, "ollama:qwen3-coder-next")
-        assert result.verdict == ReviewVerdict.APPROVE
+        assert result.verdict == ReviewVerdict.REVISE
         assert result.confidence == 0.7
         assert result.reasoning == "Unknown verdict"
 
     def test_parse_empty_response(self, reviewer: Reviewer) -> None:
-        """Test parsing empty response."""
+        """Test empty response fails safe to REVISE."""
         response = ""
         result = reviewer._parse_review(response, "ollama:qwen3-coder-next")
-        assert result.verdict == ReviewVerdict.APPROVE
-        assert result.confidence == 0.3
+        assert result.verdict == ReviewVerdict.REVISE
+        assert result.confidence == 0.0
+        assert "Reviewer unavailable" in result.reasoning
+
+    def test_parse_router_error_fails_safe(self, reviewer: Reviewer) -> None:
+        response = "[ERROR: All models failed for role=reviewer.\nLast error: timeout]"
+        result = reviewer._parse_review(response, "openai-codex:gpt-5.4")
+        assert result.verdict == ReviewVerdict.REVISE
+        assert result.confidence == 0.0
+        assert "Reviewer unavailable" in result.reasoning
 
     def test_parse_partial_json(self, reviewer: Reviewer) -> None:
         """Test parsing partial JSON (missing closing brace) — json_repair fixes it."""

@@ -355,6 +355,8 @@ class TestModelRouterFallback:
     async def test_fallback_on_first_failure(self, router: ModelRouter):
         """Fallback tries next model on first failure."""
         call_count = [0]
+        router.config.models.reviewer = "ollama:qwen3-coder-backup"
+        router.config.models.escalation = "ollama:qwen3-coder-final"
 
         async def mock_call_ollama(*args, **kwargs):
             call_count[0] += 1
@@ -367,6 +369,28 @@ class TestModelRouterFallback:
         result, usage = await router.call("Test", role="coder")
         assert result is not None
         assert call_count[0] > 1
+
+    @pytest.mark.asyncio
+    async def test_router_dedupes_identical_fallback_specs(self):
+        config = ForgeGodConfig(
+            models={
+                "reviewer": "openai-codex:gpt-5.4",
+                "sentinel": "openai-codex:gpt-5.4",
+                "escalation": "openai-codex:gpt-5.4",
+            }
+        )
+        router = ModelRouter(config)
+        calls: list[str] = []
+
+        async def always_fail(*args, **kwargs):
+            calls.append("codex")
+            raise RuntimeError("timeout")
+
+        router._call_openai_codex = always_fail
+
+        result, _usage = await router.call("Review this", role="reviewer")
+        assert "ERROR" in result
+        assert calls == ["codex"]
 
     @pytest.mark.asyncio
     async def test_fallback_exhaustion(self, router: ModelRouter):

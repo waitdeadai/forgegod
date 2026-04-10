@@ -7,9 +7,15 @@ import pytest
 
 from forgegod.config import ForgeGodConfig
 from forgegod.sandbox import (
+    DEFAULT_POLYGLOT_SANDBOX_IMAGE,
     SandboxExecutionResult,
     SandboxUnavailableError,
+    _docker_user_spec,
+    _node_command_requires_dependencies,
+    _node_dependency_volume_name,
+    _node_manifest_hash,
     diagnose_strict_sandbox,
+    resolve_sandbox_image,
 )
 from forgegod.tools import load_all_tools, reset_tool_context, set_tool_context
 from forgegod.tools.shell import bash, check_dangerous, redact_secrets
@@ -35,6 +41,82 @@ class TestCommandDenylist:
 
     def test_sudo_blocked(self):
         assert check_dangerous("sudo apt install something") is not None
+
+    def test_docker_user_spec_uses_root_on_windows(self, monkeypatch):
+        monkeypatch.setattr("forgegod.sandbox.os.name", "nt", raising=False)
+        assert _docker_user_spec() == "0:0"
+
+    def test_node_dependency_volume_name_is_stable(self, tmp_path):
+        volume = _node_dependency_volume_name(tmp_path / "repo")
+        assert volume.startswith("forgegod-node-")
+        assert volume == _node_dependency_volume_name(tmp_path / "repo")
+
+    def test_node_dependency_volume_name_changes_with_manifest(self, tmp_path):
+        workspace = tmp_path / "repo"
+        workspace.mkdir()
+        first = _node_dependency_volume_name(workspace)
+        (workspace / "package.json").write_text(
+            '{"name":"demo","version":"1.0.0"}',
+            encoding="utf-8",
+        )
+        second = _node_dependency_volume_name(workspace)
+        assert first != second
+
+    def test_node_dependency_stamp_skips_repeated_bootstrap(self, tmp_path, monkeypatch):
+        workspace = tmp_path / "repo"
+        workspace.mkdir()
+        (workspace / "package.json").write_text(
+            '{"name":"demo","version":"1.0.0"}',
+            encoding="utf-8",
+        )
+        sandbox_root = tmp_path / "sandbox"
+        sandbox_root.mkdir()
+        stamp = sandbox_root / "node-deps-stamp.txt"
+        stamp.write_text(
+            "f91db7ce2eb2f1f99fbe6a88c6d6e2c5f9a6d6d9ab0e5d37c0bdbf4ab0f49f0e",
+            encoding="utf-8",
+        )
+
+        assert _node_command_requires_dependencies(
+            ["npx", "vitest", "run"],
+            workspace,
+            sandbox_root,
+        ) is True
+
+        stamp.write_text(
+            _node_manifest_hash(workspace),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr("forgegod.sandbox._docker_volume_exists", lambda _name: True)
+
+        assert _node_command_requires_dependencies(
+            ["npx", "vitest", "run"],
+            workspace,
+            sandbox_root,
+        ) is False
+
+    def test_node_dependency_stamp_requires_bootstrap_if_volume_missing(
+        self, tmp_path, monkeypatch,
+    ):
+        workspace = tmp_path / "repo"
+        workspace.mkdir()
+        (workspace / "package.json").write_text(
+            '{"name":"demo","version":"1.0.0"}',
+            encoding="utf-8",
+        )
+        sandbox_root = tmp_path / "sandbox"
+        sandbox_root.mkdir()
+        (sandbox_root / "node-deps-stamp.txt").write_text(
+            _node_manifest_hash(workspace),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr("forgegod.sandbox._docker_volume_exists", lambda _name: False)
+
+        assert _node_command_requires_dependencies(
+            ["npx", "vitest", "run"],
+            workspace,
+            sandbox_root,
+        ) is True
 
     def test_fork_bomb_blocked(self):
         assert check_dangerous(":(){ :|:& };:") is not None
@@ -270,7 +352,7 @@ class TestSandboxModes:
         config.security.sandbox_backend = "docker"
 
         def fake_run_probe(*args, **_kwargs):
-            if args[:2] == ("docker", "version"):
+            if args[:2] == ("docker", "--version"):
                 return True, ""
             if args[:2] == ("docker", "info"):
                 return True, ""
@@ -285,6 +367,33 @@ class TestSandboxModes:
         assert "image" in readiness.detail.lower()
         assert "docker pull" in readiness.fix
 
+    def test_diagnose_strict_sandbox_auto_node_image_is_buildable(self, monkeypatch, tmp_path):
+        config = ForgeGodConfig()
+        config.security.sandbox_backend = "docker"
+        (tmp_path / "package.json").write_text('{"name":"tarot","private":true}', encoding="utf-8")
+
+        def fake_run_probe(*args, **_kwargs):
+            if args[:2] == ("docker", "--version"):
+                return True, ""
+            if args[:2] == ("docker", "info"):
+                return True, ""
+            if args[:3] == ("docker", "image", "inspect"):
+                return False, "No such image"
+            return False, "unexpected"
+
+        monkeypatch.setattr("forgegod.sandbox._run_probe", fake_run_probe)
+        readiness = diagnose_strict_sandbox(config.security, workspace_root=tmp_path)
+
+        assert readiness.ready is True
+        assert "build the managed polyglot image" in readiness.detail.lower()
+
+    def test_resolve_sandbox_image_prefers_polyglot_for_node_workspace(self, tmp_path):
+        config = ForgeGodConfig()
+        (tmp_path / "package.json").write_text('{"name":"tarot","private":true}', encoding="utf-8")
+
+        image = resolve_sandbox_image(config.security, workspace_root=tmp_path)
+        assert image == DEFAULT_POLYGLOT_SANDBOX_IMAGE
+
     def test_diagnose_strict_sandbox_reports_ready(self, monkeypatch):
         config = ForgeGodConfig()
         config.security.sandbox_backend = "docker"
@@ -297,6 +406,24 @@ class TestSandboxModes:
 
         assert readiness.ready is True
         assert "ready" in readiness.detail.lower()
+
+    def test_diagnose_strict_sandbox_distinguishes_cli_from_daemon(self, monkeypatch):
+        config = ForgeGodConfig()
+        config.security.sandbox_backend = "docker"
+
+        def fake_run_probe(*args, **_kwargs):
+            if args[:2] == ("docker", "--version"):
+                return True, "Docker version 28.3.2"
+            if args[:2] == ("docker", "info"):
+                return False, "pipe not found"
+            return False, "unexpected"
+
+        monkeypatch.setattr("forgegod.sandbox._run_probe", fake_run_probe)
+        readiness = diagnose_strict_sandbox(config.security)
+
+        assert readiness.ready is False
+        assert "daemon" in readiness.detail.lower()
+        assert "Open Docker Desktop" in readiness.fix
 
     @pytest.mark.asyncio
     async def test_standard_blocks_shell_chaining(self, tmp_path):
@@ -353,6 +480,82 @@ class TestSandboxModes:
 
         assert "BLOCKED" not in result
         assert "Python 3.13.5" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_allows_package_bootstrap_with_network_bridge(
+        self, tmp_path, monkeypatch,
+    ):
+        captured: dict[str, object] = {}
+
+        async def fake_sandbox(**kwargs):
+            captured.update(kwargs)
+            return SandboxExecutionResult(
+                backend="docker",
+                returncode=0,
+                stdout="installed\n",
+                stderr="",
+            )
+
+        monkeypatch.setattr("forgegod.tools.shell.run_in_real_sandbox", fake_sandbox)
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("npm i next react react-dom")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" not in result
+        assert captured["network_mode"] == "bridge"
+
+    @pytest.mark.asyncio
+    async def test_strict_blocks_npm_config_mutation(self, tmp_path):
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("npm config set registry https://registry.npmjs.org/")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" in result
+        assert "npm config" in result
+
+    @pytest.mark.asyncio
+    async def test_strict_allows_playwright_browser_install_with_network_bridge(
+        self, tmp_path, monkeypatch,
+    ):
+        captured: dict[str, object] = {}
+
+        async def fake_sandbox(**kwargs):
+            captured.update(kwargs)
+            return SandboxExecutionResult(
+                backend="docker",
+                returncode=0,
+                stdout="playwright ok\n",
+                stderr="",
+            )
+
+        monkeypatch.setattr("forgegod.tools.shell.run_in_real_sandbox", fake_sandbox)
+        config = ForgeGodConfig()
+        config.security.sandbox_mode = "strict"
+        config.project_dir = tmp_path / ".forgegod"
+        config.project_dir.mkdir()
+
+        token = set_tool_context(config)
+        try:
+            result = await bash("npx playwright install chromium")
+        finally:
+            reset_tool_context(token)
+
+        assert "BLOCKED" not in result
+        assert captured["network_mode"] == "bridge"
 
     @pytest.mark.asyncio
     async def test_strict_blocks_when_real_sandbox_unavailable(self, tmp_path, monkeypatch):

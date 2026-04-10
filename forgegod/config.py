@@ -114,7 +114,7 @@ class SecurityConfig(BaseModel):
     allowed_tools: list[str] = Field(default_factory=list)
     sandbox_mode: str = "standard"  # permissive | standard | strict
     sandbox_backend: str = "auto"  # auto | docker
-    sandbox_image: str = "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm"
+    sandbox_image: str = "auto"  # auto chooses managed polyglot image for Node/Next repos
     redact_secrets: bool = True  # Strip API keys from tool output
     max_rules_file_chars: int = 10_000  # Cap rules.md injection (prompt injection defense)
     audit_commands: bool = True  # Log all bash commands to audit file
@@ -213,14 +213,22 @@ def recommend_model_defaults(
     providers: list[str] | set[str] | None = None,
     *,
     ollama_available: bool = True,
+    codex_automation_supported: bool | None = None,
 ) -> ModelsConfig:
     """Choose sane default models for the currently available auth surfaces."""
+    if codex_automation_supported is None:
+        from forgegod.native_auth import codex_automation_status
+
+        codex_automation_supported, _ = codex_automation_status()
+
     provider_set = set(providers or [])
     recommended = ModelsConfig()
 
     def pick(candidates: list[str]) -> str | None:
         for spec in candidates:
             provider, _ = spec.split(":", 1)
+            if provider == "openai-codex" and not codex_automation_supported:
+                continue
             if provider == "ollama":
                 if ollama_available:
                     return spec
@@ -242,21 +250,19 @@ def recommend_model_defaults(
     if planner:
         recommended.planner = planner
 
-    if ollama_available:
-        recommended.coder = "ollama:qwen3-coder-next"
-    else:
-        coder = pick([
-            "zai:glm-5.1",
-            "openai-codex:gpt-5.4",
-            "openai:o4-mini",
-            "anthropic:claude-sonnet-4-6-20250514",
-            "kimi:kimi-k2.5",
-            "deepseek:deepseek-chat",
-            "gemini:gemini-2.5-flash",
-            "openrouter:meta-llama/llama-3.3-70b-instruct",
-        ])
-        if coder:
-            recommended.coder = coder
+    coder = pick([
+        "zai:glm-5.1",
+        "openai-codex:gpt-5.4",
+        "openai:o4-mini",
+        "anthropic:claude-sonnet-4-6-20250514",
+        "kimi:kimi-k2.5",
+        "deepseek:deepseek-chat",
+        "gemini:gemini-2.5-flash",
+        "openrouter:meta-llama/llama-3.3-70b-instruct",
+        "ollama:qwen3-coder-next",
+    ])
+    if coder:
+        recommended.coder = coder
 
     reviewer = pick([
         "openai-codex:gpt-5.4",

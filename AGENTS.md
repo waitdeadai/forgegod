@@ -9,15 +9,15 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Use [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) for the dated defect list and verification baseline.
 - Treat `README.md`, `README.es.md`, `BENCHMARKS.md`, and `docs/index.html` as secondary sources. They contain marketing and historical content.
 
-## Verified Baseline (2026-04-08)
+## Verified Baseline (2026-04-09)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `505`
-- Core suite: `python -m pytest -m "not stress" -q` -> `420 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `504 passed, 1 skipped`
+- Tests collected: `521`
+- Core suite: `python -m pytest -m "not stress" -q` -> `436 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `520 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -62,6 +62,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - If a repo root contains `DESIGN.md`, ForgeGod now injects it into the agent prompt as the frontend design source of truth.
 - ForgeGod now ships `forgegod design` for importing `DESIGN.md` presets and `forgegod contribute` for contribution-aware planning/autonomous work that reads `CONTRIBUTING.md` plus repo rules.
 - Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.
+- Strict Node/Next bootstrap now keeps the workspace itself on a bind mount but mounts `node_modules` into a named Docker volume, including on first-run bootstrap commands like `create-next-app`, so ForgeGod is less likely to poison a Windows bind mount with dependency trees.
+- The strict sandbox dependency stamp now treats the Docker volume as the real source of truth instead of host-side `node_modules`, which avoids false "deps are ready" assumptions after stale host leftovers or volume cleanup.
+- Agent execution now sees the same checked-in repo docs that planning does. `docs/README.md`, `docs/PRD.md`, `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and `docs/RUNBOOK.md` are injected in bounded form so execution loops are less likely to drift away from repo-defined intent.
 - Residual risk remains because ForgeGod does not yet provide microVM/syscall-level isolation, and strict mode depends on a usable local Docker backend plus a pre-pulled sandbox image.
 
 ## Working Rules
@@ -72,6 +75,7 @@ This file is the repo-local operating contract for coding agents working on Forg
 - The current preferred cost-effective harness is `openai-codex` plus `zai:glm-5.1`, but the architecture should remain provider-agnostic because that best pair can change quickly.
 - Do not solve showcase products manually outside ForgeGod as a substitute for harness quality. The product is the benchmark; the harness is the thing being improved.
 - Rule 7: default to maximum effort. For harness changes, do not stop at the first passing check; expand audit, verification, and documentation until the change is defensible, reproducible, and hard to fake.
+- Rule 8: when the harness hits a real blocker, do fresh current-year web research before grinding locally for hours. Prefer official docs and proven real-world cases, then encode what works into ForgeGod so the fix is repeatable.
 - Run `git status --short` before editing and do not revert user-owned local changes.
 - Before committing any change, do deep 2026 research relevant to that change. Prefer primary or official sources, verify that the guidance is current, and record the links plus the verification date in repo docs when the change affects architecture, dependencies, security, benchmarks, model strategy, workflows, or public claims.
 - ForgeGod aims for SOTA 2026 or beyond. Treat that as an engineering standard, not a marketing slogan: new architecture, safety, benchmark, or workflow changes should move the repo toward frontier practice, or clearly justify why a more conservative choice is better.

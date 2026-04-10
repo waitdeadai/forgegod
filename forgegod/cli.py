@@ -31,6 +31,14 @@ app.add_typer(auth_app, name="auth")
 _VER = __version__
 
 
+def _safe_console_text(text: str) -> str:
+    """Best-effort console-safe text for legacy Windows encodings."""
+    if not isinstance(text, str):
+        return text
+    encoding = getattr(getattr(console, "file", None), "encoding", None) or "utf-8"
+    return text.encode(encoding, errors="replace").decode(encoding, errors="replace")
+
+
 def _build_banner():
     """Build the full mascot banner using Rich Text (avoids markup escaping)."""
     from rich.text import Text
@@ -67,10 +75,12 @@ def _build_tool_approver():
         payload = json.dumps(arguments, ensure_ascii=False)[:400]
         console.print(
             Panel(
-                f"[yellow]Approval required[/yellow]\n"
-                f"Tool: {name}\n"
-                f"Reason: {reason}\n"
-                f"Arguments: {payload}",
+                _safe_console_text(
+                    f"[yellow]Approval required[/yellow]\n"
+                    f"Tool: {name}\n"
+                    f"Reason: {reason}\n"
+                    f"Arguments: {payload}"
+                ),
                 border_style="yellow",
             )
         )
@@ -79,12 +89,16 @@ def _build_tool_approver():
     return _approver
 
 
-def _detect_runtime_model_defaults():
+def _detect_runtime_model_defaults(project_path: Path | None = None):
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
-    from forgegod.config import ForgeGodConfig, recommend_model_defaults
+    from forgegod.config import ForgeGodConfig, _load_dotenv, recommend_model_defaults
 
-    models = detect_available_models(ForgeGodConfig())
+    root = Path(project_path or ".").resolve()
+    _load_dotenv(root / ".forgegod" / ".env")
+    config = ForgeGodConfig()
+    config.project_dir = root / ".forgegod"
+    models = detect_available_models(config)
     providers = sorted({model.split(":", 1)[0] for model in models})
     ollama_available = any(model.startswith("ollama:") for model in models)
     recommended = recommend_model_defaults(
@@ -252,7 +266,7 @@ def auth_status():
     from pathlib import Path
 
     from forgegod.config import _load_dotenv
-    from forgegod.native_auth import codex_login_status_sync
+    from forgegod.native_auth import codex_automation_status, codex_login_status_sync
 
     _load_dotenv(Path.cwd() / ".forgegod" / ".env")
 
@@ -262,10 +276,20 @@ def auth_status():
     table.add_column("Details", style="dim")
 
     codex_logged_in, codex_status = codex_login_status_sync()
+    codex_supported, codex_env_detail = codex_automation_status()
+    if codex_logged_in and codex_supported:
+        codex_state = "[green]ready[/green]"
+        codex_detail = codex_status or codex_env_detail
+    elif codex_logged_in:
+        codex_state = "[yellow]experimental[/yellow]"
+        codex_detail = codex_env_detail
+    else:
+        codex_state = "[yellow]not ready[/yellow]"
+        codex_detail = codex_status or "Run `codex login`"
     table.add_row(
         "openai-codex",
-        "[green]ready[/green]" if codex_logged_in else "[yellow]not ready[/yellow]",
-        codex_status or "Run `codex login`",
+        codex_state,
+        codex_detail,
     )
     table.add_row(
         "openai-api",
@@ -336,7 +360,7 @@ def auth_sync(
 
     from forgegod.config import init_project
 
-    _, providers, ollama_available, recommended = _detect_runtime_model_defaults()
+    _, providers, ollama_available, recommended = _detect_runtime_model_defaults(path)
     project_dir = init_project(path, model_defaults=recommended)
     config_path = project_dir / "config.toml"
     data = toml.loads(config_path.read_text(encoding="utf-8"))
@@ -365,6 +389,12 @@ def auth_sync(
         console.print(
             "[yellow]Note:[/yellow] OpenAI Codex subscription is strongest today "
             "for planner/reviewer/adversary flows; coder-loop use remains experimental."
+        )
+    elif "openai-codex" in providers:
+        console.print(
+            "[yellow]Note:[/yellow] OpenAI Codex login was detected, but ForgeGod "
+            "did not choose it as a default automation backend in this environment. "
+            "On native Windows, OpenAI recommends Codex in WSL."
         )
     elif not providers and not ollama_available:
         console.print("[yellow]No providers or Ollama detected.[/yellow]")
@@ -487,12 +517,12 @@ def run(
             result = await agent.run(task)
 
             if not result.success:
-                failure = result.error or result.output or "Unknown failure"
+                failure = _safe_console_text(result.error or result.output or "Unknown failure")
                 console.print(f"[red]Task failed:[/red] {failure}")
                 if result.completion_blockers:
                     console.print("[yellow]Completion blockers:[/yellow]")
                     for blocker in result.completion_blockers:
-                        console.print(f"  - {blocker}")
+                        console.print(f"  - {_safe_console_text(blocker)}")
                 return 1
 
             if review and result.files_modified:
@@ -520,18 +550,24 @@ def run(
                     color = "yellow" if review_result.verdict == ReviewVerdict.REVISE else "red"
                     console.print(
                         Panel(
-                            f"[{color}]Reviewer blocked completion: "
-                            f"{review_result.verdict.value}[/{color}]\n"
-                            f"{review_result.reasoning}",
+                            _safe_console_text(
+                                f"[{color}]Reviewer blocked completion: "
+                                f"{review_result.verdict.value}[/{color}]\n"
+                                f"{review_result.reasoning}"
+                            ),
                             border_style=color,
                         )
                     )
                     if review_result.issues:
                         for issue in review_result.issues:
-                            console.print(f"  - {issue}")
+                            console.print(f"  - {_safe_console_text(issue)}")
                     return 1
 
-            console.print(Panel(f"[green]Task completed[/green]\n{result.output[:500]}"))
+            console.print(
+                Panel(
+                    _safe_console_text(f"[green]Task completed[/green]\n{result.output[:500]}")
+                )
+            )
             if result.files_modified:
                 console.print(f"Files modified: {', '.join(result.files_modified)}")
             if result.verification_commands:
@@ -678,7 +714,7 @@ def plan(
 
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(prd.model_dump(), indent=2))
-        console.print(f"[green]PRD generated with {len(prd.stories)} stories → {output}[/green]")
+        console.print(f"[green]PRD generated with {len(prd.stories)} stories -> {output}[/green]")
         for story in prd.stories:
             console.print(f"  [{story.id}] {story.title}")
 
@@ -857,7 +893,7 @@ def contribute(
         from forgegod.planner import Planner
         from forgegod.router import ModelRouter
 
-        _, _, _, recommended = _detect_runtime_model_defaults()
+        _, _, _, recommended = _detect_runtime_model_defaults(repo_path)
         init_project(repo_path, model_defaults=recommended)
         config = load_config(repo_path)
         out_path = output or (repo_path / ".forgegod" / "contribute_prd.json")

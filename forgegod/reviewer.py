@@ -177,14 +177,25 @@ Output ONLY valid JSON."""
 
     def _parse_review(self, response: str, model: str) -> ReviewResult:
         """Parse LLM response into ReviewResult."""
+        text = response.strip()
+        if not text or text.startswith("[ERROR:"):
+            logger.warning("Review unavailable, defaulting to REVISE")
+            return ReviewResult(
+                verdict=ReviewVerdict.REVISE,
+                confidence=0.0,
+                reasoning="Reviewer unavailable or upstream model failure",
+                issues=["Review model failed or returned no parsable content"],
+                model_used=model,
+            )
+
         try:
-            data = extract_json(response)
+            data = extract_json(text)
             verdict_str = data.get("verdict", "approve").lower()
             verdict = {
                 "approve": ReviewVerdict.APPROVE,
                 "revise": ReviewVerdict.REVISE,
                 "reject": ReviewVerdict.REJECT,
-            }.get(verdict_str, ReviewVerdict.APPROVE)
+            }.get(verdict_str, ReviewVerdict.REVISE)
 
             return ReviewResult(
                 verdict=verdict,
@@ -195,11 +206,12 @@ Output ONLY valid JSON."""
                 model_used=model,
             )
         except (ValueError, KeyError, AttributeError):
-            logger.warning("Failed to parse review response, defaulting to APPROVE")
+            logger.warning("Failed to parse review response, defaulting to REVISE")
             return ReviewResult(
-                verdict=ReviewVerdict.APPROVE,
-                confidence=0.3,
+                verdict=ReviewVerdict.REVISE,
+                confidence=0.0,
                 reasoning="Failed to parse review response",
+                issues=["Review output was invalid or incomplete"],
                 model_used=model,
             )
 

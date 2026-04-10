@@ -370,6 +370,53 @@ first-class repo artifact for frontend tasks, and a contribution mode should
 read `CONTRIBUTING.md`, prefer approachable labels, and avoid treating
 "autonomous contribution" as license to bypass maintainer rules.
 
+## Runtime Research Addendum - Strict Docker Sandbox + Node/Next Bootstrap
+
+Verified on `2026-04-09` before tightening ForgeGod's strict Node/web path:
+
+- OpenAI's harness-engineering writeup is explicit that when agents fail,
+  the right move is usually to add missing capability, structure, or feedback
+  loops to the harness rather than hand-finishing the product outside it:
+  - https://openai.com/index/harness-engineering/
+- That same article also argues that repo docs should be the system of record
+  and that agent legibility matters. That supports injecting bounded repo docs
+  into execution-time context instead of limiting that treatment to planning:
+  - https://openai.com/index/harness-engineering/
+- Docker's bind-mount docs explain that bind mounts can obscure existing
+  container data. That is a concrete reason not to treat host-mounted
+  `node_modules` as a stable dependency store inside strict containers:
+  - https://docs.docker.com/engine/storage/bind-mounts/
+- Docker's volume docs position named volumes as the persistent mechanism for
+  container-managed data. That supports storing `node_modules` in a named
+  volume instead of on a Windows bind mount:
+  - https://docs.docker.com/engine/storage/volumes/
+- Next.js documents `create-next-app` as the official bootstrap path, with
+  flags such as `--app`, `--use-npm`, `--empty`, `--disable-git`, and
+  `--agents-md`, and it notes that the CLI creates the project and installs
+  the dependencies. That supports letting ForgeGod prefer the official
+  bootstrap flow instead of improvising a scaffold from scratch:
+  - https://nextjs.org/docs/app/api-reference/cli/create-next-app
+- Playwright's Docker docs say the container image includes browsers and
+  system dependencies, but the Playwright package itself still needs to be
+  installed separately. That supports allowing a narrow network exception for
+  browser/bootstrap install steps while keeping normal strict commands offline:
+  - https://playwright.dev/docs/docker
+- OpenHands documents a Docker-based runtime as the way to run the agent
+  locally, which supports ForgeGod treating container-backed execution as the
+  baseline for real local isolation rather than a niche add-on:
+  - https://docs.openhands.dev/openhands/usage/run-openhands/local-setup
+
+Operational conclusion for ForgeGod:
+
+- Keep the workspace on a bind mount so file edits stay visible to the host.
+- Keep `node_modules` off the host bind mount and inside a named Docker volume.
+- Allow network only for a narrow bootstrap surface such as package installs
+  and browser downloads; keep normal strict commands on `--network none`.
+- Treat the Docker volume plus manifest hash as the dependency readiness
+  signal, not host-side `node_modules`.
+- Give the execution agent the checked-in repo docs so it follows the same
+  source-of-truth artifacts that planning already uses.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

@@ -47,6 +47,7 @@ async def test_openai_codex_missing_login(monkeypatch):
     async def fake_status(command: str = "codex"):
         return False, "Not logged in"
 
+    monkeypatch.setattr("forgegod.router.codex_automation_status", lambda: (True, "ok"))
     monkeypatch.setattr("forgegod.router.codex_login_status", fake_status)
 
     router = ModelRouter(ForgeGodConfig())
@@ -61,3 +62,42 @@ async def test_openai_codex_missing_login(monkeypatch):
             temperature=0.3,
             tools=None,
         )
+
+
+@pytest.mark.asyncio
+async def test_openai_codex_blocks_native_windows_automation(monkeypatch):
+    from forgegod.router import ModelRouter
+
+    monkeypatch.setattr(
+        "forgegod.router.codex_automation_status",
+        lambda: (False, "Use WSL for best Windows experience"),
+    )
+
+    router = ModelRouter(ForgeGodConfig())
+
+    with pytest.raises(RuntimeError, match="Use WSL"):
+        await router._call_openai_codex(
+            model="gpt-5.4",
+            prompt="test",
+            system="",
+            json_mode=False,
+            max_tokens=100,
+            temperature=0.3,
+            tools=None,
+        )
+
+
+@pytest.mark.asyncio
+async def test_codex_login_status_reports_timeout(monkeypatch):
+    from forgegod.native_auth import codex_login_status
+
+    monkeypatch.setattr("forgegod.native_auth.find_command", lambda _command: "codex")
+
+    async def fake_run_command(*_args, **_kwargs):
+        raise RuntimeError("Command timed out after 20s: codex login status")
+
+    monkeypatch.setattr("forgegod.native_auth.run_command", fake_run_command)
+
+    ready, detail = await codex_login_status()
+    assert ready is False
+    assert "timed out" in detail

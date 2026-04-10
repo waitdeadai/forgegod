@@ -11,10 +11,11 @@ This document is the current system of record for day-to-day work in this reposi
 - `https://github.com/ultraworkers/claw-code` is the historical origin baseline. ForgeGod should understand that lineage and exceed it on architecture, workflow reliability, and harness quality.
 - The currently preferred cost-effective harness pairing is `openai-codex` plus `zai:glm-5.1`, but ForgeGod should stay provider-agnostic because the best pairing can change quickly.
 - Default to maximum effort. For harness changes, do not stop at the first passing check; expand audit, verification, and documentation until the result is defensible and reproducible.
+- Rule 8: when a real harness blocker appears, do fresh current-year web research before spending hours brute-forcing locally. Prefer official docs and proven cases from the relevant ecosystem, then encode the working pattern into ForgeGod so the fix is repeatable.
 - That target is only credible when backed by current primary or official 2026 sources and confirmed by local repo evidence such as passing tests, reproducible benchmarks, or documented verification steps.
 - If the repo falls short of that bar, document the gap explicitly rather than silently implying frontier quality.
 
-## Verified Baseline (2026-04-08)
+## Verified Baseline (2026-04-09)
 
 - OS: `Windows-11-10.0.26200-SP0`
 - Python: `3.13.5`
@@ -22,18 +23,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `505`
+- Tests collected: `521`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-08 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `420 passed, 1 skipped, 84 deselected in 42.65s` |
+| `python -m pytest -m "not stress" -q` | `436 passed, 1 skipped, 84 deselected in 65.52s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 125.85s` |
-| `python -m pytest tests -q` | `504 passed, 1 skipped in 179.10s` |
-| `python -m pytest --collect-only -q` | `505 tests collected in 0.40s` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 109.14s` |
+| `python -m pytest tests -q` | `520 passed, 1 skipped in 102.65s` |
+| `python -m pytest --collect-only -q` | `521 tests collected in 0.30s` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -59,7 +60,10 @@ This document is the current system of record for day-to-day work in this reposi
 - Security configuration is now materially wired through the tool layer: shell execution honors `sandbox_mode`, `sandbox_backend`, and `sandbox_image`; outputs honor `redact_secrets`; command execution can be audited; and rules loading respects `max_rules_file_chars`.
 - Standard mode remains a host-local guarded workflow: isolated process dirs, workspace scoping, blocked shell operators, and command policy checks.
 - Strict mode now requires a real Docker sandbox backend. Commands run in a no-network, read-only-root container with the workspace bind-mounted, or they are blocked if Docker/image prerequisites are missing.
+- Strict Node/web bootstrap is now less brittle on Windows-style workspaces: ForgeGod mounts `node_modules` as a named Docker volume, including for first-run bootstrap commands, instead of assuming dependency trees should live on the host bind mount.
+- ForgeGod now treats that dependency volume, not host-side `node_modules`, as the durable readiness signal for strict Node commands. That avoids stale-host false positives after resets or cleaned Docker volumes.
 - `forgegod doctor` now checks strict sandbox readiness directly: Docker CLI, Docker daemon, and the required strict image cache are all surfaced with copy-paste fix steps.
+- `forgegod doctor` now also distinguishes "Docker CLI missing" from "Docker daemon not ready", which matters on Windows/Desktop setups where the client is installed but the engine pipe is down.
 - Strict mode also blocks suspicious generated-code writes and edits.
 - ForgeGod now ships `forgegod design`, which imports `DESIGN.md` presets from `awesome-design-md`, and the agent automatically injects local `DESIGN.md` into frontend tasks.
 - ForgeGod now ships `forgegod contribute`, which reads `CONTRIBUTING.md`/repo rules, can discover approachable GitHub issues, and can plan or execute contribution-sized work in a target repository.
@@ -101,6 +105,9 @@ This document is the current system of record for day-to-day work in this reposi
 - ForgeGod now has deterministic CLI coverage for auth-aware provider selection
   in `forgegod auth sync`, including cloud-budget normalization and the Codex
   experimental-coder note.
+- Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
+  `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
+  `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.
 - ForgeGod now degrades cleanly when optional HTTP/2 support is unavailable in
   the host environment. If `httpx` was installed without `h2`, the router logs
   a single warning and reuses HTTP/1.1 clients instead of failing requests and

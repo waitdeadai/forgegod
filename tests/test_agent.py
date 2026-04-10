@@ -207,6 +207,46 @@ class TestDesignSystem:
 # ── Skills ──
 
 
+class TestRepoContextDocs:
+    def test_load_repo_context_docs(self):
+        from forgegod.agent import Agent
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "PRD.md").write_text("# Tarot\nBuild from scratch.\n", encoding="utf-8")
+            (docs / "STORIES.md").write_text(
+                "### T001 - Scaffold\n- create the app\n",
+                encoding="utf-8",
+            )
+
+            result = Agent._load_repo_context_docs(root)
+            assert "Repository Context" in result
+            assert "docs/PRD.md" in result
+            assert "docs/STORIES.md" in result
+            assert "<repo_context>" in result
+
+    def test_agent_system_prompt_includes_repo_context(self):
+        from forgegod.agent import Agent
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "README.md").write_text("Source of truth.\n", encoding="utf-8")
+            (docs / "STORIES.md").write_text(
+                "### T001 - Scaffold\n- create the app\n",
+                encoding="utf-8",
+            )
+            project_dir = root / ".forgegod"
+            project_dir.mkdir()
+            config = ForgeGodConfig(project_dir=project_dir)
+
+            agent = Agent(config=config)
+            assert "Repository Context" in agent.system_prompt
+            assert "docs/STORIES.md" in agent.system_prompt
+            agent.budget.close()
+
+
 class TestSkills:
     @pytest.mark.asyncio
     async def test_list_skills_empty(self):
@@ -422,3 +462,75 @@ class TestCompletionEvidence:
         assert result.verification_commands == ["python -m pytest -q"]
         assert result.reviewed_final_diff is True
         assert router.calls == 5
+
+    @pytest.mark.asyncio
+    async def test_agent_auto_closes_after_redundant_post_verification_turns(self, tmp_path):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter([
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_1",
+                    "name": "write_file",
+                    "arguments": {"path": "src/app.py", "content": "print('hi')\n"},
+                }]
+            }),
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_2",
+                    "name": "bash",
+                    "arguments": {"command": "python -m pytest -q"},
+                }]
+            }),
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_3",
+                    "name": "git_diff",
+                    "arguments": {},
+                }]
+            }),
+            json.dumps({
+                "tool_calls": [{
+                    "id": "call_4",
+                    "name": "repo_map",
+                    "arguments": {"path": "."},
+                }]
+            }),
+        ])
+
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=8,
+        )
+        agent.memory = None
+
+        async def fake_execute(tool_calls):
+            results = []
+            for tc in tool_calls:
+                results.append(
+                    ToolResult(
+                        tool_call_id=tc.id,
+                        name=tc.name,
+                        content="ok",
+                        error=False,
+                    )
+                )
+            return results
+
+        agent._execute_tool_batch = fake_execute  # type: ignore[method-assign]
+
+        result = await agent.run("Implement the API handler")
+        agent.budget.close()
+
+        assert result.success is True
+        assert "[AUTO-CLOSE]" in result.output
+        assert result.files_modified == ["src/app.py"]
+        assert result.verification_commands == ["python -m pytest -q"]
+        assert result.reviewed_final_diff is True
+        assert router.calls == 4

@@ -4,14 +4,37 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import platform
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
 def find_command(command: str) -> str | None:
     """Return the resolved executable path for a command if present."""
     return shutil.which(command)
+
+
+def codex_automation_status() -> tuple[bool, str]:
+    """Return whether Codex CLI is a reliable automation backend in this environment."""
+    if sys.platform != "win32":
+        return True, "Codex automation supported"
+
+    release = platform.release().lower()
+    if os.environ.get("WSL_DISTRO_NAME") or "microsoft" in release:
+        return True, "Codex automation supported in WSL"
+
+    if os.environ.get("FORGEGOD_ALLOW_EXPERIMENTAL_CODEX_WINDOWS") == "1":
+        return True, "Codex automation forced on native Windows (experimental)"
+
+    return (
+        False,
+        "Codex CLI automation is experimental on native Windows. "
+        "OpenAI recommends running Codex in WSL for the best Windows experience. "
+        "Use WSL or set FORGEGOD_ALLOW_EXPERIMENTAL_CODEX_WINDOWS=1 to force it.",
+    )
 
 
 async def run_command(
@@ -33,10 +56,21 @@ async def run_command(
         if stdin_text is not None
         else None
     )
-    stdout, stderr = await asyncio.wait_for(
-        proc.communicate(stdin_bytes),
-        timeout=timeout,
-    )
+    try:
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(stdin_bytes),
+            timeout=timeout,
+        )
+    except asyncio.TimeoutError as e:
+        proc.kill()
+        try:
+            await proc.communicate()
+        except Exception:
+            pass
+        preview = " ".join(argv[:6])
+        raise RuntimeError(
+            f"Command timed out after {timeout:.0f}s: {preview}"
+        ) from e
     return (
         proc.returncode,
         stdout.decode("utf-8", errors="replace"),
@@ -50,10 +84,13 @@ async def codex_login_status(command: str = "codex") -> tuple[bool, str]:
     if not resolved:
         return False, "Codex CLI not found"
 
-    code, stdout, stderr = await run_command(
-        [resolved, "login", "status"],
-        timeout=20.0,
-    )
+    try:
+        code, stdout, stderr = await run_command(
+            [resolved, "login", "status"],
+            timeout=20.0,
+        )
+    except RuntimeError as e:
+        return False, str(e)
     text = (stdout or stderr).strip()
     return code == 0 and "Logged in" in text, text
 

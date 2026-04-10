@@ -161,6 +161,7 @@ class RalphLoop:
                 # Check iteration limit
                 if self.state.total_iterations >= self.max_iterations:
                     logger.warning(f"Max iterations ({self.max_iterations}) reached")
+                    self.state.status = LoopStatus.PAUSED
                     break
 
                 # Cooldown between ticks

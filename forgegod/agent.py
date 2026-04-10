@@ -175,6 +175,10 @@ class Agent:
                 workspace_root,
                 max_chars=self.config.security.max_rules_file_chars,
             )
+            repo_docs = self._load_repo_context_docs(
+                workspace_root,
+                max_chars=self.config.security.max_rules_file_chars,
+            )
             design_system = self._load_design_system(
                 workspace_root,
                 max_chars=self.config.security.max_rules_file_chars,
@@ -185,8 +189,15 @@ class Agent:
                 base = TERSE_SYSTEM_PROMPT.format(cwd=workspace_root)
             else:
                 base = SYSTEM_PROMPT.format(cwd=workspace_root)
-            # Order: base + rules + design + skills (static, cacheable) then env (dynamic)
-            self.system_prompt = base + rules + design_system + skills_summary + env_info
+            # Order: base + rules + repo docs + design + skills (static, cacheable) then env.
+            self.system_prompt = (
+                base
+                + rules
+                + repo_docs
+                + design_system
+                + skills_summary
+                + env_info
+            )
 
         # Security — canary token to detect prompt extraction
         self._canary = CanaryToken()
@@ -209,6 +220,8 @@ class Agent:
         self._error_solutions_used: list[str] = []  # avoid re-injecting same solution
         self._post_edit_verification_commands: list[str] = []
         self._reviewed_final_diff = False
+        self._closure_ready_turns = 0
+        self._completion_closeout_prompted = False
 
         # Load tools
         load_all_tools()
@@ -480,6 +493,18 @@ class Agent:
                                 "STOP and explain what's blocking you."
                             ),
                         })
+
+                if self._maybe_force_closeout(
+                    tool_calls=tool_calls,
+                    requires_code_changes=requires_code_changes,
+                ):
+                    result = self._build_result(
+                        success=True,
+                        output=self._auto_closeout_report(),
+                        elapsed=time.time() - start,
+                    )
+                    await self._record_episode(task_id, task, result)
+                    return result
 
                 await self._run_hooks("post_turn", {"turn": self._turn})
 
@@ -807,6 +832,8 @@ class Agent:
         if tc.name in {"write_file", "edit_file"}:
             self._post_edit_verification_commands = []
             self._reviewed_final_diff = False
+            self._closure_ready_turns = 0
+            self._completion_closeout_prompted = False
             return
 
         if tc.name == "git_diff":
@@ -867,6 +894,81 @@ class Agent:
             )
 
         return blockers
+
+    def _maybe_force_closeout(
+        self,
+        *,
+        tool_calls: list[ToolCall],
+        requires_code_changes: bool,
+    ) -> bool:
+        """Nudge and then auto-close once completion gates are satisfied."""
+        if not tool_calls or not requires_code_changes:
+            return False
+
+        if any(tc.name in {"write_file", "edit_file"} for tc in tool_calls):
+            self._closure_ready_turns = 0
+            self._completion_closeout_prompted = False
+            return False
+
+        blockers = self._completion_blockers(requires_code_changes=True)
+        if blockers:
+            self._closure_ready_turns = 0
+            self._completion_closeout_prompted = False
+            return False
+
+        self._closure_ready_turns += 1
+        if not self._completion_closeout_prompted:
+            logger.info(
+                "Closure gates satisfied after %d turns; prompting agent to finalize",
+                self._turn,
+            )
+            self._completion_closeout_prompted = True
+            self.messages.append({
+                "role": "user",
+                "content": self._ready_to_close_prompt(),
+            })
+            return False
+
+        if self._closure_ready_turns >= 2:
+            logger.info(
+                "Auto-closing task after repeated post-verification tool churn "
+                "(turn=%d)",
+                self._turn,
+            )
+            return True
+
+        return False
+
+    def _ready_to_close_prompt(self) -> str:
+        files_changed = ", ".join(self.files_modified) if self.files_modified else "none"
+        verification = (
+            ", ".join(self._post_edit_verification_commands)
+            if self._post_edit_verification_commands
+            else "none"
+        )
+        return (
+            "[READY TO CLOSE]\n"
+            "All completion gates are now satisfied.\n"
+            f"- files changed: {files_changed}\n"
+            f"- verification commands: {verification}\n\n"
+            "Stop exploring. Do not call more tools unless the last command failed.\n"
+            "Provide the final completion report now."
+        )
+
+    def _auto_closeout_report(self) -> str:
+        files_changed = ", ".join(self.files_modified) if self.files_modified else "none"
+        verification = (
+            ", ".join(self._post_edit_verification_commands)
+            if self._post_edit_verification_commands
+            else "none"
+        )
+        return (
+            "[AUTO-CLOSE]\n"
+            "ForgeGod closed the task after the agent kept exploring even though "
+            "all completion gates were satisfied.\n"
+            f"Files changed: {files_changed}\n"
+            f"Verification commands run: {verification}"
+        )
 
     def _permission_failure(
         self,
@@ -1213,3 +1315,45 @@ class Agent:
                 except OSError:
                     continue
         return ""
+
+    @staticmethod
+    def _load_repo_context_docs(cwd: Path | None = None, max_chars: int = 10_000) -> str:
+        """Load bounded repo docs so execution follows the checked-in system of record."""
+        cwd = (cwd or Path.cwd()).resolve()
+        candidates = [
+            "docs/README.md",
+            "docs/PRD.md",
+            "docs/STORIES.md",
+            "docs/ARCHITECTURE.md",
+            "docs/RUNBOOK.md",
+        ]
+        remaining = max_chars
+        per_file_cap = max(800, max_chars // 4)
+        loaded: list[str] = []
+
+        for relative in candidates:
+            if remaining <= 0:
+                break
+            path = cwd / relative
+            if not path.exists() or not path.is_file():
+                continue
+            try:
+                content = path.read_text(encoding="utf-8", errors="replace").strip()
+            except OSError:
+                continue
+            if not content:
+                continue
+            snippet = content[:min(remaining, per_file_cap)]
+            loaded.append(f"### {relative}\n{snippet}")
+            remaining -= len(snippet)
+
+        if not loaded:
+            return ""
+
+        return (
+            "\n\n## Repository Context\n"
+            "Treat these repo docs as the checked-in source of truth for this task.\n"
+            "<repo_context>\n"
+            + "\n\n".join(loaded)
+            + "\n</repo_context>"
+        )

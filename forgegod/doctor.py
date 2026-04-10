@@ -279,7 +279,10 @@ def _check_strict_sandbox(project: Path) -> HealthCheck:
             "Config is not using strict mode; Docker sandbox prerequisites are optional",
         )
 
-    readiness = diagnose_strict_sandbox(type("SecurityConfig", (), security)())
+    readiness = diagnose_strict_sandbox(
+        type("SecurityConfig", (), security)(),
+        workspace_root=project,
+    )
     return HealthCheck(
         t("doctor_sandbox"),
         readiness.ready,

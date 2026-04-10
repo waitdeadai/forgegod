@@ -24,6 +24,10 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch):
         "forgegod.native_auth.codex_login_status_sync",
         lambda: (False, "Not logged in"),
     )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (False, "Codex CLI automation is experimental on native Windows."),
+    )
 
     result = runner.invoke(app, ["auth", "status"])
 
@@ -31,6 +35,27 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch):
     assert "zai-coding-plan" in result.stdout
     assert "ready" in result.stdout
     assert "ZAI_CODING_API_KEY" in result.stdout
+
+
+def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypatch):
+    project_env = tmp_path / ".forgegod"
+    project_env.mkdir()
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_login_status_sync",
+        lambda: (True, "Logged in using ChatGPT"),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (False, "Use WSL for best Windows experience"),
+    )
+
+    result = runner.invoke(app, ["auth", "status"])
+
+    assert result.exit_code == 0
+    assert "experimental" in result.stdout
+    assert "Use WSL for best Windows experience" in result.stdout
 
 
 def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
@@ -56,7 +81,7 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "forgegod.cli._detect_runtime_model_defaults",
-        lambda: (
+        lambda *_args: (
             ["openai-codex:gpt-5.4", "zai:glm-5.1"],
             ["openai-codex", "zai"],
             False,
@@ -88,7 +113,7 @@ def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "forgegod.cli._detect_runtime_model_defaults",
-        lambda: (
+        lambda *_args: (
             ["openai-codex:gpt-5.4"],
             ["openai-codex"],
             False,
@@ -100,3 +125,30 @@ def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch):
 
     assert result.exit_code == 0, result.stdout
     assert "coder-loop use remains experimental" in result.stdout
+
+
+def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monkeypatch):
+    recommended = ModelsConfig(
+        planner="zai:glm-5.1",
+        coder="zai:glm-5.1",
+        reviewer="zai:glm-5.1",
+        sentinel="zai:glm-5.1",
+        escalation="zai:glm-5.1",
+        researcher="zai:glm-5.1",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args: (
+            ["openai-codex:gpt-5.4", "zai:glm-5.1"],
+            ["openai-codex", "zai"],
+            False,
+            recommended,
+        ),
+    )
+
+    result = runner.invoke(app, ["auth", "sync", "--path", str(tmp_path)])
+
+    assert result.exit_code == 0, result.stdout
+    normalized = " ".join(result.stdout.split())
+    assert "did not choose it as a default automation backend" in normalized

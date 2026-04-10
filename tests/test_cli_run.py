@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typer.testing import CliRunner
 
-from forgegod.cli import app
+from forgegod.cli import _safe_console_text, app
 from forgegod.config import ForgeGodConfig
 from forgegod.models import AgentResult, ModelUsage, ReviewResult, ReviewVerdict
 
@@ -47,17 +47,38 @@ class FakeProc:
         return b"diff --git a/src/app.py b/src/app.py", b""
 
 
+def _capture_print_arg(renderable) -> str:
+    body = getattr(renderable, "renderable", renderable)
+    return str(body)
+
+
+def test_safe_console_text_replaces_unencodable_chars(monkeypatch):
+    class FakeFile:
+        encoding = "cp1252"
+
+    monkeypatch.setattr("forgegod.cli.console.file", FakeFile())
+
+    result = _safe_console_text("### ❌ ALL commands BLOCKED")
+    assert "❌" not in result
+    assert "?" in result
+
+
 def test_run_blocks_when_reviewer_requests_revision(monkeypatch, tmp_path):
     project_dir = tmp_path / ".forgegod"
     project_dir.mkdir()
 
     config = ForgeGodConfig()
     config.project_dir = project_dir
+    printed: list[str] = []
 
     async def fake_create_subprocess_exec(*_args, **_kwargs):
         return FakeProc()
 
     monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "forgegod.cli.console.print",
+        lambda *args, **_kwargs: printed.extend(_capture_print_arg(arg) for arg in args),
+    )
     monkeypatch.setattr("forgegod.config.load_config", lambda: config)
     monkeypatch.setattr("forgegod.agent.Agent", FakeAgent)
     monkeypatch.setattr("forgegod.reviewer.Reviewer", FakeReviewer)
@@ -67,5 +88,6 @@ def test_run_blocks_when_reviewer_requests_revision(monkeypatch, tmp_path):
     result = runner.invoke(app, ["run", "Implement the handler"])
 
     assert result.exit_code == 1
-    assert "Reviewer blocked completion" in result.stdout
-    assert "Missing acceptance proof" in result.stdout
+    joined = "\n".join(printed)
+    assert "Reviewer blocked completion" in joined
+    assert "Missing acceptance proof" in joined
