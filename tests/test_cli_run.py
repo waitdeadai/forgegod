@@ -116,3 +116,46 @@ async def test_run_narrator_reports_human_activity(monkeypatch):
     assert "plain language" in joined
     assert "Inspecting the repository" in joined
     assert "finished the patch" in joined
+
+
+def test_root_no_args_prints_guidance_when_not_tty(monkeypatch):
+    printed: list[str] = []
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli._cli_is_interactive", lambda: False)
+    monkeypatch.setattr(
+        "forgegod.cli.console.print",
+        lambda *args, **_kwargs: printed.extend(_capture_print_arg(arg) for arg in args),
+    )
+
+    result = runner.invoke(app, [])
+
+    assert result.exit_code == 0
+    visible = "\n".join(printed)
+    assert "natural-language session" in visible
+    assert "forgegod run" in visible
+
+
+def test_root_interactive_session_runs_task_and_exits(monkeypatch):
+    prompts = iter(["Add a status page", "/exit"])
+    tasks: list[str] = []
+    printed: list[str] = []
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli._cli_is_interactive", lambda: True)
+    monkeypatch.setattr("forgegod.cli.console.input", lambda *_args, **_kwargs: next(prompts))
+    monkeypatch.setattr(
+        "forgegod.cli.console.print",
+        lambda *args, **_kwargs: printed.extend(_capture_print_arg(arg) for arg in args),
+    )
+    monkeypatch.setattr(
+        "forgegod.cli._run_task_entrypoint",
+        lambda task, **_kwargs: tasks.append(task) or 0,
+    )
+
+    result = runner.invoke(app, [])
+
+    assert result.exit_code == 0
+    assert tasks == ["Add a status page"]
+    visible = "\n".join(printed)
+    assert "Talk to ForgeGod in natural language" in visible

@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-09): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `527` collected tests, `442` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `529` collected tests, `444` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. The primary human entrypoint is now conversational `forgegod`; `forgegod run` remains the explicit scripted surface. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -79,14 +79,16 @@ You don't need to be a developer to use ForgeGod. If you can describe what you w
 2. Pull a model: `ollama pull qwen3.5:9b`
 3. Install ForgeGod: `pip install forgegod`
 4. Run: `forgegod init` (interactive wizard guides you and lets you pick `adversarial` or `single-model`)
-5. Try it: `forgegod run "Create a simple website with a contact form"`
+5. Start the session: `forgegod`
+6. Say what you want naturally, for example: `Create a simple website with a contact form`
 
 ### Option B: OpenAI Native Subscription Mode
 
 1. Install ForgeGod: `pip install forgegod`
 2. Run: `forgegod auth login openai-codex`
 3. Run: `forgegod auth sync --profile adversarial`
-4. Try it: `forgegod plan "Build a REST API with user authentication"`
+4. Start the session: `forgegod`
+5. Say what you want naturally, for example: `Build a REST API with user authentication`
 
 ForgeGod stays the entrypoint. It delegates the one-time login to the official Codex auth flow, then keeps day-to-day usage inside ForgeGod CLI.
 
@@ -95,7 +97,8 @@ ForgeGod stays the entrypoint. It delegates the one-time login to the official C
 1. Export `ZAI_CODING_API_KEY=...`
 2. Install ForgeGod: `pip install forgegod`
 3. Run: `forgegod auth sync --profile adversarial`
-4. Try it: `forgegod run "Build a REST API with user authentication"`
+4. Start the session: `forgegod`
+5. Say what you want naturally, for example: `Build a REST API with user authentication`
 
 ### Recommended Experimental Harness: GLM-5.1 + Codex
 
@@ -119,6 +122,10 @@ explicitly recognizes ForgeGod as a supported coding tool.
 If you want a simpler setup, ForgeGod also supports `single-model` mode during
 `forgegod init` and `forgegod auth sync --profile single-model`. That pins all
 roles to one detected model instead of using the recommended adversarial split.
+
+`forgegod` is now the primary conversational entrypoint for humans. Use
+`forgegod run "..."` when you need a deterministic, non-interactive command for
+scripts, CI, or reproducible automation.
 
 ### Something not working?
 
@@ -149,7 +156,10 @@ forgegod auth status
 forgegod auth login openai-codex
 forgegod auth sync --profile adversarial
 
-# Single task
+# Talk to ForgeGod in natural language
+forgegod
+
+# Explicit scripted task surface
 forgegod run "Add a /health endpoint to server.py with uptime and version info"
 
 # Plan a project → generates PRD

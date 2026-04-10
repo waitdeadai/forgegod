@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from io import StringIO
+
+import pytest
 import toml
+from rich.console import Console
 from typer.testing import CliRunner
 
 from forgegod.cli import app
@@ -10,7 +14,19 @@ from forgegod.models import BudgetMode
 runner = CliRunner()
 
 
-def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch):
+@pytest.fixture
+def printed(monkeypatch):
+    buffer = StringIO()
+    capture_console = Console(file=buffer, force_terminal=False, width=120)
+
+    monkeypatch.setattr(
+        "forgegod.cli.console.print",
+        capture_console.print,
+    )
+    return buffer
+
+
+def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch, printed):
     project_env = tmp_path / ".forgegod"
     project_env.mkdir()
     (project_env / ".env").write_text("ZAI_CODING_API_KEY=test-value\n", encoding="utf-8")
@@ -32,12 +48,13 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch):
     result = runner.invoke(app, ["auth", "status"])
 
     assert result.exit_code == 0
-    assert "zai-coding-plan" in result.stdout
-    assert "ready" in result.stdout
-    assert "ZAI_CODING_API_KEY" in result.stdout
+    visible = printed.getvalue()
+    assert "zai-coding-plan" in visible
+    assert "ready" in visible
+    assert "ZAI_CODING_API_KEY" in visible
 
 
-def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypatch):
+def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypatch, printed):
     project_env = tmp_path / ".forgegod"
     project_env.mkdir()
 
@@ -54,11 +71,12 @@ def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypat
     result = runner.invoke(app, ["auth", "status"])
 
     assert result.exit_code == 0
-    assert "experimental" in result.stdout
-    assert "Use WSL for best Windows experience" in result.stdout
+    visible = printed.getvalue()
+    assert "experimental" in visible
+    assert "Use WSL for best Windows experience" in visible
 
 
-def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
+def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, printed):
     project_dir = tmp_path / ".forgegod"
     project_dir.mkdir()
 
@@ -97,12 +115,13 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch):
     assert updated["harness"]["profile"] == "adversarial"
     assert updated["budget"]["mode"] == "normal"
     assert updated["budget"]["daily_limit_usd"] == 5.0
-    assert "zai:glm-5.1" in result.stdout
-    assert "openai-codex:gpt-5.4" in result.stdout
-    assert "cloud-ready config ensured" in result.stdout
+    visible = printed.getvalue()
+    assert "zai:glm-5.1" in visible
+    assert "openai-codex:gpt-5.4" in visible
+    assert "cloud-ready config ensured" in visible
 
 
-def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch):
+def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="openai-codex:gpt-5.4",
         coder="openai-codex:gpt-5.4",
@@ -125,10 +144,11 @@ def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch):
     result = runner.invoke(app, ["auth", "sync", "--path", str(tmp_path)])
 
     assert result.exit_code == 0, result.stdout
-    assert "coder-loop use remains experimental" in result.stdout
+    normalized = " ".join(printed.getvalue().split())
+    assert "coder-loop use remains experimental" in normalized
 
 
-def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monkeypatch):
+def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="zai:glm-5.1",
         coder="zai:glm-5.1",
@@ -151,11 +171,11 @@ def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monke
     result = runner.invoke(app, ["auth", "sync", "--path", str(tmp_path)])
 
     assert result.exit_code == 0, result.stdout
-    normalized = " ".join(result.stdout.split())
+    normalized = " ".join(printed.getvalue().split())
     assert "did not choose it as a default automation backend" in normalized
 
 
-def test_auth_sync_single_model_profile(tmp_path, monkeypatch):
+def test_auth_sync_single_model_profile(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="zai:glm-5.1",
         coder="zai:glm-5.1",
@@ -185,5 +205,6 @@ def test_auth_sync_single_model_profile(tmp_path, monkeypatch):
         (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
     )
     assert updated["harness"]["profile"] == "single-model"
-    assert "Harness profile:" in result.stdout
-    assert "single-model" in result.stdout
+    visible = printed.getvalue()
+    assert "Harness profile:" in visible
+    assert "single-model" in visible

@@ -449,6 +449,9 @@ Operational conclusion for ForgeGod:
 - Guide provider setup inside ForgeGod: detect what is already linked,
   recommend a path, explain where secrets are stored, and avoid sending users
   straight to manual shell edits when the CLI can own the flow safely.
+- Prefer a conversational root entrypoint for humans and keep explicit
+  subcommands such as `run` for scripts, automation, and reproducible
+  non-interactive workflows.
 
 ## What Future Maintainers Should Re-Check
 

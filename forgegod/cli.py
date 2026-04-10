@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -25,8 +26,11 @@ from forgegod.cli_ux import (
 
 app = typer.Typer(
     name="forgegod",
-    help="Multi-model autonomous coding engine. Local + Cloud. 24/7.",
-    no_args_is_help=True,
+    help=(
+        "Conversational multi-model coding engine. Run `forgegod` to talk "
+        "naturally, or use explicit subcommands for scripts and automation."
+    ),
+    no_args_is_help=False,
 )
 design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
@@ -46,6 +50,11 @@ def _safe_console_text(text: str) -> str:
 def _build_banner():
     """Build the full mascot banner using Rich Text (avoids markup escaping)."""
     return build_banner_text(_VER)
+
+
+def _cli_is_interactive() -> bool:
+    """Return whether ForgeGod is attached to an interactive stdin."""
+    return sys.stdin.isatty()
 
 
 def _print_banner(mini: bool = False):
@@ -101,13 +110,234 @@ def _detect_runtime_model_defaults(
     return models, providers, ollama_available, recommended
 
 
+def _build_run_config(
+    *,
+    model: str | None = None,
+    review: bool = True,
+    permission_mode: str | None = None,
+    approval_mode: str | None = None,
+    allowed_tool: list[str] | None = None,
+    verbose: bool = False,
+    terse: bool = False,
+):
+    from forgegod.config import load_config
+
+    config = load_config()
+    configure_cli_logging(
+        verbose=verbose,
+        log_file=config.project_dir / "logs" / "run.log",
+        stream=verbose,
+    )
+    if model:
+        config.models.coder = model
+    config.review.always_review_run = review
+    if permission_mode:
+        config.security.permission_mode = permission_mode
+    if approval_mode:
+        config.security.approval_mode = approval_mode
+    if allowed_tool is not None:
+        config.security.allowed_tools = list(allowed_tool)
+    if terse:
+        config.terse.enabled = True
+    return config
+
+
+async def _execute_run_task(
+    task: str,
+    *,
+    config,
+    review: bool,
+    show_banner: bool,
+) -> int:
+    from forgegod.agent import Agent
+    from forgegod.models import ReviewVerdict
+    from forgegod.reviewer import Reviewer
+    from forgegod.router import ModelRouter
+
+    if show_banner:
+        _print_banner(mini=True)
+        if config.terse.enabled:
+            console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
+
+    router = ModelRouter(config)
+    narrator = RunNarrator()
+    try:
+        approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
+        agent = Agent(
+            router=router,
+            config=config,
+            tool_approver=approver,
+            event_callback=narrator,
+        )
+        result = await agent.run(task)
+
+        if not result.success:
+            failure = _safe_console_text(result.error or result.output or "Unknown failure")
+            console.print(f"[red]Task failed:[/red] {failure}")
+            if result.completion_blockers:
+                console.print("[yellow]Completion blockers:[/yellow]")
+                for blocker in result.completion_blockers:
+                    console.print(f"  - {_safe_console_text(blocker)}")
+            return 1
+
+        if review and result.files_modified:
+            reviewer = Reviewer(config=config, router=router)
+            review_code = result.output[:6000]
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "git", "diff", "HEAD",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=str(config.project_dir.parent),
+                )
+                stdout, _ = await proc.communicate()
+                if stdout:
+                    review_code = stdout.decode("utf-8", errors="replace")[:6000]
+            except Exception:
+                pass
+
+            review_result = await reviewer.review(
+                task=task,
+                code=review_code,
+                files_changed=result.files_modified,
+            )
+            if review_result.verdict != ReviewVerdict.APPROVE:
+                color = "yellow" if review_result.verdict == ReviewVerdict.REVISE else "red"
+                console.print(
+                    Panel(
+                        _safe_console_text(
+                            f"[{color}]Reviewer blocked completion: "
+                            f"{review_result.verdict.value}[/{color}]\n"
+                            f"{review_result.reasoning}"
+                        ),
+                        border_style=color,
+                    )
+                )
+                if review_result.issues:
+                    for issue in review_result.issues:
+                        console.print(f"  - {_safe_console_text(issue)}")
+                return 1
+
+        console.print(
+            Panel(
+                _safe_console_text(f"[green]Task completed[/green]\n{result.output[:500]}")
+            )
+        )
+        if result.files_modified:
+            console.print(f"Files modified: {', '.join(result.files_modified)}")
+        if result.verification_commands:
+            console.print(f"Verification: {', '.join(result.verification_commands)}")
+        console.print(
+            f"Cost: ${result.total_usage.cost_usd:.4f} | "
+            f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
+        )
+        return 0
+    finally:
+        await router.close()
+
+
+def _run_task_entrypoint(
+    task: str,
+    *,
+    model: str | None = None,
+    review: bool = True,
+    permission_mode: str | None = None,
+    approval_mode: str | None = None,
+    allowed_tool: list[str] | None = None,
+    verbose: bool = False,
+    terse: bool = False,
+    show_banner: bool = True,
+) -> int:
+    config = _build_run_config(
+        model=model,
+        review=review,
+        permission_mode=permission_mode,
+        approval_mode=approval_mode,
+        allowed_tool=allowed_tool,
+        verbose=verbose,
+        terse=terse,
+    )
+    return asyncio.run(
+        _execute_run_task(
+            task,
+            config=config,
+            review=review,
+            show_banner=show_banner,
+        )
+    )
+
+
+def _interactive_task_session() -> int:
+    _print_banner()
+    console.print(
+        "[dim]Talk to ForgeGod in natural language. "
+        "Each message becomes a task against the current workspace.[/dim]"
+    )
+    console.print(
+        "[dim]Type /exit to leave, or use slash commands like /help for quick tips.[/dim]\n"
+    )
+
+    while True:
+        try:
+            task = console.input("[bold cyan]forgegod>[/bold cyan] ").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Session closed.[/dim]")
+            return 0
+
+        if not task:
+            continue
+        lowered = task.lower()
+        if lowered in {"/exit", "/quit", "exit", "quit"}:
+            console.print("[dim]Session closed.[/dim]")
+            return 0
+        if lowered in {"/help", "help"}:
+            console.print(
+                "[dim]Try a plain request like:[/dim] "
+                '[cyan]build a /health endpoint with tests[/cyan]'
+            )
+            console.print(
+                "[dim]Use explicit commands for setup and control:[/dim] "
+                "[cyan]forgegod init[/cyan], [cyan]forgegod plan[/cyan], "
+                "[cyan]forgegod loop[/cyan], [cyan]forgegod doctor[/cyan]"
+            )
+            continue
+        if task.startswith("/"):
+            console.print(
+                "[yellow]Slash commands are limited here.[/yellow] "
+                "Use the full CLI command when you need setup, planning, or loop control."
+            )
+            continue
+
+        exit_code = _run_task_entrypoint(task, show_banner=False)
+        if exit_code != 0:
+            console.print("[yellow]ForgeGod needs another try or a different instruction.[/yellow]")
+        console.print()
+
+
 @app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
 ):
     if version:
         _print_banner()
         raise typer.Exit()
+    if ctx.invoked_subcommand is not None:
+        return
+
+    if not _cli_is_interactive():
+        _print_banner(mini=True)
+        console.print(
+            "[dim]Run [cyan]forgegod[/cyan] in a real terminal to open a "
+            "natural-language session.[/dim]"
+        )
+        console.print(
+            "[dim]Use [cyan]forgegod run[/cyan] when you need scripted, "
+            "non-interactive execution.[/dim]"
+        )
+        raise typer.Exit()
+
+    raise typer.Exit(_interactive_task_session())
 
 
 @app.command()
@@ -501,111 +731,18 @@ def run(
     ),
 ):
     """Execute a single coding task."""
-    from forgegod.config import load_config
-
-    _print_banner(mini=True)
-    config = load_config()
-    configure_cli_logging(
-        verbose=verbose,
-        log_file=config.project_dir / "logs" / "run.log",
-        stream=verbose,
+    raise typer.Exit(
+        _run_task_entrypoint(
+            task,
+            model=model,
+            review=review,
+            permission_mode=permission_mode,
+            approval_mode=approval_mode,
+            allowed_tool=allowed_tool,
+            verbose=verbose,
+            terse=terse,
+        )
     )
-    if model:
-        config.models.coder = model
-    config.review.always_review_run = review
-    if permission_mode:
-        config.security.permission_mode = permission_mode
-    if approval_mode:
-        config.security.approval_mode = approval_mode
-    if allowed_tool is not None:
-        config.security.allowed_tools = list(allowed_tool)
-    if terse:
-        config.terse.enabled = True
-        console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
-
-    async def _run():
-        from forgegod.agent import Agent
-        from forgegod.models import ReviewVerdict
-        from forgegod.reviewer import Reviewer
-        from forgegod.router import ModelRouter
-
-        router = ModelRouter(config)
-        narrator = RunNarrator()
-        try:
-            approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
-            agent = Agent(
-                router=router,
-                config=config,
-                tool_approver=approver,
-                event_callback=narrator,
-            )
-            result = await agent.run(task)
-
-            if not result.success:
-                failure = _safe_console_text(result.error or result.output or "Unknown failure")
-                console.print(f"[red]Task failed:[/red] {failure}")
-                if result.completion_blockers:
-                    console.print("[yellow]Completion blockers:[/yellow]")
-                    for blocker in result.completion_blockers:
-                        console.print(f"  - {_safe_console_text(blocker)}")
-                return 1
-
-            if review and result.files_modified:
-                reviewer = Reviewer(config=config, router=router)
-                review_code = result.output[:6000]
-                try:
-                    proc = await asyncio.create_subprocess_exec(
-                        "git", "diff", "HEAD",
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                        cwd=str(config.project_dir.parent),
-                    )
-                    stdout, _ = await proc.communicate()
-                    if stdout:
-                        review_code = stdout.decode("utf-8", errors="replace")[:6000]
-                except Exception:
-                    pass
-
-                review_result = await reviewer.review(
-                    task=task,
-                    code=review_code,
-                    files_changed=result.files_modified,
-                )
-                if review_result.verdict != ReviewVerdict.APPROVE:
-                    color = "yellow" if review_result.verdict == ReviewVerdict.REVISE else "red"
-                    console.print(
-                        Panel(
-                            _safe_console_text(
-                                f"[{color}]Reviewer blocked completion: "
-                                f"{review_result.verdict.value}[/{color}]\n"
-                                f"{review_result.reasoning}"
-                            ),
-                            border_style=color,
-                        )
-                    )
-                    if review_result.issues:
-                        for issue in review_result.issues:
-                            console.print(f"  - {_safe_console_text(issue)}")
-                    return 1
-
-            console.print(
-                Panel(
-                    _safe_console_text(f"[green]Task completed[/green]\n{result.output[:500]}")
-                )
-            )
-            if result.files_modified:
-                console.print(f"Files modified: {', '.join(result.files_modified)}")
-            if result.verification_commands:
-                console.print(f"Verification: {', '.join(result.verification_commands)}")
-            console.print(
-                f"Cost: ${result.total_usage.cost_usd:.4f} | "
-                f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
-            )
-            return 0
-        finally:
-            await router.close()
-
-    raise typer.Exit(asyncio.run(_run()))
 
 
 @app.command()

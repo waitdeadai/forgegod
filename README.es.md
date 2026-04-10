@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-09): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `527` tests recolectados, `442` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `529` tests recolectados, `444` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. La entrada principal para personas ahora es el modo conversacional `forgegod`; `forgegod run` queda como superficie explicita para scripts. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -58,6 +58,10 @@ durante `forgegod init` y `forgegod auth sync --profile single-model`. Eso
 fuerza todos los roles a un solo modelo detectado en lugar del split
 adversarial recomendado.
 
+`forgegod` ahora es la entrada principal conversacional para personas. Usá
+`forgegod run "..."` cuando necesites una superficie no interactiva y
+reproducible para scripts, CI o automatización.
+
 ## Inicio Rápido (Sin Saber Programar)
 
 No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que querés en español, ForgeGod escribe el código.
@@ -68,14 +72,24 @@ No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que q
 2. Descargá un modelo: `ollama pull qwen3.5:9b`
 3. Instalá ForgeGod: `pip install forgegod`
 4. Ejecutá: `forgegod init --lang es` (el asistente te guía y te deja elegir `adversarial` o `single-model`)
-5. Probalo: `forgegod run "Creá un sitio web simple con un formulario de contacto"`
+5. Iniciá la sesión: `forgegod`
+6. Pedile algo en lenguaje natural, por ejemplo: `Creá un sitio web simple con un formulario de contacto`
 
-### Opción B: Modo Nube (más rápido, ~$0.01/tarea)
+### Opción B: Modo Suscripción OpenAI Nativa
 
-1. Obtené una clave de OpenAI: https://platform.openai.com/api-keys
+1. Instalá ForgeGod: `pip install forgegod`
+2. Ejecutá: `forgegod auth login openai-codex`
+3. Ejecutá: `forgegod auth sync --profile adversarial`
+4. Iniciá la sesión: `forgegod`
+5. Pedile algo en lenguaje natural, por ejemplo: `Construí una API REST con autenticación de usuarios`
+
+### Opción C: Modo Z.AI Coding Plan
+
+1. Exportá `ZAI_CODING_API_KEY=...`
 2. Instalá ForgeGod: `pip install forgegod`
-3. Ejecutá: `forgegod init --lang es` → pegá tu clave cuando te lo pida
-4. Probalo: `forgegod run "Construí una API REST con autenticación de usuarios"`
+3. Ejecutá: `forgegod auth sync --profile adversarial`
+4. Iniciá la sesión: `forgegod`
+5. Pedile algo en lenguaje natural, por ejemplo: `Construí una API REST con autenticación de usuarios`
 
 ### ¿Algo no funciona?
 
@@ -129,7 +143,10 @@ forgegod auth status
 forgegod auth login openai-codex
 forgegod auth sync --profile adversarial
 
-# Tarea única
+# Hablar con ForgeGod en lenguaje natural
+forgegod
+
+# Superficie explícita para scripts
 forgegod run "Agregá un endpoint /health a server.py con uptime e info de versión"
 
 # Planificar un proyecto → genera PRD

@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `527`
-- Core suite: `python -m pytest -m "not stress" -q` -> `442 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `526 passed, 1 skipped`
+- Tests collected: `529`
+- Core suite: `python -m pytest -m "not stress" -q` -> `444 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `528 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -33,6 +33,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - `forgegod init`, onboarding, and `forgegod auth sync` now write auth-aware model defaults so planner/reviewer/adversary flows can run without hand-editing `config.toml` when the user has OpenAI Codex or Z.AI but no OpenAI API key.
 - Those same flows now expose an explicit harness choice too: `adversarial` is the recommended multi-model path, and `single-model` collapses every role onto one detected model when the user wants the simpler setup.
 - OpenAI Codex subscription routing is verified for planner/reviewer/adversary workflows. Coder-loop use is available, but it remains experimental and should be benchmarked per repo before making it the default remote coder.
+- The primary user-facing entrypoint is now conversational: running `forgegod`
+  in a real terminal opens a natural-language session. `forgegod run` remains
+  the explicit non-interactive/scriptable surface.
 - HTTP client initialization now degrades cleanly when optional HTTP/2 extras
   are absent. ForgeGod logs once and falls back to HTTP/1.1 instead of failing
   the router or CI on environments that install plain `httpx` without `h2`.
