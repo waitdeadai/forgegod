@@ -39,7 +39,11 @@ class EvalExpectation(BaseModel):
     files_exist: list[str] = Field(default_factory=list)
     files_absent: list[str] = Field(default_factory=list)
     file_contains: dict[str, str] = Field(default_factory=dict)
+    directories_empty: list[str] = Field(default_factory=list)
     first_request_tools_include: list[str] = Field(default_factory=list)
+    prd_story_status: str | None = None
+    prd_story_files_touched: list[str] = Field(default_factory=list)
+    prd_story_error_contains: list[str] = Field(default_factory=list)
 
 
 class EvalCase(BaseModel):
@@ -48,13 +52,20 @@ class EvalCase(BaseModel):
     id: str
     description: str
     scenario: str
-    surface: str = "run"  # run | chat
+    surface: str = "run"  # run | chat | loop
     setup: str = "none"  # none | hello | git | git_src
     permission_mode: str = "workspace-write"
     approval_mode: str = "deny"
     sandbox_mode: str = "standard"
+    sandbox_backend: str = "none"  # none | success | unavailable
     review: bool = False
     terse: bool = False
+    loop_workers: int = 1
+    loop_max_iterations: int = 2
+    story_id: str = "T001"
+    story_title: str = "Harness eval story"
+    story_description: str = "Execute the deterministic harness eval story."
+    story_acceptance_criteria: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     stdin_input: str = ""
     chat_inputs: list[str] = Field(default_factory=list)
@@ -106,10 +117,10 @@ class EvalReport(BaseModel):
 
 
 _BUILTIN_MANIFEST = {
-    "name": "forgegod-harness-evals-v1",
+    "name": "forgegod-harness-evals-v2",
     "description": (
-        "Deterministic harness evals for natural-language chat, terse mode, "
-        "completion gates, and permission handling."
+        "Deterministic harness evals for chat UX, completion gates, "
+        "permission handling, loop/worktree behavior, and strict sandbox paths."
     ),
     "cases": [
         {
@@ -199,6 +210,110 @@ _BUILTIN_MANIFEST = {
                 "request_count": 1,
                 "output_contains": ["ForgeGod blocked tool 'write_file'"],
                 "files_absent": ["blocked.txt"],
+            },
+        },
+        {
+            "id": "loop_story_success",
+            "description": "Loop mode completes one PRD story and records the result.",
+            "scenario": "cli_loop_story_success",
+            "surface": "loop",
+            "setup": "git_src",
+            "permission_mode": "workspace-write",
+            "loop_workers": 1,
+            "loop_max_iterations": 2,
+            "story_id": "T001",
+            "story_title": "Create the app entrypoint",
+            "story_description": "Implement src/app.py for the loop parity harness.",
+            "tags": ["loop", "prd", "verification"],
+            "expectations": {
+                "exit_code": 0,
+                "request_count": 4,
+                "output_contains": ["Completed: 1 | Failed: 0"],
+                "files_exist": ["src/app.py"],
+                "file_contains": {"src/app.py": "print('forgegod loop')"},
+                "prd_story_status": "done",
+                "prd_story_files_touched": ["src/app.py"],
+            },
+        },
+        {
+            "id": "loop_story_blocked",
+            "description": "Loop mode marks a story blocked when permissions deny a write.",
+            "scenario": "cli_loop_story_denied",
+            "surface": "loop",
+            "setup": "git",
+            "permission_mode": "read-only",
+            "loop_workers": 1,
+            "loop_max_iterations": 1,
+            "story_id": "T002",
+            "story_title": "Blocked write story",
+            "story_description": "Attempt a forbidden write from the loop parity harness.",
+            "tags": ["loop", "permissions", "safety"],
+            "expectations": {
+                "exit_code": 0,
+                "request_count": 1,
+                "output_contains": ["Completed: 0 | Failed: 1"],
+                "files_absent": ["blocked.txt"],
+                "prd_story_status": "blocked",
+                "prd_story_error_contains": ["ForgeGod blocked tool 'write_file'"],
+            },
+        },
+        {
+            "id": "loop_parallel_worktree_success",
+            "description": "Parallel loop mode completes through the isolated worktree path.",
+            "scenario": "cli_loop_story_success",
+            "surface": "loop",
+            "setup": "git_src",
+            "permission_mode": "workspace-write",
+            "loop_workers": 2,
+            "loop_max_iterations": 2,
+            "story_id": "T003",
+            "story_title": "Create the isolated app entrypoint",
+            "story_description": "Implement src/app.py through the parallel worktree path.",
+            "tags": ["loop", "worktree", "parallel"],
+            "expectations": {
+                "exit_code": 0,
+                "request_count": 4,
+                "output_contains": ["Completed: 1 | Failed: 0"],
+                "files_exist": ["src/app.py"],
+                "file_contains": {"src/app.py": "print('forgegod loop')"},
+                "directories_empty": [".forgegod/worktrees"],
+                "prd_story_status": "done",
+                "prd_story_files_touched": ["src/app.py"],
+            },
+        },
+        {
+            "id": "strict_sandbox_interface_roundtrip",
+            "description": (
+                "Run mode exercises the strict sandbox interface through a "
+                "deterministic backend stub."
+            ),
+            "scenario": "cli_strict_bash_roundtrip",
+            "surface": "run",
+            "setup": "none",
+            "permission_mode": "read-only",
+            "sandbox_mode": "strict",
+            "sandbox_backend": "success",
+            "tags": ["run", "strict", "sandbox"],
+            "expectations": {
+                "exit_code": 0,
+                "request_count": 2,
+                "output_contains": ["Strict sandbox reported Python 3.13.5."],
+            },
+        },
+        {
+            "id": "strict_sandbox_backend_blocked",
+            "description": "Run mode surfaces strict sandbox backend failures cleanly.",
+            "scenario": "cli_strict_backend_blocked",
+            "surface": "run",
+            "setup": "none",
+            "permission_mode": "read-only",
+            "sandbox_mode": "strict",
+            "sandbox_backend": "unavailable",
+            "tags": ["run", "strict", "safety"],
+            "expectations": {
+                "exit_code": 0,
+                "request_count": 2,
+                "output_contains": ["backend is unavailable"],
             },
         },
     ],
@@ -300,6 +415,8 @@ class HarnessEvalRunner:
                 approval_mode=case.approval_mode,
                 sandbox_mode=case.sandbox_mode,
             )
+            if case.surface == "loop":
+                self._write_prd(workspace, case)
             exit_code, output = self._invoke_case(workspace, case)
 
             if traces_dir is not None:
@@ -382,6 +499,40 @@ class HarnessEvalRunner:
         raise ValueError(f"Unknown workspace setup kind: {setup}")
 
     @staticmethod
+    def _write_prd(workspace: Path, case: EvalCase) -> None:
+        project_dir = workspace / ".forgegod"
+        project_dir.mkdir(parents=True, exist_ok=True)
+        prd_path = project_dir / "prd.json"
+        prd_path.write_text(
+            json.dumps(
+                {
+                    "project": "ForgeGod Harness Evals",
+                    "description": "Deterministic workflow evals for the harness.",
+                    "stories": [
+                        {
+                            "id": case.story_id,
+                            "title": case.story_title,
+                            "description": case.story_description,
+                            "status": "todo",
+                            "priority": 1,
+                            "acceptance_criteria": case.story_acceptance_criteria,
+                            "depends_on": [],
+                            "files_touched": [],
+                            "iterations": 0,
+                            "max_iterations": 5,
+                            "error_log": [],
+                            "completed_at": "",
+                        }
+                    ],
+                    "guardrails": [],
+                    "learnings": [],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+    @staticmethod
     def _init_git_repo(workspace: Path) -> None:
         commands = [
             ["git", "init"],
@@ -451,12 +602,15 @@ class HarnessEvalRunner:
 
     def _invoke_case(self, workspace: Path, case: EvalCase) -> tuple[int, str]:
         from forgegod import cli as cli_module
+        from forgegod import sandbox as sandbox_module
+        from forgegod.tools import shell as shell_module
 
         previous_openai_key = os.environ.get("OPENAI_API_KEY")
         args = self._build_args(case)
         with self._working_directory(workspace):
             captured_lines: list[str] = []
             original_print = cli_module.console.print
+            original_sandbox = shell_module.run_in_real_sandbox
 
             def capture_print(*renderables, **kwargs):
                 for renderable in renderables:
@@ -469,6 +623,24 @@ class HarnessEvalRunner:
             try:
                 cli_module.console.print = capture_print
                 os.environ["OPENAI_API_KEY"] = "mock-token"
+                if case.sandbox_backend == "success":
+                    async def fake_sandbox(**_kwargs):
+                        return sandbox_module.SandboxExecutionResult(
+                            backend="docker",
+                            returncode=0,
+                            stdout="Python 3.13.5\n",
+                            stderr="",
+                        )
+
+                    shell_module.run_in_real_sandbox = fake_sandbox
+                elif case.sandbox_backend == "unavailable":
+                    async def fake_sandbox(**_kwargs):
+                        raise sandbox_module.SandboxUnavailableError(
+                            "Strict sandbox backend is unavailable."
+                        )
+
+                    shell_module.run_in_real_sandbox = fake_sandbox
+
                 if case.surface == "chat":
                     original_is_interactive = cli_module._cli_is_interactive
                     original_input = cli_module.console.input
@@ -480,6 +652,13 @@ class HarnessEvalRunner:
                     finally:
                         cli_module._cli_is_interactive = original_is_interactive
                         cli_module.console.input = original_input
+                elif case.surface == "loop":
+                    result = self.runner.invoke(
+                        cli_module.app,
+                        args,
+                        input=case.stdin_input,
+                        catch_exceptions=False,
+                    )
                 else:
                     result = self.runner.invoke(
                         cli_module.app,
@@ -489,6 +668,7 @@ class HarnessEvalRunner:
                     )
             finally:
                 cli_module.console.print = original_print
+                shell_module.run_in_real_sandbox = original_sandbox
                 if previous_openai_key is None:
                     os.environ.pop("OPENAI_API_KEY", None)
                 else:
@@ -501,9 +681,9 @@ class HarnessEvalRunner:
         args: list[str] = []
         if case.terse:
             args.append("--terse")
-        if case.review:
+        if case.surface != "loop" and case.review:
             args.append("--review")
-        else:
+        elif case.surface != "loop":
             args.append("--no-review")
         if case.permission_mode:
             args.extend(["--permission-mode", case.permission_mode])
@@ -513,6 +693,16 @@ class HarnessEvalRunner:
         if case.surface == "run":
             args.insert(0, "run")
             args.append(SCENARIOS[case.scenario].task)
+        elif case.surface == "loop":
+            args[0:0] = [
+                "loop",
+                "--prd",
+                str(Path(".forgegod") / "prd.json"),
+                "--workers",
+                str(case.loop_workers),
+                "--max",
+                str(case.loop_max_iterations),
+            ]
         return args
 
     def _grade_case(
@@ -585,6 +775,16 @@ class HarnessEvalRunner:
                     detail=f"{rel_path} contains {snippet!r}",
                 )
             )
+        for rel_path in expected.directories_empty:
+            dpath = workspace / rel_path
+            passed = not dpath.exists() or not any(dpath.iterdir())
+            checks.append(
+                EvalCheckResult(
+                    name=f"directories_empty:{rel_path}",
+                    passed=passed,
+                    detail=rel_path,
+                )
+            )
         if expected.first_request_tools_include:
             advertised = []
             if requests:
@@ -600,6 +800,46 @@ class HarnessEvalRunner:
                         detail=", ".join(advertised),
                     )
                 )
+        if (
+            expected.prd_story_status is not None
+            or expected.prd_story_files_touched
+            or expected.prd_story_error_contains
+        ):
+            prd_path = workspace / ".forgegod" / "prd.json"
+            story = {}
+            if prd_path.exists():
+                payload = json.loads(prd_path.read_text(encoding="utf-8"))
+                for candidate in payload.get("stories", []):
+                    if candidate.get("id") == case.story_id:
+                        story = candidate
+                        break
+            if expected.prd_story_status is not None:
+                checks.append(
+                    EvalCheckResult(
+                        name="prd_story_status",
+                        passed=story.get("status") == expected.prd_story_status,
+                        detail=f"expected {expected.prd_story_status}, got {story.get('status')}",
+                    )
+                )
+            if expected.prd_story_files_touched:
+                actual = story.get("files_touched", [])
+                checks.append(
+                    EvalCheckResult(
+                        name="prd_story_files_touched",
+                        passed=actual == expected.prd_story_files_touched,
+                        detail=f"expected {expected.prd_story_files_touched}, got {actual}",
+                    )
+                )
+            if expected.prd_story_error_contains:
+                error_log = story.get("error_log", [])
+                for snippet in expected.prd_story_error_contains:
+                    checks.append(
+                        EvalCheckResult(
+                            name=f"prd_story_error_contains:{snippet[:40]}",
+                            passed=any(snippet in entry for entry in error_log),
+                            detail=snippet,
+                        )
+                    )
         return checks
 
     @staticmethod

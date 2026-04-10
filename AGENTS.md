@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `537`
-- Core suite: `python -m pytest -m "not stress" -q` -> `452 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `536 passed, 1 skipped`
+- Tests collected: `538`
+- Core suite: `python -m pytest -m "not stress" -q` -> `453 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `537 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -72,7 +72,8 @@ This file is the repo-local operating contract for coding agents working on Forg
   runs isolate loop execution without hidden post-task model calls.
 - ForgeGod now also has a first-class deterministic harness eval surface:
   `forgegod evals`. Use it for chat UX, terse mode, approval flows,
-  permission denials, and completion-gate regressions.
+  permission denials, completion-gate regressions, loop/worktree behavior,
+  and strict-sandbox interface regressions.
 - If a repo root contains `DESIGN.md`, ForgeGod now injects it into the agent prompt as the frontend design source of truth.
 - ForgeGod now ships `forgegod design` for importing `DESIGN.md` presets and `forgegod contribute` for contribution-aware planning/autonomous work that reads `CONTRIBUTING.md` plus repo rules.
 - Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.

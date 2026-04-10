@@ -14,10 +14,12 @@ runner = CliRunner()
 def test_load_builtin_harness_eval_manifest():
     manifest = load_eval_manifest()
 
-    assert manifest.name == "forgegod-harness-evals-v1"
-    assert len(manifest.cases) >= 5
+    assert manifest.name == "forgegod-harness-evals-v2"
+    assert len(manifest.cases) >= 10
     assert any(case.surface == "chat" for case in manifest.cases)
+    assert any(case.surface == "loop" for case in manifest.cases)
     assert any(case.terse for case in manifest.cases)
+    assert any(case.sandbox_mode == "strict" for case in manifest.cases)
 
 
 def test_harness_eval_runner_executes_builtin_cases(tmp_path):
@@ -66,3 +68,24 @@ def test_evals_cli_runs_selected_case(tmp_path):
     payload = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
     assert payload["total_cases"] == 1
     assert payload["passed_cases"] == 1
+
+
+def test_evals_cli_runs_parallel_worktree_case(tmp_path):
+    result = runner.invoke(
+        app,
+        [
+            "evals",
+            "--case",
+            "loop_parallel_worktree_success",
+            "--output",
+            str(tmp_path / "report.json"),
+            "--traces-dir",
+            str(tmp_path / "traces"),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    payload = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert payload["total_cases"] == 1
+    assert payload["passed_cases"] == 1
+    assert payload["results"][0]["id"] == "loop_parallel_worktree_success"

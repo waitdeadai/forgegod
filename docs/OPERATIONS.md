@@ -30,12 +30,12 @@ This document is the current system of record for day-to-day work in this reposi
 
 | Command | Observed result on 2026-04-10 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `452 passed, 1 skipped, 84 deselected in 86.48s` |
+| `python -m pytest -m "not stress" -q` | `453 passed, 1 skipped, 84 deselected in 87.29s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 153.30s` |
-| `python -m pytest tests -q` | `536 passed, 1 skipped in 229.60s` |
-| `python -m pytest --collect-only -q` | `537 tests collected` |
-| `python -m forgegod evals --case chat_natural_language_roundtrip --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `1/1 passing, score=1.000` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 144.79s` |
+| `python -m pytest tests -q` | `537 passed, 1 skipped in 231.44s` |
+| `python -m pytest --collect-only -q` | `538 tests collected` |
+| `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -126,7 +126,8 @@ This document is the current system of record for day-to-day work in this reposi
 - ForgeGod now has a first-class deterministic harness eval surface:
   `forgegod evals`. It sits above unit tests and parity harnesses, saves
   per-case trace artifacts, and grades real CLI behavior for chat UX, terse
-  mode, approval flows, permission denials, and completion-gate discipline.
+  mode, approval flows, permission denials, completion-gate discipline,
+  loop/worktree behavior, and strict-sandbox interface handling.
 - Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
   `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
   `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.
@@ -162,7 +163,7 @@ This document is the current system of record for day-to-day work in this reposi
 
 ## Recommended Next Work
 
-1. Expand `forgegod evals` beyond `run`/chat into `loop`, worktree, and opt-in strict Docker scenarios so release decisions use one eval corpus instead of scattered ad hoc checks.
+1. Add an opt-in real-Docker tier to `forgegod evals` so strict backend coverage can graduate from a separate smoke into a release-gated eval layer when the environment allows it.
 2. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
 3. Expand the opt-in real Docker strict integration coverage beyond the happy-path bash roundtrip, for example into path-rewrite or git-safe read scenarios.
 4. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.

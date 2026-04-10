@@ -1,4 +1,4 @@
-# Harness Evals V1 - 2026-04-10
+# Harness Evals - 2026-04-10
 
 ## Why This Exists
 
@@ -176,21 +176,55 @@ V1 is considered done when all of this is true:
 5. The suite is covered by automated tests.
 6. README, operations docs, audit notes, and website copy stay aligned.
 
+## V2 Status
+
+V2 is now the active built-in surface.
+
+The built-in manifest has been expanded from chat/run-only coverage to
+workflow-level cases for:
+
+- `loop` success
+- `loop` blocked-by-permissions
+- parallel `worktree` execution and cleanup
+- `strict` sandbox interface success
+- `strict` sandbox backend failure surfacing
+
+This follows the 2026 guidance more closely: traces and deterministic workflow
+checks should cover product behavior at the workflow level, while environment-
+dependent integration paths stay as separate opt-in smokes.
+
+### Included in V2
+
+- `loop` surface coverage in `forgegod evals`
+- PRD outcome grading:
+  - story status
+  - files touched
+  - blocked-story error propagation
+- worktree cleanup grading
+- deterministic strict-sandbox interface grading using backend stubs
+
+### Still Out of Scope
+
+- real Docker execution inside `forgegod evals`
+- live cloud-model comparisons inside evals
+- grader-LLM scoring
+- showcase generation
+
 ## Recommended Next Phases
 
-### V2
-
-- add loop/worktree eval scenarios
-- add opt-in strict Docker eval cases
-- add scenario tags for provider surfaces and sandbox tiers
-
 ### V3
+
+- add opt-in real Docker eval cases as a separate tier
+- add scenario tags for provider surfaces, runtime tiers, and harness profiles
+- split scores by UX, safety, workflow, and verification dimensions
+
+### V4
 
 - add grader-backed trace analysis
 - score plan quality, reviewer quality, and verification quality separately
 - compare `single-model` vs `adversarial` using the same eval corpus
 
-### V4
+### V5
 
 - connect eval outcomes to release gates and graduation decisions:
   - worktree graduation

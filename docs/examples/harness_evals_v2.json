@@ -1,0 +1,48 @@
+{
+  "name": "forgegod-harness-evals-v2",
+  "description": "Example custom manifest matching the built-in Harness Evals V2 surface.",
+  "cases": [
+    {
+      "id": "loop_parallel_worktree_success",
+      "description": "Parallel loop mode completes through the isolated worktree path.",
+      "scenario": "cli_loop_story_success",
+      "surface": "loop",
+      "setup": "git_src",
+      "permission_mode": "workspace-write",
+      "loop_workers": 2,
+      "loop_max_iterations": 2,
+      "story_id": "T003",
+      "story_title": "Create the isolated app entrypoint",
+      "story_description": "Implement src/app.py through the parallel worktree path.",
+      "tags": ["loop", "worktree", "parallel"],
+      "expectations": {
+        "exit_code": 0,
+        "request_count": 4,
+        "output_contains": ["Completed: 1 | Failed: 0"],
+        "files_exist": ["src/app.py"],
+        "file_contains": {
+          "src/app.py": "print('forgegod loop')"
+        },
+        "directories_empty": [".forgegod/worktrees"],
+        "prd_story_status": "done",
+        "prd_story_files_touched": ["src/app.py"]
+      }
+    },
+    {
+      "id": "strict_sandbox_interface_roundtrip",
+      "description": "Run mode exercises the strict sandbox interface through a deterministic backend stub.",
+      "scenario": "cli_strict_bash_roundtrip",
+      "surface": "run",
+      "setup": "none",
+      "permission_mode": "read-only",
+      "sandbox_mode": "strict",
+      "sandbox_backend": "success",
+      "tags": ["run", "strict", "sandbox"],
+      "expectations": {
+        "exit_code": 0,
+        "request_count": 2,
+        "output_contains": ["Strict sandbox reported Python 3.13.5."]
+      }
+    }
+  ]
+}

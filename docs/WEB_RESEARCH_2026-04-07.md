@@ -514,6 +514,36 @@ deterministic harness/product behavior surface. Graduation decisions such as
 worktree exposure, strict-sandbox expansion, or Codex coder-loop status should
 use both, not either alone.
 
+## Harness Evals V2 Addendum
+
+Verified on `2026-04-10` before expanding the eval surface to `loop`,
+`worktree`, and `strict` scenarios:
+
+- OpenAI's agent-evals guidance frames agent quality as workflow quality, not
+  just final-answer quality. That supports expanding ForgeGod evals from
+  chat/run UX into workflow-level loop and blocked-task behavior:
+  - https://platform.openai.com/docs/guides/agent-evals
+- OpenAI's harness-engineering guidance reinforces that repeated, measurable
+  workflow traces are how you decide whether a harness change actually made the
+  system better. That supports moving worktree and strict-sandbox claims into
+  `forgegod evals` instead of leaving them only in ad-hoc tests:
+  - https://openai.com/index/harness-engineering/
+- Git's official `worktree` docs are explicit that linked worktrees share the
+  repository while keeping per-worktree state isolated, and that they must be
+  removed or pruned cleanly. That supports grading both output correctness and
+  worktree cleanup in ForgeGod evals:
+  - https://git-scm.com/docs/git-worktree
+- OpenHands' runloop/runtime split continues to support a two-tier strategy:
+  deterministic workflow evals for product behavior, and separate opt-in
+  integration smokes for environment-backed runtime guarantees:
+  - https://docs.openhands.dev/openhands/usage/runtimes/runloop-runtime
+
+Operational conclusion for ForgeGod: `forgegod evals` should cover deterministic
+workflow behavior for `chat`, `run`, `loop`, `parallel worktree`, and
+`strict-sandbox interface` paths. Real Docker backend execution should remain a
+separate opt-in integration smoke so the eval surface stays fast, repeatable,
+and release-gating friendly.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.
