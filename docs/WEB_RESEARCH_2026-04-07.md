@@ -456,6 +456,32 @@ Operational conclusion for ForgeGod:
   project config automatically when it can detect safe defaults, and keep
   guided onboarding commands such as `init` as an explicit optional path.
 
+## Conversational Mode Addendum - Runtime Flag Parity
+
+Verified on `2026-04-10` before tightening ForgeGod's talking-mode
+compatibility:
+
+- Claude Code's interactive-mode, CLI-reference, and settings docs reinforce
+  that the natural-language surface still lives inside a configurable CLI
+  product, not a stripped-down mode with fewer controls:
+  - https://code.claude.com/docs/en/interactive-mode
+  - https://code.claude.com/docs/en/cli-reference
+  - https://code.claude.com/docs/en/settings
+- `claw-code` keeps permission and runtime controls visible at the main CLI
+  contract level, which supports not hiding important execution knobs behind a
+  separate scripted-only path:
+  - https://raw.githubusercontent.com/ultraworkers/claw-code/main/USAGE.md
+- `crush` continues to frame the chat-like terminal surface itself as the
+  product, which supports keeping the natural-language entrypoint first-class
+  instead of treating it like a toy wrapper around the real commands:
+  - https://raw.githubusercontent.com/charmbracelet/crush/main/README.md
+
+Operational conclusion for ForgeGod: the conversational `forgegod` entrypoint
+should preserve the same high-signal runtime controls that matter on `run`:
+`--terse`, model overrides, review toggles, permission modes, approval modes,
+and allow-tool overrides should all work without forcing users back to a quoted
+subcommand syntax.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

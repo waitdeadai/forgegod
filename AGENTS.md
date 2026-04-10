@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `531`
-- Core suite: `python -m pytest -m "not stress" -q` -> `446 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `530 passed, 1 skipped`
+- Tests collected: `533`
+- Core suite: `python -m pytest -m "not stress" -q` -> `448 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `532 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -39,6 +39,10 @@ This file is the repo-local operating contract for coding agents working on Forg
 - That conversational root entrypoint now also auto-bootstraps a local
   `.forgegod/config.toml` on first use. `forgegod init` remains available when
   the user wants the guided wizard or explicit profile setup.
+- That same conversational root entrypoint now inherits the same session-level
+  runtime overrides as the scripted surfaces: `--terse`, `--model`,
+  `--review/--no-review`, `--permission-mode`, `--approval-mode`, and
+  `--allow-tool` all work without forcing users back to `forgegod run`.
 - HTTP client initialization now degrades cleanly when optional HTTP/2 extras
   are absent. ForgeGod logs once and falls back to HTTP/1.1 instead of failing
   the router or CI on environments that install plain `httpx` without `h2`.

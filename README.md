@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `531` collected tests, `446` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, while `forgegod run` remains the explicit scripted surface. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `533` collected tests, `448` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, and permission/approval flags. `forgegod run` remains the explicit scripted surface, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -127,7 +127,9 @@ roles to one detected model instead of using the recommended adversarial split.
 auto-creates local project config on first use. Use `forgegod init` when you
 want the guided wizard, and use `forgegod run "..."` when you need a
 deterministic, non-interactive command for scripts, CI, or reproducible
-automation.
+automation. The same root entrypoint also accepts session overrides such as
+`--terse`, `--model`, `--review/--no-review`, `--permission-mode`,
+`--approval-mode`, and repeated `--allow-tool` values.
 
 ### Something not working?
 
@@ -176,7 +178,7 @@ forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 forgegod loop --prd .forgegod/prd.json
 
 # Caveman mode — 50-75% token savings with ultra-terse prompts
-forgegod run --terse "Add a /health endpoint"
+forgegod --terse
 
 # Check what it learned
 forgegod memory
@@ -296,6 +298,7 @@ Ultra-terse prompts that reduce token usage 50-75% with no accuracy loss for cod
 
 ```bash
 # Add --terse to any command
+forgegod --terse
 forgegod run --terse "Build a REST API"
 forgegod loop --terse --prd .forgegod/prd.json
 forgegod plan --terse "Refactor auth module"

@@ -38,7 +38,7 @@ ForgeGod orquesta mÃºltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `531` tests recolectados, `446` tests no-stress pasando por defecto mas `1` test opt-in de integracion Docker strict, `84/84` stress tests pasando, lint en verde y build en verde. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso, mientras `forgegod run` queda como superficie explicita para scripts. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `533` tests recolectados, `448` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo y flags de permisos/aprobacion. `forgegod run` queda como superficie explicita para scripts y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -61,7 +61,10 @@ adversarial recomendado.
 `forgegod` ahora es la entrada principal conversacional para personas y
 auto-crea config local en el primer uso. UsÃ¡ `forgegod init` si querÃ©s el
 wizard guiado, y `forgegod run "..."` cuando necesites una superficie no
-interactiva y reproducible para scripts, CI o automatizaciÃ³n.
+interactiva y reproducible para scripts, CI o automatizaciÃ³n. Esa misma
+entrada raÃ­z tambiÃ©n acepta overrides de sesiÃ³n como `--terse`, `--model`,
+`--review/--no-review`, `--permission-mode`, `--approval-mode` y
+`--allow-tool`.
 
 ## Inicio RÃ¡pido (Sin Saber Programar)
 
@@ -163,7 +166,7 @@ forgegod plan "ConstruÃ­ una API REST para una app de tareas con auth, CRUD y 
 forgegod loop --prd .forgegod/prd.json
 
 # Modo cavernÃ­cola â€” 50-75% ahorro de tokens con prompts ultra-concisos
-forgegod run --terse "AgregÃ¡ un endpoint /health"
+forgegod --terse
 
 # Ver quÃ© aprendiÃ³
 forgegod memory
@@ -246,6 +249,7 @@ Prompts ultra-concisos que reducen el uso de tokens 50-75% sin pÃ©rdida de pre
 
 ```bash
 # AgregÃ¡ --terse a cualquier comando
+forgegod --terse
 forgegod run --terse "ConstruÃ­ una API REST"
 forgegod loop --terse --prd .forgegod/prd.json
 

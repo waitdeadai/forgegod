@@ -315,12 +315,23 @@ def _run_task_entrypoint(
     )
 
 
-def _interactive_task_session() -> int:
+def _interactive_task_session(
+    *,
+    model: str | None = None,
+    review: bool = True,
+    permission_mode: str | None = None,
+    approval_mode: str | None = None,
+    allowed_tool: list[str] | None = None,
+    verbose: bool = False,
+    terse: bool = False,
+) -> int:
     _print_banner()
     console.print(
         "[dim]Talk to ForgeGod in natural language. "
         "Each message becomes a task against the current workspace.[/dim]"
     )
+    if terse:
+        console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
     console.print(
         "[dim]Type /exit to leave, or use slash commands like /help for quick tips.[/dim]\n"
     )
@@ -356,7 +367,17 @@ def _interactive_task_session() -> int:
             )
             continue
 
-        exit_code = _run_task_entrypoint(task, show_banner=False)
+        exit_code = _run_task_entrypoint(
+            task,
+            model=model,
+            review=review,
+            permission_mode=permission_mode,
+            approval_mode=approval_mode,
+            allowed_tool=allowed_tool,
+            verbose=verbose,
+            terse=terse,
+            show_banner=False,
+        )
         if exit_code != 0:
             console.print("[yellow]ForgeGod needs another try or a different instruction.[/yellow]")
         console.print()
@@ -366,6 +387,29 @@ def _interactive_task_session() -> int:
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Override coder model"),
+    review: bool = typer.Option(
+        True,
+        "--review/--no-review",
+        help="Review output with frontier",
+    ),
+    permission_mode: Optional[str] = typer.Option(
+        None,
+        "--permission-mode",
+        help="Permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: Optional[str] = typer.Option(
+        None,
+        "--approval-mode",
+        help="Approval mode: deny, prompt, approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allow-tool",
+        help="Repeat to allow only specific tools for this session",
+    ),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable debug logging"),
+    terse: bool = typer.Option(False, "--terse", help="Caveman mode — terse prompts"),
 ):
     if version:
         _print_banner()
@@ -386,7 +430,17 @@ def main(
         raise typer.Exit()
 
     _ensure_project_bootstrap(announce=True)
-    raise typer.Exit(_interactive_task_session())
+    raise typer.Exit(
+        _interactive_task_session(
+            model=model,
+            review=review,
+            permission_mode=permission_mode,
+            approval_mode=approval_mode,
+            allowed_tool=allowed_tool,
+            verbose=verbose,
+            terse=terse,
+        )
+    )
 
 
 @app.command()

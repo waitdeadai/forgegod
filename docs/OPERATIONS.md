@@ -23,24 +23,24 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `531`
+- Tests collected: `533`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-10 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `446 passed, 1 skipped, 84 deselected in 72.11s` |
+| `python -m pytest -m "not stress" -q` | `448 passed, 1 skipped, 84 deselected in 71.18s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
 | `python scripts/run_stress_tests.py --markdown` | `84 passed in 134.00s` |
-| `python -m pytest tests -q` | `530 passed, 1 skipped in 180.01s` |
-| `python -m pytest --collect-only -q` | `531 tests collected` |
+| `python -m pytest tests -q` | `532 passed, 1 skipped in 188.64s` |
+| `python -m pytest --collect-only -q` | `533 tests collected` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
 | `python scripts/run_mock_parity_harness.py` | `10 passed` |
 | `python scripts/run_cli_mock_parity_harness.py` | `12 passed` |
-| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q` | `1 passed in 5.01s` |
+| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `1 skipped`; local Docker daemon was not ready in this verification session |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
 
 ## Current Reality Check
@@ -60,6 +60,11 @@ This document is the current system of record for day-to-day work in this reposi
   on first use with auth-aware defaults when possible. `forgegod init` is still
   the guided wizard path when the user wants onboarding or explicit profile
   selection up front.
+- That conversational root entrypoint now also preserves the same session
+  overrides as explicit subcommands, including `--terse`, model overrides,
+  review toggles, permission/approval modes, and repeated `--allow-tool`
+  values. Humans no longer lose control by choosing the natural-language
+  surface over `forgegod run`.
 - `forgegod init` onboarding now detects linked providers up front, recommends a setup path, explains repo-local secret storage, and keeps model connection guidance inside ForgeGod CLI instead of pushing users straight into manual shell editing.
 - OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.

@@ -161,6 +161,60 @@ def test_root_interactive_session_runs_task_and_exits(monkeypatch):
     assert "Talk to ForgeGod in natural language" in visible
 
 
+def test_root_interactive_session_propagates_runtime_flags(monkeypatch):
+    prompts = iter(["Add a status page", "/exit"])
+    calls: list[tuple[str, dict[str, object]]] = []
+    printed: list[str] = []
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli._cli_is_interactive", lambda: True)
+    monkeypatch.setattr("forgegod.cli.console.input", lambda *_args, **_kwargs: next(prompts))
+    monkeypatch.setattr(
+        "forgegod.cli.console.print",
+        lambda *args, **_kwargs: printed.extend(_capture_print_arg(arg) for arg in args),
+    )
+    monkeypatch.setattr("forgegod.cli._ensure_project_bootstrap", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "forgegod.cli._run_task_entrypoint",
+        lambda task, **kwargs: calls.append((task, kwargs)) or 0,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "--terse",
+            "--no-review",
+            "--permission-mode",
+            "read-only",
+            "--approval-mode",
+            "approve",
+            "--allow-tool",
+            "read_file",
+            "--model",
+            "ollama:qwen3-coder-next",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        (
+            "Add a status page",
+            {
+                "model": "ollama:qwen3-coder-next",
+                "review": False,
+                "permission_mode": "read-only",
+                "approval_mode": "approve",
+                "allowed_tool": ["read_file"],
+                "verbose": False,
+                "terse": True,
+                "show_banner": False,
+            },
+        )
+    ]
+    visible = "\n".join(printed)
+    assert "Caveman mode enabled" in visible
+
+
 def test_root_interactive_session_bootstraps_project(monkeypatch):
     prompts = iter(["/exit"])
     bootstrap_calls: list[dict[str, object]] = []
@@ -194,3 +248,26 @@ def test_build_run_config_bootstraps_project(monkeypatch):
 
     assert built is config
     assert bootstrap_calls == [{"announce": False}]
+
+
+def test_build_run_config_applies_terse_and_session_overrides(monkeypatch):
+    config = ForgeGodConfig()
+
+    monkeypatch.setattr("forgegod.cli._ensure_project_bootstrap", lambda *args, **kwargs: False)
+    monkeypatch.setattr("forgegod.config.load_config", lambda: config)
+
+    built = _build_run_config(
+        model="ollama:qwen3-coder-next",
+        review=False,
+        permission_mode="read-only",
+        approval_mode="approve",
+        allowed_tool=["read_file"],
+        terse=True,
+    )
+
+    assert built.models.coder == "ollama:qwen3-coder-next"
+    assert built.review.always_review_run is False
+    assert built.security.permission_mode == "read-only"
+    assert built.security.approval_mode == "approve"
+    assert built.security.allowed_tools == ["read_file"]
+    assert built.terse.enabled is True
