@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from typer.testing import CliRunner
 
-from forgegod.cli import _safe_console_text, app
+from forgegod.cli import _build_run_config, _safe_console_text, app
 from forgegod.cli_ux import RunNarrator
 from forgegod.config import ForgeGodConfig
 from forgegod.models import AgentResult, ModelUsage, ReviewResult, ReviewVerdict
@@ -159,3 +159,38 @@ def test_root_interactive_session_runs_task_and_exits(monkeypatch):
     assert tasks == ["Add a status page"]
     visible = "\n".join(printed)
     assert "Talk to ForgeGod in natural language" in visible
+
+
+def test_root_interactive_session_bootstraps_project(monkeypatch):
+    prompts = iter(["/exit"])
+    bootstrap_calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli._cli_is_interactive", lambda: True)
+    monkeypatch.setattr("forgegod.cli.console.input", lambda *_args, **_kwargs: next(prompts))
+    monkeypatch.setattr("forgegod.cli.console.print", lambda *args, **_kwargs: None)
+    monkeypatch.setattr(
+        "forgegod.cli._ensure_project_bootstrap",
+        lambda *args, **kwargs: bootstrap_calls.append(kwargs) or True,
+    )
+
+    result = runner.invoke(app, [])
+
+    assert result.exit_code == 0
+    assert bootstrap_calls == [{"announce": True}]
+
+
+def test_build_run_config_bootstraps_project(monkeypatch):
+    config = ForgeGodConfig()
+    bootstrap_calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr(
+        "forgegod.cli._ensure_project_bootstrap",
+        lambda *args, **kwargs: bootstrap_calls.append(kwargs) or True,
+    )
+    monkeypatch.setattr("forgegod.config.load_config", lambda: config)
+
+    built = _build_run_config()
+
+    assert built is config
+    assert bootstrap_calls == [{"announce": False}]

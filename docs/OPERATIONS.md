@@ -15,7 +15,7 @@ This document is the current system of record for day-to-day work in this reposi
 - That target is only credible when backed by current primary or official 2026 sources and confirmed by local repo evidence such as passing tests, reproducible benchmarks, or documented verification steps.
 - If the repo falls short of that bar, document the gap explicitly rather than silently implying frontier quality.
 
-## Verified Baseline (2026-04-09)
+## Verified Baseline (2026-04-10)
 
 - OS: `Windows-11-10.0.26200-SP0`
 - Python: `3.13.5`
@@ -23,18 +23,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `529`
+- Tests collected: `531`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
-| Command | Observed result on 2026-04-09 |
+| Command | Observed result on 2026-04-10 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `444 passed, 1 skipped, 84 deselected in 61.70s` |
+| `python -m pytest -m "not stress" -q` | `446 passed, 1 skipped, 84 deselected in 72.11s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 109.14s` |
-| `python -m pytest tests -q` | `528 passed, 1 skipped in 169.94s` |
-| `python -m pytest --collect-only -q` | `529 tests collected` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 134.00s` |
+| `python -m pytest tests -q` | `530 passed, 1 skipped in 180.01s` |
+| `python -m pytest --collect-only -q` | `531 tests collected` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -56,6 +56,10 @@ This document is the current system of record for day-to-day work in this reposi
   session by default, so the primary UX no longer requires `forgegod run "..."`.
   `forgegod run` remains the deterministic scripted path for CI, automation,
   and copy-paste one-shots.
+- That same root entrypoint now auto-creates repo-local `.forgegod/config.toml`
+  on first use with auth-aware defaults when possible. `forgegod init` is still
+  the guided wizard path when the user wants onboarding or explicit profile
+  selection up front.
 - `forgegod init` onboarding now detects linked providers up front, recommends a setup path, explains repo-local secret storage, and keeps model connection guidance inside ForgeGod CLI instead of pushing users straight into manual shell editing.
 - OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.

@@ -9,15 +9,15 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Use [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) for the dated defect list and verification baseline.
 - Treat `README.md`, `README.es.md`, `BENCHMARKS.md`, and `docs/index.html` as secondary sources. They contain marketing and historical content.
 
-## Verified Baseline (2026-04-09)
+## Verified Baseline (2026-04-10)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `529`
-- Core suite: `python -m pytest -m "not stress" -q` -> `444 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `528 passed, 1 skipped`
+- Tests collected: `531`
+- Core suite: `python -m pytest -m "not stress" -q` -> `446 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `530 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes
@@ -36,6 +36,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - The primary user-facing entrypoint is now conversational: running `forgegod`
   in a real terminal opens a natural-language session. `forgegod run` remains
   the explicit non-interactive/scriptable surface.
+- That conversational root entrypoint now also auto-bootstraps a local
+  `.forgegod/config.toml` on first use. `forgegod init` remains available when
+  the user wants the guided wizard or explicit profile setup.
 - HTTP client initialization now degrades cleanly when optional HTTP/2 extras
   are absent. ForgeGod logs once and falls back to HTTP/1.1 instead of failing
   the router or CI on environments that install plain `httpx` without `h2`.

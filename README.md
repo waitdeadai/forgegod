@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `529` collected tests, `444` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. The primary human entrypoint is now conversational `forgegod`; `forgegod run` remains the explicit scripted surface. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `531` collected tests, `446` non-stress tests passing by default plus `1` opt-in Docker strict integration test, `84/84` stress tests passing, green lint, and a green build. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, while `forgegod run` remains the explicit scripted surface. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -78,9 +78,9 @@ You don't need to be a developer to use ForgeGod. If you can describe what you w
 1. Install Ollama: https://ollama.com/download
 2. Pull a model: `ollama pull qwen3.5:9b`
 3. Install ForgeGod: `pip install forgegod`
-4. Run: `forgegod init` (interactive wizard guides you and lets you pick `adversarial` or `single-model`)
-5. Start the session: `forgegod`
-6. Say what you want naturally, for example: `Create a simple website with a contact form`
+4. Start the session: `forgegod`
+5. Say what you want naturally, for example: `Create a simple website with a contact form`
+6. If you want the guided wizard instead, run: `forgegod init`
 
 ### Option B: OpenAI Native Subscription Mode
 
@@ -123,9 +123,11 @@ If you want a simpler setup, ForgeGod also supports `single-model` mode during
 `forgegod init` and `forgegod auth sync --profile single-model`. That pins all
 roles to one detected model instead of using the recommended adversarial split.
 
-`forgegod` is now the primary conversational entrypoint for humans. Use
-`forgegod run "..."` when you need a deterministic, non-interactive command for
-scripts, CI, or reproducible automation.
+`forgegod` is now the primary conversational entrypoint for humans, and it
+auto-creates local project config on first use. Use `forgegod init` when you
+want the guided wizard, and use `forgegod run "..."` when you need a
+deterministic, non-interactive command for scripts, CI, or reproducible
+automation.
 
 ### Something not working?
 
@@ -142,7 +144,10 @@ in non-technical terms.
 # Install
 pip install forgegod
 
-# Initialize a project
+# Fastest path: talk to ForgeGod directly
+forgegod
+
+# Optional guided project setup
 forgegod init
 
 # Or force one harness style explicitly
@@ -203,7 +208,11 @@ ForgeGod auto-detects your environment on first run:
 5. Lets you choose `adversarial` (recommended) or `single-model`
 6. Creates `.forgegod/config.toml` with sensible defaults
 
-No manual setup required. Just run `forgegod init` and go.
+No manual setup required. Just run `forgegod` and go.
+
+On first conversational use, ForgeGod auto-creates `.forgegod/config.toml`
+with auth-aware defaults when it can detect usable model surfaces. If you want
+the guided wizard or explicit profile selection up front, run `forgegod init`.
 
 If you add a new provider later, run `forgegod auth sync --profile adversarial`
 or `forgegod auth sync --profile single-model` to rewrite model defaults from

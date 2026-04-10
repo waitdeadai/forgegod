@@ -452,6 +452,9 @@ Operational conclusion for ForgeGod:
 - Prefer a conversational root entrypoint for humans and keep explicit
   subcommands such as `run` for scripts, automation, and reproducible
   non-interactive workflows.
+- For first-run UX, let the conversational root entrypoint bootstrap local
+  project config automatically when it can detect safe defaults, and keep
+  guided onboarding commands such as `init` as an explicit optional path.
 
 ## What Future Maintainers Should Re-Check
 

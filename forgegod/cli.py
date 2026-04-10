@@ -110,6 +110,53 @@ def _detect_runtime_model_defaults(
     return models, providers, ollama_available, recommended
 
 
+def _project_has_config(project_path: Path | None = None) -> bool:
+    root = Path(project_path or ".").resolve()
+    return (root / ".forgegod" / "config.toml").exists()
+
+
+def _ensure_project_bootstrap(
+    project_path: Path | None = None,
+    *,
+    profile: str = "adversarial",
+    announce: bool = True,
+) -> bool:
+    from forgegod.config import init_project
+
+    root = Path(project_path or ".").resolve()
+    if _project_has_config(root):
+        return False
+
+    _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
+        root,
+        profile=profile,
+    )
+    project_dir = init_project(
+        root,
+        model_defaults=recommended,
+        harness_profile=profile,
+    )
+
+    if announce:
+        if providers or ollama_available:
+            console.print(
+                "[forge.primary]ForgeGod[/forge.primary] "
+                "bootstrapped this project with auth-aware defaults."
+            )
+        else:
+            console.print(
+                "[forge.primary]ForgeGod[/forge.primary] "
+                "created local project config so you can start talking right away."
+            )
+            console.print(
+                "[forge.warn]No provider auth was detected yet.[/forge.warn] "
+                "Run [cyan]forgegod doctor[/cyan] or [cyan]forgegod auth status[/cyan] "
+                "if you need to connect models."
+            )
+        console.print(f"[forge.muted]Project config: {project_dir}[/forge.muted]")
+    return True
+
+
 def _build_run_config(
     *,
     model: str | None = None,
@@ -122,6 +169,7 @@ def _build_run_config(
 ):
     from forgegod.config import load_config
 
+    _ensure_project_bootstrap(announce=False)
     config = load_config()
     configure_cli_logging(
         verbose=verbose,
@@ -337,6 +385,7 @@ def main(
         )
         raise typer.Exit()
 
+    _ensure_project_bootstrap(announce=True)
     raise typer.Exit(_interactive_task_session())
 
 
