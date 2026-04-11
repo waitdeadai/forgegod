@@ -1,4 +1,4 @@
-"""ForgeGod CLI — Typer entry point."""
+"""ForgeGod CLI - Typer entry point."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ auth_app = typer.Typer(help="Manage native provider auth surfaces and login stat
 app.add_typer(design_app, name="design")
 app.add_typer(auth_app, name="auth")
 
-# ── Mascot — The One-Eyed Triangle ──
+# -- Mascot - The One-Eyed Triangle --
 _VER = __version__
 
 
@@ -215,7 +215,7 @@ async def _execute_run_task(
     if show_banner:
         _print_banner(mini=True)
         if config.terse.enabled:
-            console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
+            console.print("[dim]Caveman mode enabled - ultra-terse prompts[/dim]")
 
     router = ModelRouter(config)
     narrator = RunNarrator()
@@ -341,7 +341,7 @@ def _interactive_task_session(
         "Each message becomes a task against the current workspace.[/dim]"
     )
     if terse:
-        console.print("[dim]Caveman mode enabled — ultra-terse prompts[/dim]")
+        console.print("[dim]Caveman mode enabled - ultra-terse prompts[/dim]")
     console.print(
         "[dim]Type /exit to leave, or use slash commands like /help for quick tips.[/dim]\n"
     )
@@ -419,7 +419,7 @@ def main(
         help="Repeat to allow only specific tools for this session",
     ),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logging"),
-    terse: bool = typer.Option(False, "--terse", help="Caveman mode — terse prompts"),
+    terse: bool = typer.Option(False, "--terse", help="Caveman mode - terse prompts"),
 ):
     if version:
         _print_banner()
@@ -474,7 +474,7 @@ def init(
         help="OpenAI surface: auto, api-only, codex-only, api+codex",
     ),
 ):
-    """Initialize a ForgeGod project — interactive wizard or quick auto-detect."""
+    """Initialize a ForgeGod project - interactive wizard or quick auto-detect."""
     from forgegod.i18n import set_lang
 
     set_lang(lang)
@@ -545,7 +545,7 @@ def init(
             for m in model_names[:5]:
                 console.print(f"    [dim]{m}[/dim]")
     except Exception:
-        console.print("  [dim]-[/dim] Ollama not detected (optional — install for $0 local mode)")
+        console.print("  [dim]-[/dim] Ollama not detected (optional - install for $0 local mode)")
 
     if not providers and not ollama_available:
         console.print()
@@ -983,7 +983,7 @@ def run(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
     terse: bool = typer.Option(
-        False, "--terse", help="Caveman mode — terse prompts"
+        False, "--terse", help="Caveman mode - terse prompts"
     ),
 ):
     """Execute a single coding task."""
@@ -1028,10 +1028,10 @@ def loop(
         False, "--dry-run", "-d", help="Print story order, don't run"
     ),
     terse: bool = typer.Option(
-        False, "--terse", help="Caveman mode — terse prompts"
+        False, "--terse", help="Caveman mode - terse prompts"
     ),
 ):
-    """Run 24/7 Ralph loop — autonomous coding from PRD."""
+    """Run 24/7 Ralph loop - autonomous coding from PRD."""
     from forgegod.config import load_config
 
     config = load_config()
@@ -1113,7 +1113,7 @@ def plan(
         Path(".forgegod/prd.json"), "--output", "-o", help="Output PRD path"
     ),
     terse: bool = typer.Option(
-        False, "--terse", help="Caveman mode — terse prompts"
+        False, "--terse", help="Caveman mode - terse prompts"
     ),
 ):
     """Generate a PRD (task decomposition) from a description."""
@@ -1153,12 +1153,12 @@ def recon(
     ),
     min_score: float = typer.Option(7.0, "--min-score", help="Min approval score (0-10)"),
 ):
-    """Research-grounded planning — web research + adversarial debate.
+    """Research-grounded planning - web research + adversarial debate.
 
     The only coding agent that researches before it codes.
-    Phase 1: RECON — searches the web for best libraries, CVEs, patterns.
-    Phase 2: ARCHITECT — generates PRD using research findings.
-    Phase 3: ADVERSARY — hostile critic debates the plan until score >= min_score.
+    Phase 1: RECON - searches the web for best libraries, CVEs, patterns.
+    Phase 2: ARCHITECT - generates PRD using research findings.
+    Phase 3: ADVERSARY - hostile critic debates the plan until score >= min_score.
     """
     from forgegod.config import load_config
 
@@ -1177,7 +1177,7 @@ def recon(
         planner = Planner(config=config, router=router)
 
         console.print(Panel(
-            "[cyan]RECON MODE[/cyan] — Research-grounded planning\n"
+            "[cyan]RECON MODE[/cyan] - Research-grounded planning\n"
             f"Task: {task[:80]}{'...' if len(task) > 80 else ''}\n"
             f"Provider: {provider} | Searches: {searches} | Debate rounds: {rounds}",
             title="[bold cyan]ForgeGod Recon[/bold cyan]",
@@ -1278,7 +1278,7 @@ def contribute(
         help="After planning, execute the first proposed contribution story",
     ),
 ):
-    """Contribution mode — read CONTRIBUTING.md, inspect the repo, plan, then optionally act."""
+    """Contribution mode - read CONTRIBUTING.md, inspect the repo, plan, then optionally act."""
     from forgegod.config import init_project, load_config
     from forgegod.contributing import (
         build_contribution_task,
@@ -1466,13 +1466,13 @@ def status():
     table.add_column("Value", style="green")
 
     table.add_row("Status", state.status.value)
-    table.add_row("Current Story", state.current_story_id or "—")
+    table.add_row("Current Story", state.current_story_id or "-")
     table.add_row("Completed", str(state.stories_completed))
     table.add_row("Failed", str(state.stories_failed))
     table.add_row("Iterations", str(state.total_iterations))
     table.add_row("Cost", f"${state.total_cost_usd:.4f}")
     table.add_row("Context Rotations", str(state.context_rotations))
-    table.add_row("Started", state.started_at or "—")
+    table.add_row("Started", state.started_at or "-")
 
     console.print(table)
 
@@ -1874,7 +1874,7 @@ def benchmark(
     runs: int = typer.Option(1, "--runs", "-r", help="Runs per task (Pass@k)"),
     lang: str = typer.Option("auto", "--lang", "-l", help="Language: en, es, auto"),
 ):
-    """Benchmark models — compare speed, quality, cost, and self-repair."""
+    """Benchmark models - compare speed, quality, cost, and self-repair."""
     from forgegod.benchmark import BenchmarkRunner, detect_available_models
     from forgegod.config import load_config
     from forgegod.i18n import set_lang

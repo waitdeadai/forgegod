@@ -1868,7 +1868,7 @@ function setLang(lang) {
 function getTerminalLines() {
   if (currentLang === 'es') {
     return [
-      { cmd: 'forgegod init --lang es', delay: 1200, output: [
+            { cmd: 'forgegod init --profile adversarial --lang es', delay: 1200, output: [
         { text: '  ForgeGod - Inicializando proyecto', cls: 'output' },
       { text: '  + Suscripción OpenAI Codex detectada', cls: 'success' },
       { text: '  + Z.AI Coding Plan detectado', cls: 'success' },
@@ -1879,6 +1879,13 @@ function getTerminalLines() {
         { text: '  + Detectado: python', cls: 'success' },
         { text: '  + Repositorio Git', cls: 'success' },
         { text: '  Inicializado en .forgegod/', cls: 'success' },
+      ]},
+      { cmd: 'forgegod auth status', delay: 1200, output: [
+        { text: '  ForgeGod Auth Status', cls: 'output' },
+        { text: '  openai-codex: ready (suscripción)', cls: 'success' },
+        { text: '  openai-api: no listo (set OPENAI_API_KEY)', cls: 'output' },
+        { text: '  zai-coding-plan: listo', cls: 'success' },
+        { text: '  openrouter: no listo', cls: 'output' },
       ]},
       { cmd: 'forgegod', delay: 1400, output: [
       { text: '  ForgeGod - sesion conversacional lista', cls: 'output' },
@@ -1911,7 +1918,7 @@ function getTerminalLines() {
     ];
   }
   return [
-    { cmd: 'forgegod init', delay: 1200, output: [
+        { cmd: 'forgegod init --profile adversarial', delay: 1200, output: [
       { text: '  ForgeGod - Initializing project', cls: 'output' },
       { text: '  + OpenAI Codex subscription detected', cls: 'success' },
       { text: '  + Z.AI Coding Plan detected', cls: 'success' },
@@ -1922,6 +1929,13 @@ function getTerminalLines() {
       { text: '  + Detected: python', cls: 'success' },
       { text: '  + Git repository', cls: 'success' },
       { text: '  Initialized at .forgegod/', cls: 'success' },
+    ]},
+    { cmd: 'forgegod auth status', delay: 1200, output: [
+      { text: '  ForgeGod Auth Status', cls: 'output' },
+      { text: '  openai-codex: ready (subscription)', cls: 'success' },
+      { text: '  openai-api: not ready (set OPENAI_API_KEY)', cls: 'output' },
+      { text: '  zai-coding-plan: ready', cls: 'success' },
+      { text: '  openrouter: not ready', cls: 'output' },
     ]},
     { cmd: 'forgegod', delay: 1400, output: [
       { text: '  ForgeGod - natural-language session ready', cls: 'output' },
@@ -2138,4 +2152,5 @@ window.addEventListener('resize', function() {
 </script>
 </body>
 </html>
+
 
