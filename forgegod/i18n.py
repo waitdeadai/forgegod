@@ -39,7 +39,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "openai_surface_body": (
             "Auto keeps provider-agnostic routing. API-only uses OpenAI API only. "
             "Codex-only stays on the ChatGPT/Codex subscription surface. API + Codex "
-            "splits builder roles onto the API and reviewer roles onto Codex."
+            "splits builder roles onto the API and reviewer roles onto Codex. "
+            "If you only have a subscription, choose Codex-only."
         ),
         "openai_surface_auto": "Auto (keep provider-agnostic routing)",
         "openai_surface_api_only": "OpenAI API only",
@@ -161,7 +162,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "openai_surface_body": (
             "Auto mantiene ruteo agnostico. API-only usa solo OpenAI API. "
             "Codex-only se queda solo en la suscripcion ChatGPT/Codex. API + Codex "
-            "pone builder en la API y reviewer en Codex."
+            "pone builder en la API y reviewer en Codex. "
+            "Si solo tenes suscripcion, elegi Codex-only."
         ),
         "openai_surface_auto": "Auto (mantener ruteo agnostico)",
         "openai_surface_api_only": "Solo OpenAI API",

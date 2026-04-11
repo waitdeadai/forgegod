@@ -155,6 +155,10 @@ class OnboardingWizard:
         if codex_logged_in:
             self._detected_providers.add("openai-codex")
             self._detected_lines.append("OpenAI Codex subscription is already linked.")
+            if self._codex_supported:
+                self._detected_lines.append(
+                    "Codex subscription can run ForgeGod end-to-end in codex-only mode."
+                )
         elif self._codex_installed:
             self._detected_lines.append(
                 "Codex CLI is installed and can be linked from this onboarding flow."
@@ -193,6 +197,12 @@ class OnboardingWizard:
             codex_supported=self._codex_supported,
             codex_installed=self._codex_installed,
         )
+        if (
+            self._openai_surface == "auto"
+            and "openai-codex" in self._detected_providers
+            and "openai" not in self._detected_providers
+        ):
+            self._openai_surface = "codex-only"
         self._probed = True
 
     def _detect_ollama(self) -> tuple[bool, list[str]]:

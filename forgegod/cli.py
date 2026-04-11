@@ -799,6 +799,16 @@ def auth_sync(
             f"requested {openai_surface_label(openai_surface)}, "
             f"but ForgeGod only detected {openai_surface_label(effective_surface)} today."
         )
+    if (
+        openai_surface == "auto"
+        and "openai-codex" in providers
+        and "openai" not in providers
+    ):
+        console.print(
+            "[yellow]Note:[/yellow] Only Codex subscription was detected. "
+            "ForgeGod will default to codex-only for OpenAI roles. "
+            "Use --openai-surface codex-only to make that explicit."
+        )
 
     if "openai-codex" in providers and recommended.coder.startswith("openai-codex"):
         console.print(
@@ -875,6 +885,16 @@ def auth_explain(
             "[yellow]OpenAI surface fallback:[/yellow] "
             f"requested {openai_surface_label(openai_surface)}, "
             f"but ForgeGod only detected {openai_surface_label(effective_surface)} today."
+        )
+    if (
+        openai_surface == "auto"
+        and "openai-codex" in providers
+        and "openai" not in providers
+    ):
+        console.print(
+            "[yellow]Note:[/yellow] Only Codex subscription was detected. "
+            "ForgeGod will default to codex-only for OpenAI roles. "
+            "Use --openai-surface codex-only to make that explicit."
         )
 
 

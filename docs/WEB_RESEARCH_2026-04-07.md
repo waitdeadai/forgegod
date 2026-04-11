@@ -629,6 +629,9 @@ Verified on `2026-04-11` before graduating ForgeGod's native Windows Codex path:
 - OpenAI's Codex CLI help article continues to describe the official login and
   usage flow for the Codex CLI:
   - https://help.openai.com/en/articles/11096431-openai-codex-cli-getting-tarted
+- OpenAI's Codex Windows doc explicitly documents native Windows support and
+  calls out WSL as the Linux-workspace path when needed:
+  - https://developers.openai.com/codex/windows
 - OpenAI Help still states that Codex is included on supported ChatGPT plans:
   - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
 - OpenAI Help still states that ChatGPT subscriptions and OpenAI API usage are

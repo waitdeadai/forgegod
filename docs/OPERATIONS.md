@@ -37,14 +37,14 @@ This document is the current system of record for day-to-day work in this reposi
 | `python -m pytest --collect-only -q` | `567 tests collected` |
 | `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m forgegod evals --matrix openai-surfaces --output .forgegod/evals/openai_surface_matrix.json --traces-dir .forgegod/evals/openai_surface_matrix_traces` | `8/8 rows passing, score=1.000` |
-| `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | `0/8 rows passed, 0 failed, 8 skipped`; temporarily unavailable Codex quota and missing API auth are now skipped honestly instead of failing the release |
-| `python -m forgegod evals --matrix openai-live-compare --output .forgegod/evals/openai_live_compare.json` | `0 runnable, 0 passed, 0 failed, 8 skipped`; recommends `none` when no live OpenAI row is actually runnable |
+| `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | `4/8 rows passed, 0 failed, 4 skipped`; Codex-backed rows run when subscription auth is ready |
+| `python -m forgegod evals --matrix openai-live-compare --output .forgegod/evals/openai_live_compare.json` | `4 runnable, 4 passed, 0 failed, 4 skipped`; recommended row: `adversarial_codex_only` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
 | `python scripts/run_mock_parity_harness.py` | `10 passed` |
 | `python scripts/run_cli_mock_parity_harness.py` | `12 passed` |
-| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `1 passed` |
+| `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `skipped` (Docker daemon not ready) |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
 
 ## Current Reality Check
