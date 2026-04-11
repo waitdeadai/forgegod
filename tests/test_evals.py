@@ -7,7 +7,13 @@ from typer.testing import CliRunner
 
 from forgegod.cli import app
 from forgegod.config import ForgeGodConfig
-from forgegod.evals import HarnessEvalRunner, load_eval_manifest
+from forgegod.evals import (
+    EvalLiveMatrixReport,
+    EvalLiveMatrixRow,
+    EvalLiveProbeResult,
+    HarnessEvalRunner,
+    load_eval_manifest,
+)
 
 runner = CliRunner()
 
@@ -111,6 +117,7 @@ def test_evals_cli_lists_matrices():
     assert result.exit_code == 0
     assert "Harness eval matrices" in result.stdout
     assert "openai-surfaces" in result.stdout
+    assert "openai-live" in result.stdout
 
 
 def test_harness_eval_runner_runs_openai_surface_matrix(tmp_path):
@@ -165,3 +172,166 @@ def test_evals_cli_runs_openai_surface_matrix(tmp_path):
     assert payload["matrix_name"] == "openai-surfaces-v1"
     assert payload["total_rows"] == 8
     assert payload["passed_rows"] == 8
+
+
+def test_harness_eval_runner_runs_openai_live_surface_matrix(monkeypatch, tmp_path):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(
+        "forgegod.evals.codex_login_status_sync",
+        lambda: (True, "Logged in using ChatGPT"),
+    )
+    monkeypatch.setattr(
+        "forgegod.evals.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    def fake_run_live(self, models, *, profile, requested_surface, effective_surface):
+        return (
+            [
+                EvalLiveProbeResult(
+                    name="coder_exact_marker",
+                    role="coder",
+                    expected="FORGEGOD_CODER_OK",
+                    observed="FORGEGOD_CODER_OK",
+                    provider=models["coder"].split(":", 1)[0],
+                    model=models["coder"].split(":", 1)[1],
+                    passed=True,
+                    detail=f"surface={effective_surface}",
+                    usage={"input_tokens": 10, "output_tokens": 2},
+                ),
+                EvalLiveProbeResult(
+                    name="reviewer_exact_marker",
+                    role="reviewer",
+                    expected="FORGEGOD_REVIEWER_OK",
+                    observed="FORGEGOD_REVIEWER_OK",
+                    provider=models["reviewer"].split(":", 1)[0],
+                    model=models["reviewer"].split(":", 1)[1],
+                    passed=True,
+                    detail=f"surface={effective_surface}",
+                    usage={"input_tokens": 10, "output_tokens": 2},
+                ),
+            ],
+            0.001,
+            2,
+        )
+
+    monkeypatch.setattr(HarnessEvalRunner, "_run_live_openai_probes", fake_run_live)
+
+    report = eval_runner.run_openai_live_surface_matrix(
+        output_path=tmp_path / "live-matrix.json"
+    )
+
+    assert report.matrix_name == "openai-live-v1"
+    assert report.total_rows == 8
+    assert report.passed_rows == 8
+    assert report.failed_rows == 0
+    assert report.skipped_rows == 0
+    assert report.score == 1.0
+    assert (tmp_path / "live-matrix.json").exists()
+    hybrid = next(row for row in report.rows if row.id == "adversarial_api_codex")
+    assert hybrid.requested_openai_surface == "api+codex"
+    assert hybrid.status == "passed"
+    assert hybrid.probe_results[1].provider == "openai-codex"
+
+
+def test_harness_eval_runner_skips_live_openai_rows_when_surfaces_missing(monkeypatch):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "forgegod.evals.codex_login_status_sync",
+        lambda: (False, "Not logged in"),
+    )
+    monkeypatch.setattr(
+        "forgegod.evals.codex_automation_status",
+        lambda: (False, "Use WSL for best Windows experience"),
+    )
+
+    report = eval_runner.run_openai_live_surface_matrix()
+
+    assert report.total_rows == 8
+    assert report.passed_rows == 0
+    assert report.failed_rows == 0
+    assert report.skipped_rows == 8
+    assert all(row.status == "skipped" for row in report.rows)
+
+
+def test_evals_cli_runs_openai_live_surface_matrix(tmp_path, monkeypatch):
+    fake_report = EvalLiveMatrixReport(
+        timestamp="2026-04-11T00:00:00+00:00",
+        forgegod_version="0.1.0",
+        matrix_name="openai-live-v1",
+        detected_providers=["openai"],
+        codex_login_ready=False,
+        codex_automation_supported=False,
+        total_rows=2,
+        passed_rows=1,
+        failed_rows=0,
+        skipped_rows=1,
+        score=1.0,
+        rows=[
+            EvalLiveMatrixRow(
+                id="single_model_api_only",
+                profile="single-model",
+                preferred_provider="openai",
+                requested_openai_surface="api-only",
+                effective_openai_surface="api-only",
+                detected_providers=["openai"],
+                requested_surface_ready=True,
+                status="passed",
+                detail="2/2 live probes passed.",
+                models={"coder": "openai:gpt-5.4-mini", "reviewer": "openai:gpt-5.4-mini"},
+                score=1.0,
+                total_cost_usd=0.0012,
+                call_count=2,
+                probe_results=[
+                    EvalLiveProbeResult(
+                        name="coder_exact_marker",
+                        role="coder",
+                        expected="FORGEGOD_CODER_OK",
+                        observed="FORGEGOD_CODER_OK",
+                        provider="openai",
+                        model="gpt-5.4-mini",
+                        passed=True,
+                    )
+                ],
+            ),
+            EvalLiveMatrixRow(
+                id="adversarial_codex_only",
+                profile="adversarial",
+                preferred_provider="openai",
+                requested_openai_surface="codex-only",
+                effective_openai_surface="api-only",
+                detected_providers=["openai"],
+                requested_surface_ready=False,
+                status="skipped",
+                detail="Skipped: Codex subscription is not logged in.",
+                models={"coder": "openai:gpt-5.4-mini", "reviewer": "openai:gpt-5.4-mini"},
+            ),
+        ],
+    )
+
+    monkeypatch.setattr(
+        "forgegod.evals.HarnessEvalRunner.run_openai_live_surface_matrix",
+        lambda self, output_path: fake_report,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "evals",
+            "--matrix",
+            "openai-live",
+            "--output",
+            str(tmp_path / "matrix.json"),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    normalized = _normalize_cli_text(result.stdout)
+    assert "Live OpenAI eval matrix complete" in normalized
+    assert "Live probe summary" in normalized

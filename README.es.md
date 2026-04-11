@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `553` tests recolectados, `468` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, separa scores por dimension del harness, trae una matriz de superficies OpenAI y emite resúmenes de trace graders locales. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-11): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `556` tests recolectados, `471` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, separa scores por dimension del harness, trae una matriz de superficies OpenAI, emite resúmenes de trace graders locales, y ahora también ofrece una matriz live opt-in que hace probes reales sobre superficies API/Codex y saltea honestamente las que no están listas. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -192,6 +192,7 @@ forgegod run "Agregá un endpoint /health a server.py con uptime e info de versi
 forgegod evals
 forgegod evals --case chat_natural_language_roundtrip
 forgegod evals --matrix openai-surfaces
+forgegod evals --matrix openai-live
 
 # Planificar un proyecto → genera PRD
 forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y tests"
@@ -375,8 +376,10 @@ Regla practica del harness:
   denegaciones por permisos, disciplina del completion gate, comportamiento de
   loop/worktree y manejo de la interfaz strict. Ahora tambien separa scores por
   `ux`, `safety`, `workflow` y `verification`, y trae
-  `forgegod evals --matrix openai-surfaces` para cobertura OpenAI-first.
-  Los reportes ahora también incluyen trace graders locales.
+  `forgegod evals --matrix openai-surfaces` para cobertura OpenAI-first
+  determinística, más `forgegod evals --matrix openai-live` para probes reales
+  baratos cuando las superficies OpenAI están enlazadas. Los reportes ahora
+  también incluyen trace graders locales.
 
 ## Seguridad
 

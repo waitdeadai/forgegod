@@ -7,6 +7,7 @@ This is intentionally separate from `forgegod benchmark`:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import shutil
@@ -24,6 +25,7 @@ from typer.testing import CliRunner
 
 from forgegod import __version__
 from forgegod.config import ForgeGodConfig, recommend_model_defaults, resolve_openai_surface
+from forgegod.native_auth import codex_automation_status, codex_login_status_sync
 from forgegod.testing.mock_openai_service import SCENARIOS, start_mock_openai_server
 
 console = Console()
@@ -162,8 +164,62 @@ class EvalMatrixReport(BaseModel):
     matrix_name: str
     total_rows: int = 0
     passed_rows: int = 0
+    failed_rows: int = 0
+    skipped_rows: int = 0
     score: float = 0.0
     rows: list[EvalMatrixRow] = Field(default_factory=list)
+
+
+class EvalLiveProbeResult(BaseModel):
+    """One live provider probe inside a matrix row."""
+
+    name: str
+    role: str
+    expected: str
+    observed: str = ""
+    provider: str = ""
+    model: str = ""
+    passed: bool = False
+    detail: str = ""
+    usage: dict[str, Any] = Field(default_factory=dict)
+
+
+class EvalLiveMatrixRow(BaseModel):
+    """One live OpenAI API/Codex probe row."""
+
+    id: str
+    profile: str
+    preferred_provider: str
+    requested_openai_surface: str
+    effective_openai_surface: str
+    detected_providers: list[str] = Field(default_factory=list)
+    codex_login_ready: bool = False
+    codex_automation_supported: bool = False
+    requested_surface_ready: bool = False
+    status: str = "skipped"  # passed | failed | skipped
+    detail: str = ""
+    models: dict[str, str] = Field(default_factory=dict)
+    score: float = 0.0
+    total_cost_usd: float = 0.0
+    call_count: int = 0
+    probe_results: list[EvalLiveProbeResult] = Field(default_factory=list)
+
+
+class EvalLiveMatrixReport(BaseModel):
+    """Live OpenAI surface probe matrix report."""
+
+    timestamp: str
+    forgegod_version: str
+    matrix_name: str
+    detected_providers: list[str] = Field(default_factory=list)
+    codex_login_ready: bool = False
+    codex_automation_supported: bool = False
+    total_rows: int = 0
+    passed_rows: int = 0
+    failed_rows: int = 0
+    skipped_rows: int = 0
+    score: float = 0.0
+    rows: list[EvalLiveMatrixRow] = Field(default_factory=list)
 
 
 _BUILTIN_MANIFEST = {
@@ -535,6 +591,8 @@ class HarnessEvalRunner:
             matrix_name="openai-surfaces-v1",
             total_rows=len(rows),
             passed_rows=sum(1 for row in rows if row.passed),
+            failed_rows=sum(1 for row in rows if not row.passed),
+            skipped_rows=0,
             score=round(sum(row.score for row in rows) / len(rows), 3) if rows else 0.0,
             rows=rows,
         )
@@ -542,6 +600,110 @@ class HarnessEvalRunner:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(matrix_report.model_dump_json(indent=2), encoding="utf-8")
         return matrix_report
+
+    def run_openai_live_surface_matrix(
+        self,
+        *,
+        output_path: Path | None = None,
+    ) -> EvalLiveMatrixReport:
+        """Run small live probes against actual OpenAI API/Codex auth surfaces."""
+        detected_providers, codex_login_ready, codex_supported = (
+            self._detect_live_openai_providers()
+        )
+        rows: list[EvalLiveMatrixRow] = []
+
+        console.print("[bold cyan]Running live OpenAI surface probe matrix[/bold cyan]")
+        for row_spec in _OPENAI_SURFACE_MATRIX:
+            requested_surface = row_spec["openai_surface"]
+            effective_surface = resolve_openai_surface(
+                requested_surface,
+                detected_providers,
+                codex_automation_supported=codex_supported,
+            )
+            models = recommend_model_defaults(
+                detected_providers,
+                ollama_available=False,
+                codex_automation_supported=codex_supported,
+                profile=row_spec["profile"],
+                preferred_provider=row_spec["preferred_provider"],
+                openai_surface=requested_surface,
+            ).model_dump()
+
+            row = EvalLiveMatrixRow(
+                id=row_spec["id"],
+                profile=row_spec["profile"],
+                preferred_provider=row_spec["preferred_provider"],
+                requested_openai_surface=requested_surface,
+                effective_openai_surface=effective_surface,
+                detected_providers=list(detected_providers),
+                codex_login_ready=codex_login_ready,
+                codex_automation_supported=codex_supported,
+                requested_surface_ready=self._is_requested_openai_surface_ready(
+                    requested_surface,
+                    detected_providers,
+                    codex_login_ready=codex_login_ready,
+                    codex_automation_supported=codex_supported,
+                ),
+                models=models,
+            )
+
+            if not row.requested_surface_ready:
+                row.status = "skipped"
+                row.detail = self._build_live_surface_skip_detail(
+                    requested_surface,
+                    effective_surface,
+                    detected_providers,
+                    codex_login_ready=codex_login_ready,
+                    codex_automation_supported=codex_supported,
+                )
+                rows.append(row)
+                continue
+
+            probe_results, total_cost_usd, call_count = self._run_live_openai_probes(
+                models,
+                profile=row_spec["profile"],
+                requested_surface=requested_surface,
+                effective_surface=effective_surface,
+            )
+            row.probe_results = probe_results
+            row.total_cost_usd = total_cost_usd
+            row.call_count = call_count
+            row.score = round(
+                sum(1.0 if probe.passed else 0.0 for probe in probe_results)
+                / max(len(probe_results), 1),
+                3,
+            )
+            row.status = "passed" if all(probe.passed for probe in probe_results) else "failed"
+            row.detail = self._build_live_row_detail(
+                requested_surface,
+                effective_surface,
+                probe_results,
+            )
+            rows.append(row)
+
+        runnable_rows = [row for row in rows if row.status != "skipped"]
+        report = EvalLiveMatrixReport(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            forgegod_version=__version__,
+            matrix_name="openai-live-v1",
+            detected_providers=list(detected_providers),
+            codex_login_ready=codex_login_ready,
+            codex_automation_supported=codex_supported,
+            total_rows=len(rows),
+            passed_rows=sum(1 for row in rows if row.status == "passed"),
+            failed_rows=sum(1 for row in rows if row.status == "failed"),
+            skipped_rows=sum(1 for row in rows if row.status == "skipped"),
+            score=(
+                round(sum(row.score for row in runnable_rows) / len(runnable_rows), 3)
+                if runnable_rows
+                else 0.0
+            ),
+            rows=rows,
+        )
+        if output_path is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+        return report
 
     def run_case(
         self,
@@ -665,6 +827,156 @@ class HarnessEvalRunner:
             for name, scores in sorted(grouped.items())
             if scores
         }
+
+    @staticmethod
+    def _detect_live_openai_providers() -> tuple[list[str], bool, bool]:
+        """Detect which real OpenAI auth surfaces are usable right now."""
+        providers: list[str] = []
+        api_ready = bool(os.environ.get("OPENAI_API_KEY"))
+        codex_logged_in, _ = codex_login_status_sync()
+        codex_supported, _ = codex_automation_status()
+        codex_ready = codex_logged_in and codex_supported
+        if api_ready:
+            providers.append("openai")
+        if codex_ready:
+            providers.append("openai-codex")
+        return providers, codex_logged_in, codex_supported
+
+    @staticmethod
+    def _is_requested_openai_surface_ready(
+        requested_surface: str,
+        detected_providers: list[str],
+        *,
+        codex_login_ready: bool,
+        codex_automation_supported: bool,
+    ) -> bool:
+        provider_set = set(detected_providers)
+        api_ready = "openai" in provider_set
+        codex_ready = (
+            "openai-codex" in provider_set
+            and codex_login_ready
+            and codex_automation_supported
+        )
+        if requested_surface == "auto":
+            return api_ready or codex_ready
+        if requested_surface == "api-only":
+            return api_ready
+        if requested_surface == "codex-only":
+            return codex_ready
+        if requested_surface == "api+codex":
+            return api_ready and codex_ready
+        return False
+
+    @staticmethod
+    def _build_live_surface_skip_detail(
+        requested_surface: str,
+        effective_surface: str,
+        detected_providers: list[str],
+        *,
+        codex_login_ready: bool,
+        codex_automation_supported: bool,
+    ) -> str:
+        provider_bits = ", ".join(detected_providers) or "none"
+        if requested_surface == "api-only":
+            return f"Skipped: OPENAI_API_KEY is not ready. Detected providers: {provider_bits}."
+        if requested_surface == "codex-only":
+            if not codex_login_ready:
+                return "Skipped: Codex subscription is not logged in."
+            if not codex_automation_supported:
+                return (
+                    "Skipped: Codex is logged in but automation is not "
+                    "supported in this environment."
+                )
+            return (
+                "Skipped: codex-only is not ready. "
+                f"Effective surface would be {effective_surface}."
+            )
+        if requested_surface == "api+codex":
+            missing: list[str] = []
+            if "openai" not in detected_providers:
+                missing.append("OpenAI API")
+            if "openai-codex" not in detected_providers:
+                if not codex_login_ready:
+                    missing.append("Codex login")
+                elif not codex_automation_supported:
+                    missing.append("Codex automation")
+            missing_text = ", ".join(missing) or "required OpenAI surfaces"
+            return (
+                f"Skipped: api+codex is not fully ready ({missing_text}). "
+                f"Effective fallback would be {effective_surface}."
+            )
+        return "Skipped: no real OpenAI auth surface is ready."
+
+    @staticmethod
+    def _build_live_row_detail(
+        requested_surface: str,
+        effective_surface: str,
+        probe_results: list[EvalLiveProbeResult],
+    ) -> str:
+        passing = sum(1 for probe in probe_results if probe.passed)
+        total = len(probe_results)
+        if requested_surface != effective_surface and requested_surface != "auto":
+            return (
+                f"Executed with fallback surface {effective_surface}; "
+                f"{passing}/{total} probes passed."
+            )
+        return f"{passing}/{total} live probes passed."
+
+    def _run_live_openai_probes(
+        self,
+        models: dict[str, str],
+        *,
+        profile: str,
+        requested_surface: str,
+        effective_surface: str,
+    ) -> tuple[list[EvalLiveProbeResult], float, int]:
+        """Run low-cost live probes against coder/reviewer roles."""
+        from forgegod.router import ModelRouter
+
+        config = self.config.model_copy(deep=True)
+        config.models = type(config.models).model_validate(models)
+        config.harness.profile = profile
+        config.harness.preferred_provider = "openai"
+        config.harness.openai_surface = requested_surface
+
+        async def _run() -> tuple[list[EvalLiveProbeResult], float, int]:
+            router = ModelRouter(config)
+            probe_results: list[EvalLiveProbeResult] = []
+            try:
+                for probe in _OPENAI_LIVE_PROBES:
+                    before_calls = router.call_count
+                    response, usage = await router.call(
+                        probe["prompt"],
+                        role=probe["role"],
+                        system=probe["system"],
+                        json_mode=False,
+                        max_tokens=32,
+                        temperature=0.0,
+                    )
+                    spec = ""
+                    if router.call_count > before_calls and router._call_log:
+                        spec = router._call_log[-1].get("spec", "")
+                    provider, _, model = spec.partition(":")
+                    observed = " ".join(response.split())[:160]
+                    passed = probe["expected"] in response
+                    probe_results.append(
+                        EvalLiveProbeResult(
+                            name=probe["name"],
+                            role=probe["role"],
+                            expected=probe["expected"],
+                            observed=observed,
+                            provider=provider,
+                            model=model,
+                            passed=passed,
+                            detail=f"surface={effective_surface}",
+                            usage=usage.model_dump(),
+                        )
+                    )
+                return probe_results, router.total_cost, router.call_count
+            finally:
+                await router.close()
+
+        return asyncio.run(_run())
 
     @staticmethod
     def _select_cases(
@@ -1306,5 +1618,29 @@ _OPENAI_SURFACE_MATRIX: tuple[dict[str, Any], ...] = (
         "openai_surface": "api+codex",
         "detected_providers": ["openai", "openai-codex"],
         "codex_automation_supported": True,
+    },
+)
+
+
+_OPENAI_LIVE_PROBES: tuple[dict[str, str], ...] = (
+    {
+        "name": "coder_exact_marker",
+        "role": "coder",
+        "system": (
+            "Reply with only the exact marker requested by the user. "
+            "Do not add markdown, punctuation, or explanation."
+        ),
+        "prompt": "Return exactly this marker: FORGEGOD_CODER_OK",
+        "expected": "FORGEGOD_CODER_OK",
+    },
+    {
+        "name": "reviewer_exact_marker",
+        "role": "reviewer",
+        "system": (
+            "Reply with only the exact marker requested by the user. "
+            "Do not add markdown, punctuation, or explanation."
+        ),
+        "prompt": "Return exactly this marker: FORGEGOD_REVIEWER_OK",
+        "expected": "FORGEGOD_REVIEWER_OK",
     },
 )

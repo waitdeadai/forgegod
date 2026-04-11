@@ -1512,7 +1512,7 @@ def evals(
     matrix: Optional[str] = typer.Option(
         None,
         "--matrix",
-        help="Built-in eval matrix to run. Supported today: openai-surfaces",
+        help="Built-in eval matrix to run. Supported today: openai-surfaces, openai-live",
     ),
     case: list[str] | None = typer.Option(
         None,
@@ -1562,9 +1562,17 @@ def evals(
             "openai-surfaces",
             "Compare adversarial vs single-model across OpenAI API/Codex surfaces",
         )
+        matrix_table.add_row(
+            "openai-live",
+            "Run cheap live probes against real OpenAI API/Codex auth surfaces",
+        )
         typer.echo(
             "openai-surfaces\t"
             "Compare adversarial vs single-model across OpenAI API/Codex surfaces"
+        )
+        typer.echo(
+            "openai-live\t"
+            "Run cheap live probes against real OpenAI API/Codex auth surfaces"
         )
         console.print(matrix_table)
         raise typer.Exit()
@@ -1596,9 +1604,60 @@ def evals(
 
     runner = HarnessEvalRunner(load_config())
     if matrix:
+        if matrix == "openai-live":
+            live_report = runner.run_openai_live_surface_matrix(output_path=output)
+            summary = Table(title=f"ForgeGod eval matrix - {live_report.matrix_name}")
+            summary.add_column("Row", style="cyan")
+            summary.add_column("Profile", style="white")
+            summary.add_column("Requested", style="yellow")
+            summary.add_column("Effective", style="yellow")
+            summary.add_column("Status", justify="center")
+            summary.add_column("Score", justify="right")
+            for row in live_report.rows:
+                summary.add_row(
+                    row.id,
+                    row.profile,
+                    row.requested_openai_surface,
+                    row.effective_openai_surface,
+                    row.status,
+                    "-" if row.status == "skipped" else f"{row.score:.3f}",
+                )
+            console.print(summary)
+            probes = Table(title="Live probe summary")
+            probes.add_column("Row", style="cyan")
+            probes.add_column("Detail", style="dim")
+            for row in live_report.rows:
+                if row.probe_results:
+                    rendered = ", ".join(
+                        f"{probe.role}:{'pass' if probe.passed else 'fail'}"
+                        for probe in row.probe_results
+                    )
+                    probes.add_row(row.id, f"{rendered} | cost=${row.total_cost_usd:.4f}")
+                else:
+                    probes.add_row(row.id, row.detail or "-")
+            console.print(probes)
+            typer.echo(
+                f"Live OpenAI eval matrix complete ("
+                f"{live_report.passed_rows}/{live_report.total_rows} rows passed, "
+                f"{live_report.failed_rows} failed, "
+                f"{live_report.skipped_rows} skipped, "
+                f"score={live_report.score:.3f})"
+            )
+            typer.echo(f"Report: {output}")
+            typer.echo("Live probe summary")
+            console.print(
+                f"\n[bold green]Live OpenAI eval matrix complete[/bold green] "
+                f"({live_report.passed_rows}/{live_report.total_rows} rows passed, "
+                f"{live_report.failed_rows} failed, {live_report.skipped_rows} skipped, "
+                f"score={live_report.score:.3f})"
+            )
+            console.print(f"[dim]Report: {output}[/dim]")
+            if live_report.failed_rows > 0:
+                raise typer.Exit(1)
+            raise typer.Exit()
         if matrix != "openai-surfaces":
             raise typer.BadParameter(
-                "Unknown eval matrix. Supported today: openai-surfaces"
+                "Unknown eval matrix. Supported today: openai-surfaces, openai-live"
             )
         matrix_report = runner.run_openai_surface_matrix(
             eval_manifest,

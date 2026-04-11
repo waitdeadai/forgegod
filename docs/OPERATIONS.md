@@ -15,7 +15,7 @@ This document is the current system of record for day-to-day work in this reposi
 - That target is only credible when backed by current primary or official 2026 sources and confirmed by local repo evidence such as passing tests, reproducible benchmarks, or documented verification steps.
 - If the repo falls short of that bar, document the gap explicitly rather than silently implying frontier quality.
 
-## Verified Baseline (2026-04-10)
+## Verified Baseline (2026-04-11)
 
 - OS: `Windows-11-10.0.26200-SP0`
 - Python: `3.13.5`
@@ -23,20 +23,21 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `553`
+- Tests collected: `556`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
-| Command | Observed result on 2026-04-10 |
+| Command | Observed result on 2026-04-11 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `468 passed, 1 skipped, 84 deselected in 153.89s` |
+| `python -m pytest -m "not stress" -q` | `471 passed, 1 skipped, 84 deselected in 157.49s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 137.62s` |
-| `python -m pytest tests -q` | `552 passed, 1 skipped in 235.36s` |
-| `python -m pytest --collect-only -q` | `553 tests collected` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 102.53s` |
+| `python -m pytest tests -q` | `555 passed, 1 skipped in 259.44s` |
+| `python -m pytest --collect-only -q` | `556 tests collected` |
 | `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m forgegod evals --matrix openai-surfaces --output .forgegod/evals/openai_surface_matrix.json --traces-dir .forgegod/evals/openai_surface_matrix_traces` | `8/8 rows passing, score=1.000` |
+| `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | no live OpenAI auth surface ready in this environment; command exits honestly with `0 failed, 8 skipped` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -140,6 +141,10 @@ This document is the current system of record for day-to-day work in this reposi
   summaries. Today they grade transport-noise suppression, completion
   discipline, permission transparency, strict-sandbox transparency, and loop
   outcome summaries. This is the local bridge toward richer grader-backed evals.
+- ForgeGod now also ships `forgegod evals --matrix openai-live`, a cheap live
+  probe matrix for real OpenAI API/Codex auth surfaces. It does not fake
+  missing auth. Rows whose requested surface is not actually ready are skipped
+  with an explicit reason.
 - Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
   `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
   `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.
@@ -178,8 +183,8 @@ This document is the current system of record for day-to-day work in this reposi
 1. Add an opt-in real-Docker tier to `forgegod evals` so strict backend coverage can graduate from a separate smoke into a release-gated eval layer when the environment allows it.
 2. Expand the local trace-grader layer toward reviewer quality and verification
    quality, so score splits evolve beyond flow-level transparency checks.
-3. Expand the OpenAI matrix from deterministic routing coverage to live
-   API/Codex comparisons when the user has both auth surfaces linked.
+3. Expand the live OpenAI matrix beyond cheap coder/reviewer probes into
+   broader task probes once both API and Codex auth surfaces are linked.
 4. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
 5. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
 6. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, using `forgegod evals` plus broader repo-local benchmarks instead of anecdotal runs.

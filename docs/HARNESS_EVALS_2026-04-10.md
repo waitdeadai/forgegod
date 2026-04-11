@@ -231,6 +231,11 @@ Completed in the current repo baseline:
   - `api-only`
   - `codex-only`
   - `api+codex`
+- `forgegod evals` now also ships a cheap live OpenAI probe matrix:
+  `forgegod evals --matrix openai-live`
+  - it uses real API/Codex auth surfaces only when they are actually ready
+  - it skips requested surfaces honestly when auth is missing or unsupported
+  - it keeps live cost low by probing `coder` and `reviewer` with exact-marker tasks
 
 Still remaining for V3:
 
@@ -242,7 +247,7 @@ Still remaining for V3:
 
 - add grader-backed trace analysis
 - score plan quality, reviewer quality, and verification quality separately
-- expand the matrix from deterministic routing coverage to live provider
+- expand the live matrix beyond cheap role probes into broader task-level
   coverage when the user has the auth surfaces available
 
 ### V5

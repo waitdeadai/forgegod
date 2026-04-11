@@ -544,6 +544,12 @@ workflow behavior for `chat`, `run`, `loop`, `parallel worktree`, and
 separate opt-in integration smoke so the eval surface stays fast, repeatable,
 and release-gating friendly.
 
+Re-verified on `2026-04-11`: current OpenAI docs still support that sequence.
+The practical implication for ForgeGod is that live OpenAI comparisons should
+be probe-based and honest about auth availability. API and Codex subscription
+remain separate surfaces, so a live matrix should skip missing requested
+surfaces rather than silently pretending a fallback was measured.
+
 ## OpenAI-First Harness Addendum - API + Codex Subscription
 
 Verified on `2026-04-10` before strengthening ForgeGod's OpenAI-compatible

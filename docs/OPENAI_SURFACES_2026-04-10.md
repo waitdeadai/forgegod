@@ -137,6 +137,7 @@ Release-grade matrix:
 
 ```bash
 forgegod evals --matrix openai-surfaces
+forgegod evals --matrix openai-live
 ```
 
 That matrix compares:
@@ -154,6 +155,23 @@ with split scores for:
 - `safety`
 - `workflow`
 - `verification`
+
+## Live Probe Matrix
+
+ForgeGod also exposes an opt-in live matrix:
+
+```bash
+forgegod evals --matrix openai-live
+```
+
+This is intentionally different from the deterministic harness matrix.
+It runs cheap real probes through the current OpenAI auth surfaces, currently
+targeting `coder` and `reviewer`, and it skips rows when the requested surface
+is not actually ready. That means:
+
+- no fake `api+codex` result when only one auth surface is linked
+- no fake `codex-only` result on native Windows when Codex automation is unsupported
+- explicit skip reasons in the report instead of silent fallback pretending to be live coverage
 
 ## Current status
 

@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `553` collected tests, `468` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, splits scores by harness dimension, ships an OpenAI surfaces matrix, and emits local trace-grader summaries. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), and [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) before making runtime changes.
+> Audit note (re-verified 2026-04-11): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `556` collected tests, `471` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, splits scores by harness dimension, ships an OpenAI surfaces matrix, emits local trace-grader summaries, and now also offers an opt-in live OpenAI probe matrix that skips unavailable auth surfaces honestly. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), and [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -204,6 +204,7 @@ forgegod run "Add a /health endpoint to server.py with uptime and version info"
 forgegod evals
 forgegod evals --case chat_natural_language_roundtrip
 forgegod evals --matrix openai-surfaces
+forgegod evals --matrix openai-live
 
 # Plan a project → generates PRD
 forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
@@ -432,8 +433,10 @@ Harness rule of thumb:
   permission denials, completion-gate discipline, loop/worktree behavior, and
   strict-sandbox interface handling. It also splits scores by `ux`, `safety`,
   `workflow`, and `verification`, ships
-  `forgegod evals --matrix openai-surfaces` for OpenAI-first routing coverage.
-  Reports now include local trace graders too.
+  `forgegod evals --matrix openai-surfaces` for deterministic OpenAI-first
+  routing coverage, and `forgegod evals --matrix openai-live` for cheap real
+  API/Codex probes when those auth surfaces are linked. Reports now include
+  local trace graders too.
 
 ## Model Leaderboard
 
