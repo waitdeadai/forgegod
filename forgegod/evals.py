@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -258,6 +260,10 @@ class EvalLiveComparisonReport(BaseModel):
     recommended_row_id: str = ""
     recommendation_reason: str = ""
     rows: list[EvalLiveComparisonRow] = Field(default_factory=list)
+
+
+class LiveSurfaceUnavailableError(RuntimeError):
+    """Raised when a live provider surface is present but temporarily unavailable."""
 
 
 _BUILTIN_MANIFEST = {
@@ -697,12 +703,23 @@ class HarnessEvalRunner:
                 rows.append(row)
                 continue
 
-            probe_results, total_cost_usd, call_count = self._run_live_openai_probes(
-                models,
-                profile=row_spec["profile"],
-                requested_surface=requested_surface,
-                effective_surface=effective_surface,
-            )
+            try:
+                probe_results, total_cost_usd, call_count = self._run_live_openai_probes(
+                    models,
+                    profile=row_spec["profile"],
+                    requested_surface=requested_surface,
+                    effective_surface=effective_surface,
+                )
+            except LiveSurfaceUnavailableError as exc:
+                row.status = "skipped"
+                row.detail = f"Skipped: {exc}"
+                rows.append(row)
+                continue
+            except Exception as exc:
+                row.status = "failed"
+                row.detail = self._summarize_live_probe_error(str(exc))
+                rows.append(row)
+                continue
             row.probe_results = probe_results
             row.total_cost_usd = total_cost_usd
             row.call_count = call_count
@@ -1045,40 +1062,97 @@ class HarnessEvalRunner:
             router = ModelRouter(config)
             probe_results: list[EvalLiveProbeResult] = []
             try:
-                for probe in _OPENAI_LIVE_PROBES:
-                    before_calls = router.call_count
-                    response, usage = await router.call(
-                        probe["prompt"],
-                        role=probe["role"],
-                        system=probe["system"],
-                        json_mode=False,
-                        max_tokens=32,
-                        temperature=0.0,
-                    )
-                    spec = ""
-                    if router.call_count > before_calls and router._call_log:
-                        spec = router._call_log[-1].get("spec", "")
-                    provider, _, model = spec.partition(":")
-                    observed = " ".join(response.split())[:160]
-                    passed = probe["expected"] in response
-                    probe_results.append(
-                        EvalLiveProbeResult(
-                            name=probe["name"],
-                            role=probe["role"],
-                            expected=probe["expected"],
-                            observed=observed,
-                            provider=provider,
-                            model=model,
-                            passed=passed,
-                            detail=f"surface={effective_surface}",
-                            usage=usage.model_dump(),
+                with self._quiet_logger("forgegod.router", level=logging.ERROR):
+                    for probe in _OPENAI_LIVE_PROBES:
+                        before_calls = router.call_count
+                        try:
+                            response, usage = await router.call(
+                                probe["prompt"],
+                                role=probe["role"],
+                                system=probe["system"],
+                                json_mode=False,
+                                max_tokens=32,
+                                temperature=0.0,
+                            )
+                        except Exception as exc:
+                            raw_detail = str(exc)
+                            detail = self._summarize_live_probe_error(raw_detail)
+                            if self._is_temporarily_unavailable_live_surface_error(raw_detail):
+                                raise LiveSurfaceUnavailableError(detail) from exc
+                            raise RuntimeError(detail) from exc
+                        if response.lstrip().startswith("[ERROR:"):
+                            detail = self._summarize_live_probe_error(response)
+                            if self._is_temporarily_unavailable_live_surface_error(response):
+                                raise LiveSurfaceUnavailableError(detail)
+                            raise RuntimeError(detail)
+                        spec = ""
+                        if router.call_count > before_calls and router._call_log:
+                            spec = router._call_log[-1].get("spec", "")
+                        provider, _, model = spec.partition(":")
+                        observed = " ".join(response.split())[:160]
+                        passed = probe["expected"] in response
+                        probe_results.append(
+                            EvalLiveProbeResult(
+                                name=probe["name"],
+                                role=probe["role"],
+                                expected=probe["expected"],
+                                observed=observed,
+                                provider=provider,
+                                model=model,
+                                passed=passed,
+                                detail=f"surface={effective_surface}",
+                                usage=usage.model_dump(),
+                            )
                         )
-                    )
                 return probe_results, router.total_cost, router.call_count
             finally:
                 await router.close()
 
         return asyncio.run(_run())
+
+    @staticmethod
+    def _summarize_live_probe_error(detail: str) -> str:
+        """Collapse noisy provider stderr into one actionable line."""
+        text = " ".join((detail or "").split())
+        if not text:
+            return "live probe failed without stderr"
+        usage_limit_match = re.search(
+            r"You've hit your usage limit\..*?(purchase more credits|try again at [^.]+)\.?",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if usage_limit_match:
+            return usage_limit_match.group(0).strip()
+        interesting_markers = [
+            "You've hit your usage limit.",
+            "Usage limit exceeded.",
+            "insufficient_quota",
+            "Rate limit exceeded",
+            "authentication failed",
+            "invalid_api_key",
+            "Codex CLI returned a non-zero status.",
+        ]
+        for marker in interesting_markers:
+            index = text.find(marker)
+            if index >= 0:
+                return text[index : index + 240].strip()
+        return text[:240].strip()
+
+    @staticmethod
+    def _is_temporarily_unavailable_live_surface_error(detail: str) -> bool:
+        """Return whether a live surface is present but temporarily unavailable."""
+        lowered = (detail or "").lower()
+        markers = (
+            "usage limit",
+            "purchase more credits",
+            "insufficient_quota",
+            "rate limit exceeded",
+            "try again at",
+            "upgrade to pro",
+            "capacity",
+            "temporarily unavailable",
+        )
+        return any(marker in lowered for marker in markers)
 
     @staticmethod
     def _live_comparison_sort_key(
@@ -1696,6 +1770,20 @@ class HarnessEvalRunner:
             yield
         finally:
             os.chdir(previous)
+
+    @staticmethod
+    @contextmanager
+    def _quiet_logger(name: str, level: int = logging.ERROR):
+        logger = logging.getLogger(name)
+        previous_level = logger.level
+        previous_disabled = logger.disabled
+        logger.setLevel(level)
+        logger.disabled = True
+        try:
+            yield
+        finally:
+            logger.disabled = previous_disabled
+            logger.setLevel(previous_level)
 
 
 _OPENAI_SURFACE_MATRIX: tuple[dict[str, Any], ...] = (

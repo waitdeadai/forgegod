@@ -15,6 +15,7 @@ from forgegod.config import init_project, openai_surface_label, recommend_model_
 from forgegod.i18n import t
 from forgegod.native_auth import (
     codex_automation_status,
+    codex_login_argv,
     codex_login_status_sync,
     find_command,
 )
@@ -441,7 +442,13 @@ class OnboardingWizard:
             console.print(f"  [forge.warn]![/forge.warn] {detail}")
 
         console.print("\n  Opening official Codex login flow...")
-        subprocess.run([find_command("codex"), "login"], check=False)
+        try:
+            argv = codex_login_argv()
+        except RuntimeError as exc:
+            console.print(f"  [forge.error]-[/forge.error] {exc}")
+            return
+
+        subprocess.run(argv, check=False)
         logged_in, _ = codex_login_status_sync()
         if logged_in:
             self._providers.append("openai-codex")

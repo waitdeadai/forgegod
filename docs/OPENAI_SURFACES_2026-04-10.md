@@ -26,6 +26,9 @@ Verified on 2026-04-10:
 - OpenAI Help also states that ChatGPT plans and API usage are billed
   separately:
   https://help.openai.com/en/articles/8156019
+- OpenAI now also documents Codex on Windows directly, with native Windows
+  support plus WSL as the Linux-workspace path when needed:
+  https://developers.openai.com/codex/windows
 
 Inference from those sources:
 
@@ -171,7 +174,9 @@ targeting `coder` and `reviewer`, and it skips rows when the requested surface
 is not actually ready. That means:
 
 - no fake `api+codex` result when only one auth surface is linked
-- no fake `codex-only` result on native Windows when Codex automation is unsupported
+- no fake `codex-only` result when no supported Codex backend is actually ready
+- no fake failures when Codex auth exists but subscription quota is temporarily
+  unavailable
 - explicit skip reasons in the report instead of silent fallback pretending to be live coverage
 
 ForgeGod also exposes a ranking view built from those runnable live rows:
@@ -186,10 +191,17 @@ same score, and uses cost/call count only as late tie-breakers.
 
 ## Current status
 
-As of 2026-04-10:
+As of 2026-04-11:
 
 - This OpenAI surface model is implemented in ForgeGod config, onboarding, and
   CLI.
 - The behavior is covered by deterministic unit and CLI tests.
+- Native Windows Codex CLI is now treated as a production-ready ForgeGod
+  backend when the official Codex CLI is installed and logged in. WSL remains
+  the supported Linux-workspace fallback when users prefer or require it.
+- The live OpenAI matrices now also treat temporary Codex usage-limit failures
+  as honest `skipped` rows instead of release failures. That keeps the harness
+  signal focused on compatibility and correctness rather than transient quota
+  state.
 - It is a harness clarity upgrade, not a claim that OpenAI is automatically the
   best default for every repository.

@@ -14,6 +14,7 @@ from forgegod.evals import (
     EvalLiveMatrixRow,
     EvalLiveProbeResult,
     HarnessEvalRunner,
+    LiveSurfaceUnavailableError,
     load_eval_manifest,
 )
 
@@ -261,6 +262,83 @@ def test_harness_eval_runner_skips_live_openai_rows_when_surfaces_missing(monkey
     assert report.failed_rows == 0
     assert report.skipped_rows == 8
     assert all(row.status == "skipped" for row in report.rows)
+
+
+def test_harness_eval_runner_skips_live_openai_rows_when_surface_hits_usage_limit(
+    monkeypatch,
+):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "forgegod.evals.codex_login_status_sync",
+        lambda: (True, "Logged in using ChatGPT"),
+    )
+    monkeypatch.setattr(
+        "forgegod.evals.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    def fake_run_live(self, models, *, profile, requested_surface, effective_surface):
+        raise LiveSurfaceUnavailableError(
+            "You've hit your usage limit. Try again later."
+        )
+
+    monkeypatch.setattr(HarnessEvalRunner, "_run_live_openai_probes", fake_run_live)
+
+    report = eval_runner.run_openai_live_surface_matrix()
+
+    assert report.total_rows == 8
+    assert report.passed_rows == 0
+    assert report.failed_rows == 0
+    assert report.skipped_rows == 8
+    codex_row = next(row for row in report.rows if row.id == "adversarial_codex_only")
+    assert codex_row.status == "skipped"
+    assert "usage limit" in codex_row.detail.lower()
+
+
+def test_run_live_openai_probes_treats_router_error_payload_as_surface_unavailable(
+    monkeypatch,
+):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    class FakeUsage:
+        def model_dump(self):
+            return {}
+
+    class FakeRouter:
+        def __init__(self, config):
+            self.config = config
+            self.call_count = 1
+            self.total_cost = 0.0
+            self._call_log = [{"spec": "openai-codex:gpt-5.4"}]
+
+        async def call(self, *args, **kwargs):
+            return (
+                "[ERROR: All models failed for role=coder.\n"
+                "  Last error: You've hit your usage limit. Upgrade to Pro "
+                "or try again at 4:33 PM.]",
+                FakeUsage(),
+            )
+
+        async def close(self):
+            return None
+
+    monkeypatch.setattr("forgegod.router.ModelRouter", FakeRouter)
+
+    try:
+        eval_runner._run_live_openai_probes(
+            {"coder": "openai-codex:gpt-5.4", "reviewer": "openai-codex:gpt-5.4"},
+            profile="single-model",
+            requested_surface="codex-only",
+            effective_surface="codex-only",
+        )
+    except LiveSurfaceUnavailableError as exc:
+        assert "usage limit" in str(exc).lower()
+    else:
+        raise AssertionError("expected LiveSurfaceUnavailableError")
 
 
 def test_evals_cli_runs_openai_live_surface_matrix(tmp_path, monkeypatch):

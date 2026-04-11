@@ -42,7 +42,7 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch, printed):
     )
     monkeypatch.setattr(
         "forgegod.native_auth.codex_automation_status",
-        lambda: (False, "Codex CLI automation is experimental on native Windows."),
+        lambda: (False, "Codex CLI not found on native Windows and WSL is not installed."),
     )
 
     result = runner.invoke(app, ["auth", "status"])
@@ -54,7 +54,7 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch, printed):
     assert "ZAI_CODING_API_KEY" in visible
 
 
-def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypatch, printed):
+def test_auth_status_marks_codex_needs_setup_when_logged_in(tmp_path, monkeypatch, printed):
     project_env = tmp_path / ".forgegod"
     project_env.mkdir()
 
@@ -72,7 +72,7 @@ def test_auth_status_marks_codex_experimental_when_logged_in(tmp_path, monkeypat
 
     assert result.exit_code == 0
     visible = printed.getvalue()
-    assert "experimental" in visible
+    assert "needs setup" in visible
     assert "Use WSL for best Windows experience" in visible
 
 
@@ -126,7 +126,7 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, 
     assert "Effective OpenAI surface:" in visible
 
 
-def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch, printed):
+def test_auth_sync_shows_codex_coder_production_note(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="openai-codex:gpt-5.4",
         coder="openai-codex:gpt-5.4",
@@ -150,7 +150,7 @@ def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch, pr
 
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(printed.getvalue().split())
-    assert "coder-loop use remains experimental" in normalized
+    assert "production-ready ForgeGod surface" in normalized
 
 
 def test_auth_sync_notes_when_codex_is_detected_but_not_selected(tmp_path, monkeypatch, printed):

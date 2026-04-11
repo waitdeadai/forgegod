@@ -649,7 +649,7 @@ def auth_status():
         codex_state = "[green]ready[/green]"
         codex_detail = codex_status or codex_env_detail
     elif codex_logged_in:
-        codex_state = "[yellow]experimental[/yellow]"
+        codex_state = "[yellow]needs setup[/yellow]"
         codex_detail = codex_env_detail
     else:
         codex_state = "[yellow]not ready[/yellow]"
@@ -704,7 +704,7 @@ def auth_login(
     """Start an official login flow when ForgeGod can delegate to it."""
     import subprocess
 
-    from forgegod.native_auth import find_command
+    from forgegod.native_auth import codex_login_argv
 
     if provider != "openai-codex":
         raise typer.BadParameter(
@@ -712,11 +712,12 @@ def auth_login(
             "Z.AI uses Coding Plan API keys inside ForgeGod."
         )
 
-    codex = find_command("codex")
-    if not codex:
-        raise typer.BadParameter("Codex CLI not found on PATH.")
+    try:
+        argv = codex_login_argv()
+    except RuntimeError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
-    subprocess.run([codex, "login"], check=False)
+    subprocess.run(argv, check=False)
 
 
 @auth_app.command("sync")
@@ -801,14 +802,15 @@ def auth_sync(
 
     if "openai-codex" in providers and recommended.coder.startswith("openai-codex"):
         console.print(
-            "[yellow]Note:[/yellow] OpenAI Codex subscription is strongest today "
-            "for planner/reviewer/adversary flows; coder-loop use remains experimental."
+            "[yellow]Note:[/yellow] OpenAI Codex subscription is now a production-ready "
+            "ForgeGod surface when the Codex CLI is installed and logged in. "
+            "Benchmark codex-only versus api+codex on your workload before making it "
+            "the default remote coder."
         )
     elif "openai-codex" in providers:
         console.print(
             "[yellow]Note:[/yellow] OpenAI Codex login was detected, but ForgeGod "
-            "did not choose it as a default automation backend in this environment. "
-            "On native Windows, OpenAI recommends Codex in WSL."
+            "did not choose it as a default automation backend in this environment."
         )
     elif not providers and not ollama_available:
         console.print("[yellow]No providers or Ollama detected.[/yellow]")

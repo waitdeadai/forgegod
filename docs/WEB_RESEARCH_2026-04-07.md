@@ -619,6 +619,31 @@ note now lives in:
 
 - [docs/OPENAI_SURFACES_2026-04-10.md](OPENAI_SURFACES_2026-04-10.md)
 
+## OpenAI Codex Windows Addendum
+
+Verified on `2026-04-11` before graduating ForgeGod's native Windows Codex path:
+
+- OpenAI now documents Codex on Windows directly, including native Windows
+  support and WSL as the Linux-workspace path when users prefer or require it:
+  - https://developers.openai.com/codex/windows
+- OpenAI's Codex CLI help article continues to describe the official login and
+  usage flow for the Codex CLI:
+  - https://help.openai.com/en/articles/11096431-openai-codex-cli-getting-tarted
+- OpenAI Help still states that Codex is included on supported ChatGPT plans:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI Help still states that ChatGPT subscriptions and OpenAI API usage are
+  separate billing surfaces:
+  - https://help.openai.com/en/articles/8156019
+
+Operational conclusion for ForgeGod: native Windows Codex automation should no
+longer be treated as experimental when the official Codex CLI is installed and
+logged in. The production contract is:
+
+- native Windows Codex first
+- WSL fallback when Codex is installed there or when users want a Linux workspace
+- explicit OpenAI surface selection (`codex-only`, `api-only`, `api+codex`)
+- live `forgegod evals` evidence instead of hand-wavy support claims
+
 ## OpenAI Evals Matrix Addendum
 
 Verified on `2026-04-10` before extending `forgegod evals` into an explicit
@@ -665,6 +690,20 @@ noise. OpenAI's eval guidance pushes toward graders and trace-aware evaluation;
 ForgeGod can mirror that direction first with deterministic local graders over
 its own CLI/request traces, then graduate to hosted graders or live-provider
 comparisons later.
+
+Verified again on `2026-04-11` while hardening live OpenAI probes:
+
+- OpenAI's Codex plan article still describes a plan-backed Codex surface with
+  usage management separate from the API:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI's billing separation article still says ChatGPT/Codex usage and API
+  usage are separate billing surfaces:
+  - https://help.openai.com/en/articles/8156019
+
+Operational conclusion for ForgeGod: a live OpenAI matrix should treat
+temporary Codex plan usage limits as `skipped` evidence rather than as a
+harness regression. The harness can only claim a live surface is production
+ready when compatibility works and failures are classified honestly.
 
 ## What Future Maintainers Should Re-Check
 

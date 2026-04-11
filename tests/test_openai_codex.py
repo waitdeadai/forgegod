@@ -65,17 +65,20 @@ async def test_openai_codex_missing_login(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_openai_codex_blocks_native_windows_automation(monkeypatch):
+async def test_openai_codex_blocks_when_no_supported_backend_exists(monkeypatch):
     from forgegod.router import ModelRouter
 
     monkeypatch.setattr(
         "forgegod.router.codex_automation_status",
-        lambda: (False, "Use WSL for best Windows experience"),
+        lambda: (
+            False,
+            "Codex CLI was not found on native Windows or in any configured WSL distro.",
+        ),
     )
 
     router = ModelRouter(ForgeGodConfig())
 
-    with pytest.raises(RuntimeError, match="Use WSL"):
+    with pytest.raises(RuntimeError, match="configured WSL distro"):
         await router._call_openai_codex(
             model="gpt-5.4",
             prompt="test",

@@ -79,7 +79,7 @@ Operational conclusion: do not use Hermes as proof that this path is officially 
 
 - GLM-5.1 is the production workhorse for planning and code generation.
 - Codex is the adversarial layer: critique, diff review, regression detection, front-end verification, and escalation.
-- ForgeGod's own codebase already treats Codex as strongest today for planner/reviewer/adversary flows, while coder-loop use remains experimental.
+- ForgeGod's own codebase now treats Codex as a production-ready planner/reviewer/adversary/coder surface when the official Codex CLI is installed and logged in. For this harness, Codex remains the adversarial layer while GLM-5.1 stays the primary builder.
 
 ## Policy and risk
 

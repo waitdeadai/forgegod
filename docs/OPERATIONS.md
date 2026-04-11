@@ -23,22 +23,22 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `559`
+- Tests collected: `567`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-11 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `474 passed, 1 skipped, 84 deselected in 242.54s` |
+| `python -m pytest -m "not stress" -q` | `482 passed, 1 skipped, 84 deselected in 227.26s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 203.68s` |
-| `python -m pytest tests -q` | `558 passed, 1 skipped in 352.33s` |
-| `python -m pytest --collect-only -q` | `559 tests collected` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 160.47s` |
+| `python -m pytest tests -q` | `566 passed, 1 skipped in 330.56s` |
+| `python -m pytest --collect-only -q` | `567 tests collected` |
 | `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m forgegod evals --matrix openai-surfaces --output .forgegod/evals/openai_surface_matrix.json --traces-dir .forgegod/evals/openai_surface_matrix_traces` | `8/8 rows passing, score=1.000` |
-| `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | no live OpenAI auth surface ready in this environment; command exits honestly with `0 failed, 8 skipped` |
-| `python -m forgegod evals --matrix openai-live-compare --output .forgegod/evals/openai_live_compare.json` | no runnable live OpenAI rows in this environment; command exits honestly with a comparison report and recommendation note |
+| `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | `0/8 rows passed, 0 failed, 8 skipped`; temporarily unavailable Codex quota and missing API auth are now skipped honestly instead of failing the release |
+| `python -m forgegod evals --matrix openai-live-compare --output .forgegod/evals/openai_live_compare.json` | `0 runnable, 0 passed, 0 failed, 8 skipped`; recommends `none` when no live OpenAI row is actually runnable |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -126,8 +126,8 @@ This document is the current system of record for day-to-day work in this reposi
   deterministic harnesses and benchmarks can isolate loop behavior without
   hidden post-task memory-model calls.
 - ForgeGod now has deterministic CLI coverage for auth-aware provider selection
-  in `forgegod auth sync`, including cloud-budget normalization and the Codex
-  experimental-coder note.
+  in `forgegod auth sync`, including cloud-budget normalization and clear
+  production notes for supported Codex-only vs API+Codex routing.
 - ForgeGod now has a first-class deterministic harness eval surface:
   `forgegod evals`. It sits above unit tests and parity harnesses, saves
   per-case trace artifacts, and grades real CLI behavior for chat UX, terse
@@ -191,4 +191,4 @@ This document is the current system of record for day-to-day work in this reposi
    broader task probes once both API and Codex auth surfaces are linked.
 4. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
 5. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
-6. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, using `forgegod evals` plus broader repo-local benchmarks instead of anecdotal runs.
+6. Expand the live OpenAI comparison path from cheap coder/reviewer probes into broader repo-local task probes now that Codex-only routing has graduated from experimental status on supported installs.

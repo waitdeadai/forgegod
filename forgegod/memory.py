@@ -395,51 +395,57 @@ class Memory:
         episode_id = f"ep-{uuid.uuid4().hex[:12]}"
 
         conn = self._open_conn()
-        conn.execute(
-            """INSERT INTO episodes
-               (episode_id, task_id, task_description, outcome, files_touched,
-                tools_used, success, reflexion_rounds, model_used, cost_usd,
-                duration_s, error_log, created_at, project)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                episode_id,
-                task_id,
-                task_description,
-                json.dumps(outcome),
-                json.dumps([
-                    f.get("path", "") if isinstance(f, dict) else str(f)
-                    for f in (code_files or [])
-                ]),
-                json.dumps(tools_used or []),
-                1 if outcome.get("score", 0) >= 0.7 else 0,
-                outcome.get("reflexion_rounds", 0),
-                outcome.get("model", ""),
-                outcome.get("cost_usd", 0.0),
-                outcome.get("duration_s", 0.0),
-                outcome.get("error", ""),
-                now,
-                self._project_name(),
-            ),
-        )
-        # Track episodes since last consolidation (AutoDream trigger)
-        row = conn.execute(
-            "SELECT value FROM memory_meta "
-            "WHERE key = 'episodes_since_consolidation'"
-        ).fetchone()
-        count = int(row[0]) + 1 if row else 1
-        conn.execute(
-            "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
-            "VALUES ('episodes_since_consolidation', ?, ?)",
-            (str(count), now),
-        )
+        try:
+            conn.execute(
+                """INSERT INTO episodes
+                   (episode_id, task_id, task_description, outcome, files_touched,
+                    tools_used, success, reflexion_rounds, model_used, cost_usd,
+                    duration_s, error_log, created_at, project)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    episode_id,
+                    task_id,
+                    task_description,
+                    json.dumps(outcome),
+                    json.dumps([
+                        f.get("path", "") if isinstance(f, dict) else str(f)
+                        for f in (code_files or [])
+                    ]),
+                    json.dumps(tools_used or []),
+                    1 if outcome.get("score", 0) >= 0.7 else 0,
+                    outcome.get("reflexion_rounds", 0),
+                    outcome.get("model", ""),
+                    outcome.get("cost_usd", 0.0),
+                    outcome.get("duration_s", 0.0),
+                    outcome.get("error", ""),
+                    now,
+                    self._project_name(),
+                ),
+            )
+            # Track episodes since last consolidation (AutoDream trigger)
+            row = conn.execute(
+                "SELECT value FROM memory_meta "
+                "WHERE key = 'episodes_since_consolidation'"
+            ).fetchone()
+            count = int(row[0]) + 1 if row else 1
+            conn.execute(
+                "INSERT OR REPLACE INTO memory_meta (key, value, updated_at) "
+                "VALUES ('episodes_since_consolidation', ?, ?)",
+                (str(count), now),
+            )
 
-        conn.commit()
-        conn.close()
+            # Auto-extract into higher tiers inside the same transaction.
+            await self._extract_semantic(
+                episode_id, task_description, outcome, code_files, conn=conn
+            )
+            await self._extract_procedural(
+                episode_id, task_description, outcome, code_files, conn=conn
+            )
+            await self._update_graph(task_description, outcome, code_files, conn=conn)
 
-        # Auto-extract into higher tiers
-        await self._extract_semantic(episode_id, task_description, outcome, code_files)
-        await self._extract_procedural(episode_id, task_description, outcome, code_files)
-        await self._update_graph(task_description, outcome, code_files)
+            conn.commit()
+        finally:
+            conn.close()
 
         logger.info(f"Memory: recorded episode {episode_id} for task {task_id}")
         return episode_id
@@ -525,25 +531,27 @@ class Memory:
         confidence: float = 0.5,
         source_episode: str = "",
         tags: list[str] | None = None,
+        conn: sqlite3.Connection | None = None,
     ) -> str:
         """Add or reinforce a semantic memory."""
         cache_key = self._semantic_cache_key(text)
         cached_memory_id = self._semantic_text_cache.get(cache_key)
         if cached_memory_id:
-            await self._reinforce_semantic(cached_memory_id, source_episode)
+            await self._reinforce_semantic(cached_memory_id, source_episode, conn=conn)
             return cached_memory_id
 
-        existing = await self._find_similar_semantic(text)
+        existing = await self._find_similar_semantic(text, conn=conn)
         if existing:
             self._semantic_text_cache[cache_key] = existing
-            await self._reinforce_semantic(existing, source_episode)
+            await self._reinforce_semantic(existing, source_episode, conn=conn)
             return existing
 
         memory_id = f"sm-{uuid.uuid4().hex[:8]}"
         now = datetime.now(timezone.utc).isoformat()
         importance = self._calculate_importance(confidence, 1, now)
 
-        conn = self._open_conn()
+        own_conn = conn is None
+        conn = conn or self._open_conn()
         conn.execute(
             """INSERT INTO semantic
                (memory_id, text, category, confidence, importance, evidence_count,
@@ -556,8 +564,9 @@ class Memory:
                 now, now, self._project_name(),
             ),
         )
-        conn.commit()
-        conn.close()
+        if own_conn:
+            conn.commit()
+            conn.close()
         self._semantic_text_cache[cache_key] = memory_id
         return memory_id
 
@@ -575,12 +584,14 @@ class Memory:
         code_template: str = "",
         language: str = "",
         source_episode: str = "",
+        conn: sqlite3.Connection | None = None,
     ) -> str:
         """Add a procedural memory (code pattern, fix recipe, template)."""
         pattern_id = f"proc-{uuid.uuid4().hex[:8]}"
         now = datetime.now(timezone.utc).isoformat()
 
-        conn = self._open_conn()
+        own_conn = conn is None
+        conn = conn or self._open_conn()
         conn.execute(
             """INSERT INTO procedural
                (pattern_id, name, description, pattern_type, trigger, action,
@@ -593,8 +604,9 @@ class Memory:
                 "[]", now, self._project_name(),
             ),
         )
-        conn.commit()
-        conn.close()
+        if own_conn:
+            conn.commit()
+            conn.close()
         return pattern_id
 
     async def get_procedures(
@@ -1051,6 +1063,7 @@ class Memory:
     async def _extract_semantic(
         self, episode_id: str, task_desc: str, outcome: dict,
         code_files: list[dict] | None,
+        conn: sqlite3.Connection | None = None,
     ):
         """Extract semantic memories from a completed episode."""
         extracted_count = 0
@@ -1062,6 +1075,7 @@ class Memory:
                     text=text, category=category,
                     confidence=self._initial_confidence(outcome),
                     source_episode=episode_id,
+                    conn=conn,
                 )
                 extracted_count += 1
 
@@ -1091,6 +1105,7 @@ class Memory:
                             text="High type hint coverage correlates with fewer reflexion rounds",
                             category="readability",
                             source_episode=episode_id,
+                            conn=conn,
                         )
                         extracted_count += 1
 
@@ -1101,12 +1116,13 @@ class Memory:
                     and (fn.end_lineno - fn.lineno) > 50
                 )
                 if long_fns > 0:
-                    await self.add_semantic(
-                        text="Functions over 50 lines should be decomposed",
-                        category="design",
-                        source_episode=episode_id,
-                    )
-                    extracted_count += 1
+                        await self.add_semantic(
+                            text="Functions over 50 lines should be decomposed",
+                            category="design",
+                            source_episode=episode_id,
+                            conn=conn,
+                        )
+                        extracted_count += 1
 
         # 3. Error-driven extraction
         error = outcome.get("error", "")
@@ -1119,6 +1135,7 @@ class Memory:
                 confidence=0.4,
                 source_episode=episode_id,
                 tags=["error", "negative"],
+                conn=conn,
             )
             extracted_count += 1
 
@@ -1127,6 +1144,7 @@ class Memory:
     async def _extract_procedural(
         self, episode_id: str, task_desc: str, outcome: dict,
         code_files: list[dict] | None,
+        conn: sqlite3.Connection | None = None,
     ):
         """Extract procedural memories (code patterns) from successful episodes."""
         if not outcome.get("score", 0) >= 0.7 or not code_files:
@@ -1171,16 +1189,19 @@ class Memory:
                                         pattern_type="pattern",
                                         language=lang,
                                         source_episode=episode_id,
+                                        conn=conn,
                                     )
                 except (SyntaxError, TypeError):
                     pass
 
     async def _update_graph(
         self, task_desc: str, outcome: dict, code_files: list[dict] | None,
+        conn: sqlite3.Connection | None = None,
     ):
         """Update graph memory: extract entities, add relations, update causal edges."""
         now = datetime.now(timezone.utc).isoformat()
-        conn = self._open_conn()
+        own_conn = conn is None
+        conn = conn or self._open_conn()
 
         # 1. Extract entities from task description
         all_text = task_desc
@@ -1229,8 +1250,9 @@ class Memory:
                 (factor, outcome_label, 0.5, 1),
             )
 
-        conn.commit()
-        conn.close()
+        if own_conn:
+            conn.commit()
+            conn.close()
 
     # ═══════════════════════════════════════════════════════════════════
     # MAINTENANCE — Consolidation, decay, health
@@ -1722,7 +1744,11 @@ class Memory:
         except (ValueError, TypeError):
             return 0.3
 
-    async def _find_similar_semantic(self, text: str) -> str | None:
+    async def _find_similar_semantic(
+        self,
+        text: str,
+        conn: sqlite3.Connection | None = None,
+    ) -> str | None:
         """Find an existing semantic memory similar to the given text.
 
         Returns memory_id if found, None otherwise.
@@ -1737,9 +1763,11 @@ class Memory:
         if not candidate_words:
             return None
 
-        conn = self._open_conn()
+        own_conn = conn is None
+        conn = conn or self._open_conn()
         rows = conn.execute("SELECT memory_id, text FROM semantic").fetchall()
-        conn.close()
+        if own_conn:
+            conn.close()
 
         for memory_id, existing_text in rows:
             existing_words = set(existing_text.lower().split())
@@ -1753,10 +1781,16 @@ class Memory:
                 return memory_id
         return None
 
-    async def _reinforce_semantic(self, memory_id: str, source_episode: str):
+    async def _reinforce_semantic(
+        self,
+        memory_id: str,
+        source_episode: str,
+        conn: sqlite3.Connection | None = None,
+    ):
         """Reinforce an existing semantic memory."""
         now = datetime.now(timezone.utc).isoformat()
-        conn = self._open_conn()
+        own_conn = conn is None
+        conn = conn or self._open_conn()
         row = conn.execute(
             "SELECT evidence_count, confidence, source_episodes FROM semantic WHERE memory_id = ?",
             (memory_id,),
@@ -1779,8 +1813,10 @@ class Memory:
                 (evidence, round(confidence, 3), importance,
                  json.dumps(sources), now, memory_id),
             )
-            conn.commit()
-        conn.close()
+            if own_conn:
+                conn.commit()
+        if own_conn:
+            conn.close()
 
     def _semantic_cache_key(self, text: str) -> str:
         """Normalize semantic text so repeated heuristics can reuse lookups."""
