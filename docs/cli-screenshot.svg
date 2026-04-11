@@ -21,7 +21,7 @@
   <circle class="r" cx="22" cy="19" r="6"/>
   <circle class="y" cx="42" cy="19" r="6"/>
   <circle class="g" cx="62" cy="19" r="6"/>
-  <text class="t" x="410" y="23" text-anchor="middle" fill="#888">forgegod — ~/myproject</text>
+  <text class="t" x="410" y="23" text-anchor="middle" fill="#888">forgegod - ~/myproject</text>
 
   <!-- Command -->
   <text x="20" y="66" fill="#28c840">&#x276F; <tspan fill="#e0e0e0">forgegod init</tspan></text>
