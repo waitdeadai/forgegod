@@ -133,6 +133,28 @@ Force Codex-only:
 forgegod auth sync --profile adversarial --openai-surface codex-only
 ```
 
+Release-grade matrix:
+
+```bash
+forgegod evals --matrix openai-surfaces
+```
+
+That matrix compares:
+
+- `adversarial`
+- `single-model`
+- `auto`
+- `api-only`
+- `codex-only`
+- `api+codex`
+
+with split scores for:
+
+- `ux`
+- `safety`
+- `workflow`
+- `verification`
+
 ## Current status
 
 As of 2026-04-10:

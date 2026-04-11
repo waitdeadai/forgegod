@@ -613,6 +613,44 @@ note now lives in:
 
 - [docs/OPENAI_SURFACES_2026-04-10.md](OPENAI_SURFACES_2026-04-10.md)
 
+## OpenAI Evals Matrix Addendum
+
+Verified on `2026-04-10` before extending `forgegod evals` into an explicit
+OpenAI-first comparison surface:
+
+- OpenAI's harness engineering guidance continues to argue that the harness is
+  the system, not just the model. Measurement should focus on repo structure,
+  feedback loops, and workflow behavior, not only benchmark folklore:
+  - https://openai.com/index/harness-engineering/
+- OpenAI's eval guidance continues to emphasize eval-driven iteration,
+  reproducibility, and grader-based interpretation rather than relying only on
+  unit tests or intuition:
+  - https://platform.openai.com/docs/guides/evals
+  - https://platform.openai.com/docs/guides/agent-evals
+- OpenAI's current model docs still support GPT-5.4 / GPT-5.4-mini as the main
+  API-side surfaces for current OpenAI-first harness designs:
+  - https://developers.openai.com/api/docs/models
+- OpenAI's Codex docs and Help articles continue to justify treating Codex as a
+  distinct subscription-backed auth surface rather than collapsing it into the
+  API story:
+  - https://developers.openai.com/codex/learn/best-practices
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+
+Operational conclusion for ForgeGod: after making OpenAI surface selection
+explicit, the next correct step is not more copy. It is a deterministic matrix.
+ForgeGod should be able to compare:
+
+- `adversarial`
+- `single-model`
+- `auto`
+- `api-only`
+- `codex-only`
+- `api+codex`
+
+inside `forgegod evals`, with traces and split scores. That is now a better
+2026-aligned way to reason about OpenAI routing changes than anecdotal "felt
+better locally" reports.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

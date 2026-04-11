@@ -1509,6 +1509,11 @@ def evals(
         "-m",
         help="Optional JSON manifest path. Defaults to ForgeGod's built-in harness evals.",
     ),
+    matrix: Optional[str] = typer.Option(
+        None,
+        "--matrix",
+        help="Built-in eval matrix to run. Supported today: openai-surfaces",
+    ),
     case: list[str] | None = typer.Option(
         None,
         "--case",
@@ -1535,6 +1540,11 @@ def evals(
         "--list",
         help="List available eval cases without running them.",
     ),
+    list_matrices: bool = typer.Option(
+        False,
+        "--list-matrices",
+        help="List built-in eval matrices without running them.",
+    ),
 ):
     """Run deterministic harness evals for CLI surfaces and guardrails."""
     from forgegod.config import load_config
@@ -1542,6 +1552,22 @@ def evals(
 
     _print_banner(mini=True)
     eval_manifest = load_eval_manifest(manifest)
+
+    if list_matrices:
+        typer.echo("Harness eval matrices")
+        matrix_table = Table(title="Harness eval matrices")
+        matrix_table.add_column("Matrix", style="cyan")
+        matrix_table.add_column("Purpose", style="dim")
+        matrix_table.add_row(
+            "openai-surfaces",
+            "Compare adversarial vs single-model across OpenAI API/Codex surfaces",
+        )
+        typer.echo(
+            "openai-surfaces\t"
+            "Compare adversarial vs single-model across OpenAI API/Codex surfaces"
+        )
+        console.print(matrix_table)
+        raise typer.Exit()
 
     if list_cases:
         typer.echo(f"Harness eval cases - {eval_manifest.name}")
@@ -1569,6 +1595,50 @@ def evals(
         raise typer.Exit()
 
     runner = HarnessEvalRunner(load_config())
+    if matrix:
+        if matrix != "openai-surfaces":
+            raise typer.BadParameter(
+                "Unknown eval matrix. Supported today: openai-surfaces"
+            )
+        matrix_report = runner.run_openai_surface_matrix(
+            eval_manifest,
+            selected_case_ids=set(case or []),
+            selected_tags=set(tag or []),
+            output_path=output,
+            traces_dir=traces_dir,
+        )
+        summary = Table(title=f"ForgeGod eval matrix - {matrix_report.matrix_name}")
+        summary.add_column("Row", style="cyan")
+        summary.add_column("Profile", style="white")
+        summary.add_column("OpenAI surface", style="yellow")
+        summary.add_column("Score", justify="right")
+        summary.add_column("Pass", justify="center")
+        for row in matrix_report.rows:
+            summary.add_row(
+                row.id,
+                row.profile,
+                row.effective_openai_surface,
+                f"{row.score:.3f}",
+                "yes" if row.passed else "no",
+            )
+        console.print(summary)
+        typer.echo(
+            f"Harness eval matrix complete ({matrix_report.passed_rows}/{matrix_report.total_rows} "
+            f"rows passing, score={matrix_report.score:.3f})"
+        )
+        typer.echo(f"Report: {output}")
+        typer.echo(f"Traces root: {traces_dir}")
+        console.print(
+            f"\n[bold green]Harness eval matrix complete[/bold green] "
+            f"({matrix_report.passed_rows}/{matrix_report.total_rows} rows passing, "
+            f"score={matrix_report.score:.3f})"
+        )
+        console.print(f"[dim]Report: {output}[/dim]")
+        console.print(f"[dim]Traces root: {traces_dir}[/dim]")
+        if matrix_report.passed_rows != matrix_report.total_rows:
+            raise typer.Exit(1)
+        raise typer.Exit()
+
     report = runner.run_manifest(
         eval_manifest,
         selected_case_ids=set(case or []),

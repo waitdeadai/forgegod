@@ -23,7 +23,7 @@ from rich.console import Console
 from typer.testing import CliRunner
 
 from forgegod import __version__
-from forgegod.config import ForgeGodConfig
+from forgegod.config import ForgeGodConfig, recommend_model_defaults, resolve_openai_surface
 from forgegod.testing.mock_openai_service import SCENARIOS, start_mock_openai_server
 
 console = Console()
@@ -69,6 +69,12 @@ class EvalCase(BaseModel):
     tags: list[str] = Field(default_factory=list)
     stdin_input: str = ""
     chat_inputs: list[str] = Field(default_factory=list)
+    dimensions: list[str] = Field(default_factory=list)
+    harness_profile: str = "adversarial"
+    preferred_provider: str = "auto"
+    openai_surface: str = "auto"
+    detected_providers: list[str] = Field(default_factory=lambda: ["openai"])
+    codex_automation_supported: bool = False
     expectations: EvalExpectation = Field(default_factory=EvalExpectation)
 
 
@@ -113,7 +119,40 @@ class EvalReport(BaseModel):
     total_cases: int = 0
     passed_cases: int = 0
     score: float = 0.0
+    dimension_scores: dict[str, float] = Field(default_factory=dict)
     results: list[EvalCaseResult] = Field(default_factory=list)
+
+
+class EvalMatrixRow(BaseModel):
+    """One profile/surface row in a harness eval matrix."""
+
+    id: str
+    profile: str
+    preferred_provider: str
+    requested_openai_surface: str
+    effective_openai_surface: str
+    detected_providers: list[str] = Field(default_factory=list)
+    codex_automation_supported: bool = False
+    models: dict[str, str] = Field(default_factory=dict)
+    passed_cases: int = 0
+    total_cases: int = 0
+    score: float = 0.0
+    dimension_scores: dict[str, float] = Field(default_factory=dict)
+    passed: bool = False
+    report_path: str = ""
+    traces_dir: str = ""
+
+
+class EvalMatrixReport(BaseModel):
+    """Multi-row harness eval matrix report."""
+
+    timestamp: str
+    forgegod_version: str
+    matrix_name: str
+    total_rows: int = 0
+    passed_rows: int = 0
+    score: float = 0.0
+    rows: list[EvalMatrixRow] = Field(default_factory=list)
 
 
 _BUILTIN_MANIFEST = {
@@ -131,6 +170,7 @@ _BUILTIN_MANIFEST = {
             "setup": "hello",
             "permission_mode": "read-only",
             "tags": ["chat", "ux", "natural-language"],
+            "dimensions": ["ux", "verification"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 2,
@@ -152,6 +192,7 @@ _BUILTIN_MANIFEST = {
             "permission_mode": "read-only",
             "terse": True,
             "tags": ["chat", "terse", "ux"],
+            "dimensions": ["ux"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 2,
@@ -171,6 +212,7 @@ _BUILTIN_MANIFEST = {
             "setup": "git_src",
             "permission_mode": "workspace-write",
             "tags": ["run", "completion-gate", "verification"],
+            "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 4,
@@ -189,6 +231,7 @@ _BUILTIN_MANIFEST = {
             "approval_mode": "prompt",
             "stdin_input": "y\n",
             "tags": ["run", "approval", "permissions"],
+            "dimensions": ["safety", "workflow"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 3,
@@ -205,6 +248,7 @@ _BUILTIN_MANIFEST = {
             "setup": "none",
             "permission_mode": "read-only",
             "tags": ["run", "permissions", "safety"],
+            "dimensions": ["safety"],
             "expectations": {
                 "exit_code": 1,
                 "request_count": 1,
@@ -225,6 +269,7 @@ _BUILTIN_MANIFEST = {
             "story_title": "Create the app entrypoint",
             "story_description": "Implement src/app.py for the loop parity harness.",
             "tags": ["loop", "prd", "verification"],
+            "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 4,
@@ -248,6 +293,7 @@ _BUILTIN_MANIFEST = {
             "story_title": "Blocked write story",
             "story_description": "Attempt a forbidden write from the loop parity harness.",
             "tags": ["loop", "permissions", "safety"],
+            "dimensions": ["safety", "workflow"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 1,
@@ -270,6 +316,7 @@ _BUILTIN_MANIFEST = {
             "story_title": "Create the isolated app entrypoint",
             "story_description": "Implement src/app.py through the parallel worktree path.",
             "tags": ["loop", "worktree", "parallel"],
+            "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 4,
@@ -294,6 +341,7 @@ _BUILTIN_MANIFEST = {
             "sandbox_mode": "strict",
             "sandbox_backend": "success",
             "tags": ["run", "strict", "sandbox"],
+            "dimensions": ["safety", "workflow"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 2,
@@ -310,6 +358,7 @@ _BUILTIN_MANIFEST = {
             "sandbox_mode": "strict",
             "sandbox_backend": "unavailable",
             "tags": ["run", "strict", "safety"],
+            "dimensions": ["safety"],
             "expectations": {
                 "exit_code": 0,
                 "request_count": 2,
@@ -380,12 +429,106 @@ class HarnessEvalRunner:
             total_cases=len(results),
             passed_cases=passed_cases,
             score=score,
+            dimension_scores=self._build_dimension_scores(cases, results),
             results=results,
         )
         if output_path is not None:
             report.manifest_path = str(output_path)
             self.save_report(report, output_path)
         return report
+
+    def run_openai_surface_matrix(
+        self,
+        manifest: EvalManifest,
+        *,
+        selected_case_ids: set[str] | None = None,
+        selected_tags: set[str] | None = None,
+        output_path: Path | None = None,
+        traces_dir: Path | None = None,
+    ) -> EvalMatrixReport:
+        """Run the harness eval corpus across OpenAI profile/surface rows."""
+        rows: list[EvalMatrixRow] = []
+        if traces_dir is not None:
+            traces_dir.mkdir(parents=True, exist_ok=True)
+
+        console.print("[bold cyan]Running OpenAI surface eval matrix[/bold cyan]")
+        for row_spec in _OPENAI_SURFACE_MATRIX:
+            row_cases = [
+                case.model_copy(
+                    update={
+                        "harness_profile": row_spec["profile"],
+                        "preferred_provider": row_spec["preferred_provider"],
+                        "openai_surface": row_spec["openai_surface"],
+                        "detected_providers": row_spec["detected_providers"],
+                        "codex_automation_supported": row_spec["codex_automation_supported"],
+                    }
+                )
+                for case in manifest.cases
+            ]
+            row_manifest = EvalManifest(
+                name=f"{manifest.name}:{row_spec['id']}",
+                description=manifest.description,
+                cases=row_cases,
+            )
+            row_report_path = (
+                output_path.parent / f"{row_spec['id']}.report.json"
+                if output_path is not None
+                else None
+            )
+            row_traces_dir = traces_dir / row_spec["id"] if traces_dir is not None else None
+            report = self.run_manifest(
+                row_manifest,
+                selected_case_ids=selected_case_ids,
+                selected_tags=selected_tags,
+                output_path=row_report_path,
+                traces_dir=row_traces_dir,
+            )
+            effective_surface = resolve_openai_surface(
+                row_spec["openai_surface"],
+                row_spec["detected_providers"],
+                codex_automation_supported=row_spec["codex_automation_supported"],
+            )
+            models = recommend_model_defaults(
+                row_spec["detected_providers"],
+                ollama_available=False,
+                codex_automation_supported=row_spec["codex_automation_supported"],
+                profile=row_spec["profile"],
+                preferred_provider=row_spec["preferred_provider"],
+                openai_surface=row_spec["openai_surface"],
+            ).model_dump()
+            rows.append(
+                EvalMatrixRow(
+                    id=row_spec["id"],
+                    profile=row_spec["profile"],
+                    preferred_provider=row_spec["preferred_provider"],
+                    requested_openai_surface=row_spec["openai_surface"],
+                    effective_openai_surface=effective_surface,
+                    detected_providers=list(row_spec["detected_providers"]),
+                    codex_automation_supported=row_spec["codex_automation_supported"],
+                    models=models,
+                    passed_cases=report.passed_cases,
+                    total_cases=report.total_cases,
+                    score=report.score,
+                    dimension_scores=report.dimension_scores,
+                    passed=report.passed_cases == report.total_cases,
+                    report_path=str(row_report_path) if row_report_path else "",
+                    traces_dir=str(row_traces_dir) if row_traces_dir else "",
+                )
+            )
+
+        matrix_report = EvalMatrixReport(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            forgegod_version=__version__,
+            matrix_name="openai-surfaces-v1",
+            total_rows=len(rows),
+            passed_rows=sum(1 for row in rows if row.passed),
+            score=round(sum(row.score for row in rows) / len(rows), 3) if rows else 0.0,
+            rows=rows,
+        )
+        if output_path is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(matrix_report.model_dump_json(indent=2), encoding="utf-8")
+        return matrix_report
 
     def run_case(
         self,
@@ -411,6 +554,7 @@ class HarnessEvalRunner:
             self._write_project_config(
                 workspace,
                 started.base_url,
+                case=case,
                 permission_mode=case.permission_mode,
                 approval_mode=case.approval_mode,
                 sandbox_mode=case.sandbox_mode,
@@ -466,6 +610,26 @@ class HarnessEvalRunner:
         """Persist a JSON report."""
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+
+    @staticmethod
+    def _build_dimension_scores(
+        cases: list[EvalCase],
+        results: list[EvalCaseResult],
+    ) -> dict[str, float]:
+        """Split harness scores by dimension for release decisions."""
+        by_id = {result.id: result for result in results}
+        grouped: dict[str, list[float]] = {}
+        for case in cases:
+            result = by_id.get(case.id)
+            if result is None:
+                continue
+            for dimension in case.dimensions or ["uncategorized"]:
+                grouped.setdefault(dimension, []).append(result.score)
+        return {
+            dimension: round(sum(scores) / len(scores), 3)
+            for dimension, scores in sorted(grouped.items())
+            if scores
+        }
 
     @staticmethod
     def _select_cases(
@@ -568,15 +732,23 @@ class HarnessEvalRunner:
         workspace: Path,
         base_url: str,
         *,
+        case: EvalCase,
         permission_mode: str,
         approval_mode: str,
         sandbox_mode: str,
     ) -> None:
         config = self.config.model_copy(deep=True)
-        config.models.coder = "openai:gpt-5.4-mini"
-        config.models.reviewer = "openai:gpt-5.4-mini"
-        config.models.sentinel = "openai:gpt-5.4-mini"
-        config.models.escalation = "openai:gpt-5.4-mini"
+        config.models = recommend_model_defaults(
+            case.detected_providers,
+            ollama_available=False,
+            codex_automation_supported=case.codex_automation_supported,
+            profile=case.harness_profile,
+            preferred_provider=case.preferred_provider,
+            openai_surface=case.openai_surface,
+        )
+        config.harness.profile = case.harness_profile
+        config.harness.preferred_provider = case.preferred_provider
+        config.harness.openai_surface = case.openai_surface
         config.openai.base_url = base_url
         config.review.enabled = False
         config.review.always_review_run = False
@@ -602,6 +774,7 @@ class HarnessEvalRunner:
 
     def _invoke_case(self, workspace: Path, case: EvalCase) -> tuple[int, str]:
         from forgegod import cli as cli_module
+        from forgegod import router as router_module
         from forgegod import sandbox as sandbox_module
         from forgegod.tools import shell as shell_module
 
@@ -611,6 +784,7 @@ class HarnessEvalRunner:
             captured_lines: list[str] = []
             original_print = cli_module.console.print
             original_sandbox = shell_module.run_in_real_sandbox
+            original_codex_call = router_module.ModelRouter._call_openai_codex
 
             def capture_print(*renderables, **kwargs):
                 for renderable in renderables:
@@ -623,6 +797,29 @@ class HarnessEvalRunner:
             try:
                 cli_module.console.print = capture_print
                 os.environ["OPENAI_API_KEY"] = "mock-token"
+
+                async def fake_codex_call(
+                    router_self,
+                    model,
+                    prompt,
+                    system,
+                    json_mode,
+                    max_tokens,
+                    temperature,
+                    tools,
+                ):
+                    return await router_module.ModelRouter._call_openai(
+                        router_self,
+                        model,
+                        prompt,
+                        system,
+                        json_mode,
+                        max_tokens,
+                        temperature,
+                        tools,
+                    )
+
+                router_module.ModelRouter._call_openai_codex = fake_codex_call
                 if case.sandbox_backend == "success":
                     async def fake_sandbox(**_kwargs):
                         return sandbox_module.SandboxExecutionResult(
@@ -669,6 +866,7 @@ class HarnessEvalRunner:
             finally:
                 cli_module.console.print = original_print
                 shell_module.run_in_real_sandbox = original_sandbox
+                router_module.ModelRouter._call_openai_codex = original_codex_call
                 if previous_openai_key is None:
                     os.environ.pop("OPENAI_API_KEY", None)
                 else:
@@ -851,3 +1049,71 @@ class HarnessEvalRunner:
             yield
         finally:
             os.chdir(previous)
+
+
+_OPENAI_SURFACE_MATRIX: tuple[dict[str, Any], ...] = (
+    {
+        "id": "adversarial_auto",
+        "profile": "adversarial",
+        "preferred_provider": "openai",
+        "openai_surface": "auto",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "adversarial_api_only",
+        "profile": "adversarial",
+        "preferred_provider": "openai",
+        "openai_surface": "api-only",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "adversarial_codex_only",
+        "profile": "adversarial",
+        "preferred_provider": "openai",
+        "openai_surface": "codex-only",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "adversarial_api_codex",
+        "profile": "adversarial",
+        "preferred_provider": "openai",
+        "openai_surface": "api+codex",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "single_model_auto",
+        "profile": "single-model",
+        "preferred_provider": "openai",
+        "openai_surface": "auto",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "single_model_api_only",
+        "profile": "single-model",
+        "preferred_provider": "openai",
+        "openai_surface": "api-only",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "single_model_codex_only",
+        "profile": "single-model",
+        "preferred_provider": "openai",
+        "openai_surface": "codex-only",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+    {
+        "id": "single_model_api_codex",
+        "profile": "single-model",
+        "preferred_provider": "openai",
+        "openai_surface": "api+codex",
+        "detected_providers": ["openai", "openai-codex"],
+        "codex_automation_supported": True,
+    },
+)

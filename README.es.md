@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `550` tests recolectados, `465` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `553` tests recolectados, `468` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, separa scores por dimension del harness y trae una matriz de superficies OpenAI. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -191,6 +191,7 @@ forgegod run "Agregá un endpoint /health a server.py con uptime e info de versi
 # Evals deterministicas del harness
 forgegod evals
 forgegod evals --case chat_natural_language_roundtrip
+forgegod evals --matrix openai-surfaces
 
 # Planificar un proyecto → genera PRD
 forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y tests"
@@ -372,7 +373,9 @@ Regla practica del harness:
 - `forgegod benchmark` mide performance de codigo/modelos sobre tareas scaffold
 - `forgegod evals` mide a ForgeGod mismo: UX conversacional, aprobaciones,
   denegaciones por permisos, disciplina del completion gate, comportamiento de
-  loop/worktree y manejo de la interfaz strict
+  loop/worktree y manejo de la interfaz strict. Ahora tambien separa scores por
+  `ux`, `safety`, `workflow` y `verification`, y trae
+  `forgegod evals --matrix openai-surfaces` para cobertura OpenAI-first.
 
 ## Seguridad
 

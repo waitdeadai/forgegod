@@ -214,15 +214,33 @@ dependent integration paths stay as separate opt-in smokes.
 
 ### V3
 
+V3 is now partially complete.
+
+Completed in the current repo baseline:
+
+- scenario tags are now complemented by explicit eval dimensions
+- scores now split by UX, safety, workflow, and verification
+- `forgegod evals` now ships an OpenAI-first matrix:
+  `forgegod evals --matrix openai-surfaces`
+- that matrix compares:
+  - `adversarial` vs `single-model`
+  - `auto`
+  - `api-only`
+  - `codex-only`
+  - `api+codex`
+
+Still remaining for V3:
+
 - add opt-in real Docker eval cases as a separate tier
-- add scenario tags for provider surfaces, runtime tiers, and harness profiles
-- split scores by UX, safety, workflow, and verification dimensions
+- add runtime-tier tags that distinguish host-local vs real-strict backend
+- persist richer per-row matrix summaries for release dashboards
 
 ### V4
 
 - add grader-backed trace analysis
 - score plan quality, reviewer quality, and verification quality separately
-- compare `single-model` vs `adversarial` using the same eval corpus
+- expand the matrix from deterministic routing coverage to live provider
+  coverage when the user has the auth surfaces available
 
 ### V5
 
