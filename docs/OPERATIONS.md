@@ -30,7 +30,7 @@ This document is the current system of record for day-to-day work in this reposi
 
 | Command | Observed result on 2026-04-11 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `482 passed, 1 skipped, 84 deselected in 227.26s` |
+| `python -m pytest -m "not stress" -q` | `483 passed, 1 skipped, 84 deselected in 143.66s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
 | `python scripts/run_stress_tests.py --markdown` | `84 passed in 160.47s` |
 | `python -m pytest tests -q` | `566 passed, 1 skipped in 330.56s` |

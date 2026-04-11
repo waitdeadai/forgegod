@@ -648,6 +648,11 @@ def auth_status():
     if codex_logged_in and codex_supported:
         codex_state = "[green]ready[/green]"
         codex_detail = codex_status or codex_env_detail
+        if codex_detail:
+            codex_detail = (
+                f"{codex_detail} (quota can still block live runs; "
+                "use `forgegod evals --matrix openai-live` to verify)"
+            )
     elif codex_logged_in:
         codex_state = "[yellow]needs setup[/yellow]"
         codex_detail = codex_env_detail

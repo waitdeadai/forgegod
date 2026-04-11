@@ -76,6 +76,29 @@ def test_auth_status_marks_codex_needs_setup_when_logged_in(tmp_path, monkeypatc
     assert "Use WSL for best Windows experience" in visible
 
 
+def test_auth_status_ready_codex_mentions_live_probe(tmp_path, monkeypatch, printed):
+    project_env = tmp_path / ".forgegod"
+    project_env.mkdir()
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_login_status_sync",
+        lambda: (True, "Logged in using ChatGPT"),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Codex automation supported"),
+    )
+
+    result = runner.invoke(app, ["auth", "status"])
+
+    assert result.exit_code == 0
+    visible = printed.getvalue()
+    assert "openai-codex" in visible
+    assert "ready" in visible
+    assert "openai-live" in visible
+
+
 def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, printed):
     project_dir = tmp_path / ".forgegod"
     project_dir.mkdir()
