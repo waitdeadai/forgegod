@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `541` collected tests, `456` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, and OpenAI-first provider preference. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) before making runtime changes.
+> Audit note (re-verified 2026-04-10): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `550` collected tests, `465` non-stress tests passing by default, `84/84` stress tests passing, green lint, and a green build. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it now honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod evals` now covers deterministic chat, run, loop, worktree, and strict-interface regressions, and `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), and [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -86,9 +86,10 @@ You don't need to be a developer to use ForgeGod. If you can describe what you w
 
 1. Install ForgeGod: `pip install forgegod`
 2. Run: `forgegod auth login openai-codex`
-3. Run: `forgegod auth sync --profile adversarial --prefer-provider openai`
-4. Start the session: `forgegod`
-5. Say what you want naturally, for example: `Build a REST API with user authentication`
+3. Inspect the OpenAI split you want: `forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex`
+4. Run: `forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex`
+5. Start the session: `forgegod`
+6. Say what you want naturally, for example: `Build a REST API with user authentication`
 
 ForgeGod stays the entrypoint. It delegates the one-time login to the official Codex auth flow, then keeps day-to-day usage inside ForgeGod CLI.
 
@@ -96,7 +97,7 @@ ForgeGod stays the entrypoint. It delegates the one-time login to the official C
 
 1. Export `ZAI_CODING_API_KEY=...`
 2. Install ForgeGod: `pip install forgegod`
-3. Run: `forgegod auth sync --profile adversarial --prefer-provider openai`
+3. Run: `forgegod auth sync --profile adversarial`
 4. Start the session: `forgegod`
 5. Say what you want naturally, for example: `Build a REST API with user authentication`
 
@@ -119,10 +120,10 @@ This harness is research-backed and works in ForgeGod today. The `ZAI_CODING_API
 path should still be treated as experimental and at-your-own-risk until Z.AI
 explicitly recognizes ForgeGod as a supported coding tool.
 
-### OpenAI-First Harness: API Builder + Codex Reviewer
+### OpenAI Surface Modes
 
 If you want ForgeGod to stay inside OpenAI surfaces, apply an explicit
-OpenAI-first preference:
+surface mode:
 
 - `planner = openai:gpt-5.4`
 - `coder = openai:gpt-5.4-mini`
@@ -132,12 +133,21 @@ OpenAI-first preference:
 - `researcher = openai:gpt-5.4-mini`
 
 ```bash
-forgegod auth sync --profile adversarial --prefer-provider openai
+forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex
+forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex
 ```
 
-That keeps the adversarial split, but biases the harness toward OpenAI API plus
-Codex subscription when both are connected. ChatGPT/Codex subscription access
-and OpenAI API billing remain separate surfaces.
+ForgeGod now supports four explicit OpenAI surface modes:
+
+- `auto`
+- `api-only`
+- `codex-only`
+- `api+codex`
+
+`api+codex` keeps the adversarial split but makes the contract explicit:
+OpenAI API handles builder/research roles while Codex subscription handles the
+reviewer path when both are connected. ChatGPT/Codex subscription access and
+OpenAI API billing remain separate surfaces.
 
 If you want a simpler setup, ForgeGod also supports `single-model` mode during
 `forgegod init` and `forgegod auth sync --profile single-model`. That pins all
@@ -181,7 +191,8 @@ forgegod auth status
 
 # Link ChatGPT-backed OpenAI Codex subscription, then sync config defaults
 forgegod auth login openai-codex
-forgegod auth sync --profile adversarial --prefer-provider openai
+forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex
+forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex
 
 # Talk to ForgeGod in natural language
 forgegod
@@ -235,6 +246,7 @@ ForgeGod auto-detects your environment on first run:
 3. Detects your project language, test framework, and linter
 4. Picks auth-aware model defaults for each role based on what's available
 5. Lets you choose `adversarial` (recommended) or `single-model`, plus `auto` or `openai` provider preference
+6. Lets you choose OpenAI `auto`, `api-only`, `codex-only`, or `api+codex` surfaces when you want explicit OpenAI behavior
 6. Creates `.forgegod/config.toml` with sensible defaults
 
 No manual setup required. Just run `forgegod` and go.

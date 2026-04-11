@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `541` tests recolectados, `456` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion y preferencia de proveedor OpenAI-first. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) y [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-10): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `550` tests recolectados, `465` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, y `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -53,10 +53,10 @@ El camino con `ZAI_CODING_API_KEY` funciona hoy en ForgeGod, pero sigue siendo
 experimental hasta que Z.AI reconozca explícitamente a ForgeGod como coding
 tool soportada.
 
-### Harness OpenAI-First: Builder por API + Reviewer por Codex
+### Modos de Superficie OpenAI
 
 Si querés mantener ForgeGod dentro de superficies OpenAI, aplicá una
-preferencia explícita OpenAI-first:
+superficie explícita:
 
 - `planner = openai:gpt-5.4`
 - `coder = openai:gpt-5.4-mini`
@@ -66,12 +66,21 @@ preferencia explícita OpenAI-first:
 - `researcher = openai:gpt-5.4-mini`
 
 ```bash
-forgegod auth sync --profile adversarial --prefer-provider openai
+forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex
+forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex
 ```
 
-Eso mantiene el split adversarial, pero sesga el harness hacia OpenAI API más
-la suscripción Codex cuando ambas superficies están conectadas. El billing de
-ChatGPT/Codex y el billing del API de OpenAI siguen siendo superficies separadas.
+ForgeGod ahora soporta cuatro modos explícitos de superficie OpenAI:
+
+- `auto`
+- `api-only`
+- `codex-only`
+- `api+codex`
+
+`api+codex` mantiene el split adversarial, pero vuelve explícito el contrato:
+la OpenAI API maneja roles de builder/investigación y la suscripción Codex
+maneja el reviewer cuando ambas están conectadas. El billing de ChatGPT/Codex
+y el billing del API de OpenAI siguen siendo superficies separadas.
 
 Si querés una configuración más simple, ForgeGod también soporta `single-model`
 durante `forgegod init` y `forgegod auth sync --profile single-model`. Eso
@@ -104,15 +113,16 @@ No necesitás ser desarrollador para usar ForgeGod. Si podés describir lo que q
 
 1. Instalá ForgeGod: `pip install forgegod`
 2. Ejecutá: `forgegod auth login openai-codex`
-3. Ejecutá: `forgegod auth sync --profile adversarial --prefer-provider openai`
-4. Iniciá la sesión: `forgegod`
-5. Pedile algo en lenguaje natural, por ejemplo: `Construí una API REST con autenticación de usuarios`
+3. Inspeccioná el split OpenAI que querés: `forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex`
+4. Ejecutá: `forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex`
+5. Iniciá la sesión: `forgegod`
+6. Pedile algo en lenguaje natural, por ejemplo: `Construí una API REST con autenticación de usuarios`
 
 ### Opción C: Modo Z.AI Coding Plan
 
 1. Exportá `ZAI_CODING_API_KEY=...`
 2. Instalá ForgeGod: `pip install forgegod`
-3. Ejecutá: `forgegod auth sync --profile adversarial --prefer-provider openai`
+3. Ejecutá: `forgegod auth sync --profile adversarial`
 4. Iniciá la sesión: `forgegod`
 5. Pedile algo en lenguaje natural, por ejemplo: `Construí una API REST con autenticación de usuarios`
 
@@ -169,7 +179,8 @@ forgegod auth status
 
 # Vincular la suscripción de OpenAI Codex y sincronizar defaults
 forgegod auth login openai-codex
-forgegod auth sync --profile adversarial --prefer-provider openai
+forgegod auth explain --profile adversarial --prefer-provider openai --openai-surface api+codex
+forgegod auth sync --profile adversarial --prefer-provider openai --openai-surface api+codex
 
 # Hablar con ForgeGod en lenguaje natural
 forgegod

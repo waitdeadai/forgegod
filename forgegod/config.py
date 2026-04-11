@@ -73,6 +73,7 @@ class HarnessConfig(BaseModel):
 
     profile: str = "adversarial"  # adversarial | single-model
     preferred_provider: str = "auto"  # auto | openai
+    openai_surface: str = "auto"  # auto | api-only | codex-only | api+codex
 
 
 class BudgetConfig(BaseModel):
@@ -232,6 +233,7 @@ def recommend_model_defaults(
     codex_automation_supported: bool | None = None,
     profile: str = "adversarial",
     preferred_provider: str = "auto",
+    openai_surface: str = "auto",
 ) -> ModelsConfig:
     """Choose sane default models for the currently available auth surfaces."""
     if codex_automation_supported is None:
@@ -241,8 +243,32 @@ def recommend_model_defaults(
 
     provider_set = set(providers or [])
     recommended = ModelsConfig()
+    effective_openai_surface = resolve_openai_surface(
+        openai_surface,
+        provider_set,
+        codex_automation_supported=codex_automation_supported,
+    )
+
+    def surface_allows(provider: str) -> bool:
+        if effective_openai_surface == "auto":
+            return True
+        if provider == "openai":
+            return effective_openai_surface in {"api-only", "api+codex"}
+        if provider == "openai-codex":
+            return effective_openai_surface in {"codex-only", "api+codex"}
+        return False
 
     def prioritize(candidates: list[str]) -> list[str]:
+        if effective_openai_surface != "auto":
+            preferred: list[str] = []
+            fallback: list[str] = []
+            for spec in candidates:
+                provider, _ = spec.split(":", 1)
+                if surface_allows(provider):
+                    preferred.append(spec)
+                else:
+                    fallback.append(spec)
+            return preferred + fallback
         if preferred_provider != "openai":
             return candidates
         preferred: list[str] = []
@@ -258,6 +284,8 @@ def recommend_model_defaults(
     def pick(candidates: list[str]) -> str | None:
         for spec in prioritize(candidates):
             provider, _ = spec.split(":", 1)
+            if not surface_allows(provider):
+                continue
             if provider == "openai-codex" and not codex_automation_supported:
                 continue
             if provider == "ollama":
@@ -411,6 +439,7 @@ def init_project(
     model_defaults: ModelsConfig | None = None,
     harness_profile: str | None = None,
     preferred_provider: str | None = None,
+    openai_surface: str | None = None,
 ) -> Path:
     """Initialize .forgegod/ directory with default config."""
     if project_root is None:
@@ -428,6 +457,8 @@ def init_project(
             default.harness.profile = harness_profile
         if preferred_provider is not None:
             default.harness.preferred_provider = preferred_provider
+        if openai_surface is not None:
+            default.harness.openai_surface = openai_surface
         config_path.write_text(
             toml.dumps(
                 default.model_dump(
@@ -508,3 +539,48 @@ def _load_dotenv(env_path: Path) -> None:
             value = value.strip().strip("'\"")
             if key and key not in os.environ:
                 os.environ[key] = value
+
+
+def resolve_openai_surface(
+    requested_surface: str,
+    providers: list[str] | set[str] | None = None,
+    *,
+    codex_automation_supported: bool = True,
+) -> str:
+    """Resolve the requested OpenAI surface against the auth surfaces that are ready."""
+    provider_set = set(providers or [])
+    has_api = "openai" in provider_set
+    has_codex = "openai-codex" in provider_set and codex_automation_supported
+
+    if requested_surface == "api-only":
+        if has_api:
+            return "api-only"
+        if has_codex:
+            return "codex-only"
+        return "auto"
+    if requested_surface == "codex-only":
+        if has_codex:
+            return "codex-only"
+        if has_api:
+            return "api-only"
+        return "auto"
+    if requested_surface == "api+codex":
+        if has_api and has_codex:
+            return "api+codex"
+        if has_api:
+            return "api-only"
+        if has_codex:
+            return "codex-only"
+        return "auto"
+    return "auto"
+
+
+def openai_surface_label(surface: str) -> str:
+    """Return a short label for an OpenAI surface selection."""
+    labels = {
+        "auto": "auto",
+        "api-only": "api-only",
+        "codex-only": "codex-only",
+        "api+codex": "api+codex",
+    }
+    return labels.get(surface, surface)

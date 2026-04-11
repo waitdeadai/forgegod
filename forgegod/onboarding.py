@@ -11,7 +11,7 @@ from rich.panel import Panel
 
 from forgegod import __version__
 from forgegod.cli_ux import build_banner_text, console, print_brand_panel
-from forgegod.config import init_project, recommend_model_defaults
+from forgegod.config import init_project, openai_surface_label, recommend_model_defaults
 from forgegod.i18n import t
 from forgegod.native_auth import (
     codex_automation_status,
@@ -103,11 +103,13 @@ class OnboardingWizard:
         lang: str = "en",
         harness_profile: str = "adversarial",
         preferred_provider: str = "auto",
+        openai_surface: str = "auto",
     ):
         self.project_path = Path(project_path).resolve()
         self.lang = lang
         self._harness_profile = harness_profile
         self._preferred_provider = preferred_provider
+        self._openai_surface = openai_surface
         self._providers: list[str] = []
         self._ollama_available = False
         self._ollama_models: list[str] = []
@@ -126,6 +128,7 @@ class OnboardingWizard:
         self._step_provider()
         self._step_harness_profile()
         self._step_provider_preference()
+        self._step_openai_surface()
         self._step_verify()
         self._step_done()
         return {
@@ -305,6 +308,54 @@ class OnboardingWizard:
         default_choice = "2" if self._preferred_provider == "openai" else "1"
         choice = typer.prompt("Provider preference", default=default_choice)
         self._preferred_provider = "openai" if choice == "2" else "auto"
+
+    def _step_openai_surface(self) -> None:
+        """Step 5: choose how ForgeGod should use OpenAI API and Codex surfaces."""
+        if not self._should_offer_openai_surface():
+            self._openai_surface = "auto"
+            return
+
+        print_brand_panel(
+            t("openai_surface_prompt"),
+            t("openai_surface_body"),
+            border_style="forge.secondary",
+        )
+        console.print(
+            f"  [forge.primary]1.[/forge.primary] {t('openai_surface_auto')} "
+            f"[forge.muted]({t('provider_recommended')})[/forge.muted]"
+        )
+        console.print(
+            f"  [forge.primary]2.[/forge.primary] {t('openai_surface_api_only')}"
+        )
+        console.print(
+            f"  [forge.primary]3.[/forge.primary] {t('openai_surface_codex_only')}"
+        )
+        console.print(
+            f"  [forge.primary]4.[/forge.primary] {t('openai_surface_hybrid')}"
+        )
+        console.print()
+
+        defaults = {
+            "auto": "1",
+            "api-only": "2",
+            "codex-only": "3",
+            "api+codex": "4",
+        }
+        choice = typer.prompt("OpenAI surface", default=defaults.get(self._openai_surface, "1"))
+        self._openai_surface = {
+            "1": "auto",
+            "2": "api-only",
+            "3": "codex-only",
+            "4": "api+codex",
+        }.get(choice, "auto")
+
+    def _should_offer_openai_surface(self) -> bool:
+        """Return whether the OpenAI surface step is relevant for this session."""
+        if self._preferred_provider == "openai":
+            return True
+        if any(provider in {"openai", "openai-codex"} for provider in self._providers):
+            return True
+        return any(provider in {"openai", "openai-codex"} for provider in self._detected_providers)
 
     def _print_provider_guidance(self) -> None:
         """Show friendly recommendations and what ForgeGod already detected."""
@@ -563,12 +614,14 @@ class OnboardingWizard:
             ollama_available=self._ollama_available,
             profile=self._harness_profile,
             preferred_provider=self._preferred_provider,
+            openai_surface=self._openai_surface,
         )
         project_dir = init_project(
             self.project_path,
             model_defaults=recommended,
             harness_profile=self._harness_profile,
             preferred_provider=self._preferred_provider,
+            openai_surface=self._openai_surface,
         )
         config_path = project_dir / "config.toml"
         try:
@@ -578,10 +631,15 @@ class OnboardingWizard:
             data["models"] = recommended.model_dump()
             data.setdefault("harness", {})["profile"] = self._harness_profile
             data["harness"]["preferred_provider"] = self._preferred_provider
+            data["harness"]["openai_surface"] = self._openai_surface
             config_path.write_text(toml.dumps(data), encoding="utf-8")
         except Exception:
             pass
 
+        openai_surface_text = t(
+            "openai_surface_selected",
+            surface=openai_surface_label(self._openai_surface),
+        )
         console.print()
         console.print(
             Panel(
@@ -589,6 +647,7 @@ class OnboardingWizard:
                     f"[forge.success]{t('success')}[/forge.success]\n\n"
                     f"{t('harness_selected', profile=self._harness_profile)}\n"
                     f"{t('provider_pref_selected', provider=self._preferred_provider)}\n"
+                    f"{openai_surface_text}\n"
                     f"{t('try_it')}"
                 ),
                 border_style="forge.primary",

@@ -12,7 +12,9 @@ from forgegod.config import (
     _env_overrides,
     init_project,
     load_config,
+    openai_surface_label,
     recommend_model_defaults,
+    resolve_openai_surface,
 )
 from forgegod.models import BudgetMode
 
@@ -22,6 +24,7 @@ def test_default_config():
     assert config.models.coder == "ollama:qwen3-coder-next"
     assert config.harness.profile == "adversarial"
     assert config.harness.preferred_provider == "auto"
+    assert config.harness.openai_surface == "auto"
     assert config.budget.daily_limit_usd == 5.0
     assert config.budget.mode == BudgetMode.NORMAL
     assert config.loop.max_iterations == 100
@@ -132,6 +135,59 @@ def test_recommend_model_defaults_openai_preference_biases_openai_surfaces():
     assert models.researcher == "openai:gpt-5.4-mini"
 
 
+def test_recommend_model_defaults_openai_surface_api_only():
+    models = recommend_model_defaults(
+        ["openai", "openai-codex", "zai"],
+        ollama_available=False,
+        codex_automation_supported=True,
+        openai_surface="api-only",
+    )
+    assert models.planner == "openai:gpt-5.4"
+    assert models.coder == "openai:gpt-5.4-mini"
+    assert models.reviewer == "openai:gpt-5.4"
+    assert models.sentinel == "openai:gpt-5.4"
+    assert models.researcher == "openai:gpt-5.4-mini"
+
+
+def test_recommend_model_defaults_openai_surface_codex_only():
+    models = recommend_model_defaults(
+        ["openai", "openai-codex", "zai"],
+        ollama_available=False,
+        codex_automation_supported=True,
+        openai_surface="codex-only",
+    )
+    assert models.planner == "openai-codex:gpt-5.4"
+    assert models.coder == "openai-codex:gpt-5.4"
+    assert models.reviewer == "openai-codex:gpt-5.4"
+    assert models.sentinel == "openai-codex:gpt-5.4"
+    assert models.escalation == "openai-codex:gpt-5.4"
+    assert models.researcher == "openai-codex:gpt-5.4"
+
+
+def test_recommend_model_defaults_openai_surface_api_plus_codex():
+    models = recommend_model_defaults(
+        ["openai", "openai-codex", "zai"],
+        ollama_available=False,
+        codex_automation_supported=True,
+        openai_surface="api+codex",
+    )
+    assert models.planner == "openai:gpt-5.4"
+    assert models.coder == "openai:gpt-5.4-mini"
+    assert models.reviewer == "openai-codex:gpt-5.4"
+    assert models.sentinel == "openai:gpt-5.4"
+    assert models.escalation == "openai:gpt-5.4"
+    assert models.researcher == "openai:gpt-5.4-mini"
+
+
+def test_resolve_openai_surface_degrades_cleanly():
+    assert resolve_openai_surface("api+codex", {"openai", "openai-codex"}) == "api+codex"
+    assert resolve_openai_surface("api+codex", {"openai"}) == "api-only"
+    assert resolve_openai_surface("api+codex", {"openai-codex"}) == "codex-only"
+    assert resolve_openai_surface("api-only", {"openai-codex"}) == "codex-only"
+    assert resolve_openai_surface("codex-only", {"openai"}) == "api-only"
+    assert openai_surface_label("api+codex") == "api+codex"
+
+
 def test_init_project_writes_model_defaults():
     with tempfile.TemporaryDirectory() as tmpdir:
         models = recommend_model_defaults(
@@ -144,11 +200,13 @@ def test_init_project_writes_model_defaults():
             model_defaults=models,
             harness_profile="single-model",
             preferred_provider="openai",
+            openai_surface="api+codex",
         )
         data = toml.loads((project_dir / "config.toml").read_text(encoding="utf-8"))
         assert data["models"]["planner"] == "openai-codex:gpt-5.4"
         assert data["harness"]["profile"] == "single-model"
         assert data["harness"]["preferred_provider"] == "openai"
+        assert data["harness"]["openai_surface"] == "api+codex"
 
 
 def test_load_config_from_toml():

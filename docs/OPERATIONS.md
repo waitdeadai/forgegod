@@ -23,18 +23,18 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `541`
+- Tests collected: `550`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-10 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `456 passed, 1 skipped, 84 deselected in 78.99s` |
+| `python -m pytest -m "not stress" -q` | `465 passed, 1 skipped, 84 deselected in 93.36s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
 | `python scripts/run_stress_tests.py --markdown` | `84 passed in 157.08s` |
-| `python -m pytest tests -q` | `540 passed, 1 skipped in 225.19s` |
-| `python -m pytest --collect-only -q` | `541 tests collected` |
+| `python -m pytest tests -q` | `549 passed, 1 skipped in 214.06s` |
+| `python -m pytest --collect-only -q` | `550 tests collected` |
 | `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
@@ -71,6 +71,7 @@ This document is the current system of record for day-to-day work in this reposi
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.
 - `forgegod init`, onboarding, and `forgegod auth sync` now also expose a harness profile choice: `adversarial` is the recommended split-model setup, while `single-model` intentionally pins every role to one detected model for users who prefer a simpler loop.
 - Those same setup flows now expose `preferred_provider = "openai"` as an explicit bias. In adversarial mode, ForgeGod can now prefer `openai:gpt-5.4` / `openai:gpt-5.4-mini` for API-backed roles while still using `openai-codex:gpt-5.4` as the reviewer when the ChatGPT/Codex subscription surface is linked.
+- ForgeGod now also exposes explicit OpenAI surface selection in setup flows: `auto`, `api-only`, `codex-only`, and `api+codex`. `forgegod auth explain` makes the requested surface, the effective detected surface, and the resulting role mapping visible before the user rewrites project defaults.
 - Agent completion is now harder to fake locally: implementation tasks must show
   post-edit verification evidence plus a reviewed final diff before the core
   agent loop accepts completion, and `forgegod run --review` now treats

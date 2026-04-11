@@ -578,6 +578,41 @@ stronger and more honest than forcing everything into either API-only or
 subscription-only narratives, and it keeps the repo provider-agnostic because
 the preference is explicit config, not hard-coded architecture.
 
+## OpenAI Surface Modes Addendum
+
+Verified on `2026-04-10` before turning OpenAI API vs Codex subscription into
+an explicit user-facing contract:
+
+- OpenAI model docs continue to position GPT-5.4 and GPT-5.4-mini as current
+  general API surfaces suitable for high-quality builder and researcher roles:
+  - https://developers.openai.com/api/docs/models
+- OpenAI Codex best practices continue to emphasize plan-first execution,
+  bounded repo context, and parallel task structure. That supports keeping
+  reviewer/adversary behavior explicit instead of pretending one OpenAI surface
+  can transparently do everything the same way:
+  - https://developers.openai.com/codex/learn/best-practices
+- OpenAI Help continues to state that supported ChatGPT plans include Codex as
+  a distinct subscription-backed surface:
+  - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- OpenAI Help continues to state that API usage and ChatGPT subscription usage
+  are billed separately:
+  - https://help.openai.com/en/articles/8156019
+
+Operational conclusion for ForgeGod: it is more honest and more useful to make
+OpenAI surface selection explicit in product setup. ForgeGod should expose:
+
+- `auto`
+- `api-only`
+- `codex-only`
+- `api+codex`
+
+and show both the requested surface and the effective detected surface. That
+lets users understand whether ForgeGod is running OpenAI API only, Codex
+subscription only, or a hybrid builder/reviewer split. The detailed product
+note now lives in:
+
+- [docs/OPENAI_SURFACES_2026-04-10.md](OPENAI_SURFACES_2026-04-10.md)
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

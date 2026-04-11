@@ -114,6 +114,7 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, 
     assert updated["models"] == recommended.model_dump()
     assert updated["harness"]["profile"] == "adversarial"
     assert updated["harness"]["preferred_provider"] == "auto"
+    assert updated["harness"]["openai_surface"] == "auto"
     assert updated["budget"]["mode"] == "normal"
     assert updated["budget"]["daily_limit_usd"] == 5.0
     visible = printed.getvalue()
@@ -121,6 +122,8 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, 
     assert "openai-codex:gpt-5.4" in visible
     assert "cloud-ready config ensured" in visible
     assert "Provider preference:" in visible
+    assert "Requested OpenAI surface:" in visible
+    assert "Effective OpenAI surface:" in visible
 
 
 def test_auth_sync_shows_codex_coder_experimental_note(tmp_path, monkeypatch, printed):
@@ -247,3 +250,204 @@ def test_auth_sync_openai_preference(tmp_path, monkeypatch, printed):
     normalized = " ".join(printed.getvalue().split())
     assert "Provider preference:" in normalized
     assert "openai" in normalized
+
+
+def test_auth_sync_openai_surface_hybrid(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="openai:gpt-5.4",
+        coder="openai:gpt-5.4-mini",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai:gpt-5.4",
+        escalation="openai:gpt-5.4",
+        researcher="openai:gpt-5.4-mini",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["openai:gpt-5.4-mini", "openai-codex:gpt-5.4"],
+            ["openai", "openai-codex"],
+            False,
+            recommended,
+        ),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "auth",
+            "sync",
+            "--path",
+            str(tmp_path),
+            "--prefer-provider",
+            "openai",
+            "--openai-surface",
+            "api+codex",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    updated = toml.loads(
+        (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
+    )
+    assert updated["harness"]["openai_surface"] == "api+codex"
+    normalized = " ".join(printed.getvalue().split())
+    assert "Requested OpenAI surface:" in normalized
+    assert "api+codex" in normalized
+    assert "Effective OpenAI surface:" in normalized
+
+
+def test_auth_sync_openai_surface_fallback(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="openai-codex:gpt-5.4",
+        coder="openai-codex:gpt-5.4",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai-codex:gpt-5.4",
+        escalation="openai-codex:gpt-5.4",
+        researcher="openai-codex:gpt-5.4",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["openai-codex:gpt-5.4"],
+            ["openai-codex"],
+            False,
+            recommended,
+        ),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "auth",
+            "sync",
+            "--path",
+            str(tmp_path),
+            "--openai-surface",
+            "api+codex",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    normalized = " ".join(printed.getvalue().split())
+    assert "OpenAI surface fallback:" in normalized
+    assert "requested api+codex" in normalized
+    assert "codex-only" in normalized
+
+
+def test_auth_explain_shows_effective_surface(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="openai:gpt-5.4",
+        coder="openai:gpt-5.4-mini",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai:gpt-5.4",
+        escalation="openai:gpt-5.4",
+        researcher="openai:gpt-5.4-mini",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["openai:gpt-5.4-mini", "openai-codex:gpt-5.4"],
+            ["openai", "openai-codex"],
+            False,
+            recommended,
+        ),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "explain", "--path", str(tmp_path), "--openai-surface", "api+codex"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    visible = printed.getvalue()
+    assert "Requested OpenAI surface" in visible
+    assert "Effective OpenAI surface" in visible
+    assert "Role Mapping" in visible
+    assert "openai-codex:gpt-5.4" in visible
+
+
+def test_auth_explain_downgrades_when_codex_is_not_supported(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="zai:glm-5.1",
+        coder="zai:glm-5.1",
+        reviewer="zai:glm-5.1",
+        sentinel="zai:glm-5.1",
+        escalation="zai:glm-5.1",
+        researcher="zai:glm-5.1",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["openai-codex:gpt-5.4", "zai:glm-5.1"],
+            ["openai-codex", "zai"],
+            False,
+            recommended,
+        ),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (False, "Use WSL for best Windows experience"),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "explain", "--path", str(tmp_path), "--openai-surface", "api+codex"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    visible = printed.getvalue()
+    assert "Effective OpenAI surface" in visible
+    assert "auto" in visible
+    assert "OpenAI surface fallback" in visible
+
+
+def test_init_quick_writes_openai_surface(tmp_path, monkeypatch, printed):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_login_status_sync",
+        lambda: (True, "Logged in using ChatGPT"),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+    monkeypatch.setattr(
+        "httpx.get",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("no ollama")),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "init",
+            str(tmp_path),
+            "--quick",
+            "--prefer-provider",
+            "openai",
+            "--openai-surface",
+            "api+codex",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    config_path = tmp_path / ".forgegod" / "config.toml"
+    data = toml.loads(config_path.read_text(encoding="utf-8"))
+    assert data["harness"]["openai_surface"] == "api+codex"
+    assert data["models"]["reviewer"] == "openai-codex:gpt-5.4"
+    assert data["models"]["planner"] == "openai:gpt-5.4"

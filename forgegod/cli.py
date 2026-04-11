@@ -91,6 +91,7 @@ def _detect_runtime_model_defaults(
     *,
     profile: str = "adversarial",
     preferred_provider: str = "auto",
+    openai_surface: str = "auto",
 ):
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
@@ -108,6 +109,7 @@ def _detect_runtime_model_defaults(
         ollama_available=ollama_available,
         profile=profile,
         preferred_provider=preferred_provider,
+        openai_surface=openai_surface,
     )
     return models, providers, ollama_available, recommended
 
@@ -122,6 +124,7 @@ def _ensure_project_bootstrap(
     *,
     profile: str = "adversarial",
     preferred_provider: str = "auto",
+    openai_surface: str = "auto",
     announce: bool = True,
 ) -> bool:
     from forgegod.config import init_project
@@ -134,12 +137,14 @@ def _ensure_project_bootstrap(
         root,
         profile=profile,
         preferred_provider=preferred_provider,
+        openai_surface=openai_surface,
     )
     project_dir = init_project(
         root,
         model_defaults=recommended,
         harness_profile=profile,
         preferred_provider=preferred_provider,
+        openai_surface=openai_surface,
     )
 
     if announce:
@@ -463,6 +468,11 @@ def init(
         "--prefer-provider",
         help="Provider preference: auto or openai",
     ),
+    openai_surface: str = typer.Option(
+        "auto",
+        "--openai-surface",
+        help="OpenAI surface: auto, api-only, codex-only, api+codex",
+    ),
 ):
     """Initialize a ForgeGod project — interactive wizard or quick auto-detect."""
     from forgegod.i18n import set_lang
@@ -478,6 +488,7 @@ def init(
             lang=lang,
             harness_profile=profile,
             preferred_provider=prefer_provider,
+            openai_surface=openai_surface,
         )
         wizard.run()
         return
@@ -554,18 +565,21 @@ def init(
         ollama_available=ollama_available,
         profile=profile,
         preferred_provider=prefer_provider,
+        openai_surface=openai_surface,
     )
     project_dir = init_project(
         path,
         model_defaults=recommended_models,
         harness_profile=profile,
         preferred_provider=prefer_provider,
+        openai_surface=openai_surface,
     )
 
     console.print()
     console.print(f"[green]Initialized at {project_dir}[/green]")
     console.print("[dim]Applied auth-aware model defaults for detected providers.[/dim]")
     console.print(f"[dim]Provider preference: {prefer_provider}[/dim]")
+    console.print(f"[dim]OpenAI surface: {openai_surface}[/dim]")
     console.print()
     console.print("[bold]Quick start:[/bold]")
     console.print('  forgegod run "Describe your task here"')
@@ -718,28 +732,37 @@ def auth_sync(
         "--prefer-provider",
         help="Provider preference: auto or openai",
     ),
+    openai_surface: str = typer.Option(
+        "auto",
+        "--openai-surface",
+        help="OpenAI surface: auto, api-only, codex-only, api+codex",
+    ),
 ):
     """Rewrite model defaults based on detected native auth surfaces."""
     import toml
 
-    from forgegod.config import init_project
+    from forgegod.config import init_project, openai_surface_label, resolve_openai_surface
+    from forgegod.native_auth import codex_automation_status
 
     _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
         path,
         profile=profile,
         preferred_provider=prefer_provider,
+        openai_surface=openai_surface,
     )
     project_dir = init_project(
         path,
         model_defaults=recommended,
         harness_profile=profile,
         preferred_provider=prefer_provider,
+        openai_surface=openai_surface,
     )
     config_path = project_dir / "config.toml"
     data = toml.loads(config_path.read_text(encoding="utf-8"))
     data["models"] = recommended.model_dump()
     data.setdefault("harness", {})["profile"] = profile
     data["harness"]["preferred_provider"] = prefer_provider
+    data["harness"]["openai_surface"] = openai_surface
     budget = data.setdefault("budget", {})
     if providers and not ollama_available:
         if budget.get("mode") in {"local-only", "halt"}:
@@ -747,6 +770,12 @@ def auth_sync(
         if float(budget.get("daily_limit_usd", 0) or 0) <= 0:
             budget["daily_limit_usd"] = 5.0
     config_path.write_text(toml.dumps(data), encoding="utf-8")
+    codex_supported, _ = codex_automation_status()
+    effective_surface = resolve_openai_surface(
+        openai_surface,
+        providers,
+        codex_automation_supported=codex_supported,
+    )
 
     table = Table(title=f"ForgeGod Model Sync ({Path(path).resolve()})")
     table.add_column("Role", style="cyan")
@@ -756,10 +785,18 @@ def auth_sync(
     console.print(table)
     console.print(f"[dim]Harness profile:[/dim] {profile}")
     console.print(f"[dim]Provider preference:[/dim] {prefer_provider}")
+    console.print(f"[dim]Requested OpenAI surface:[/dim] {openai_surface_label(openai_surface)}")
+    console.print(f"[dim]Effective OpenAI surface:[/dim] {openai_surface_label(effective_surface)}")
     if providers and not ollama_available:
         console.print(
             "[dim]Budget sync:[/dim] cloud-ready config ensured "
             f"(mode={budget.get('mode')}, daily_limit_usd={budget.get('daily_limit_usd')})."
+        )
+    if openai_surface != "auto" and effective_surface != openai_surface:
+        console.print(
+            "[yellow]OpenAI surface fallback:[/yellow] "
+            f"requested {openai_surface_label(openai_surface)}, "
+            f"but ForgeGod only detected {openai_surface_label(effective_surface)} today."
         )
 
     if "openai-codex" in providers and recommended.coder.startswith("openai-codex"):
@@ -775,6 +812,68 @@ def auth_sync(
         )
     elif not providers and not ollama_available:
         console.print("[yellow]No providers or Ollama detected.[/yellow]")
+
+
+@auth_app.command("explain")
+def auth_explain(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    profile: str = typer.Option(
+        "adversarial",
+        "--profile",
+        help="Harness profile: adversarial or single-model",
+    ),
+    prefer_provider: str = typer.Option(
+        "auto",
+        "--prefer-provider",
+        help="Provider preference: auto or openai",
+    ),
+    openai_surface: str = typer.Option(
+        "auto",
+        "--openai-surface",
+        help="OpenAI surface: auto, api-only, codex-only, api+codex",
+    ),
+):
+    """Explain how ForgeGod will map roles from the currently available auth surfaces."""
+    from forgegod.config import openai_surface_label, resolve_openai_surface
+    from forgegod.native_auth import codex_automation_status
+
+    _, providers, ollama_available, recommended = _detect_runtime_model_defaults(
+        path,
+        profile=profile,
+        preferred_provider=prefer_provider,
+        openai_surface=openai_surface,
+    )
+    codex_supported, _ = codex_automation_status()
+    effective_surface = resolve_openai_surface(
+        openai_surface,
+        providers,
+        codex_automation_supported=codex_supported,
+    )
+
+    summary = Table(title=f"ForgeGod Harness Explain ({Path(path).resolve()})")
+    summary.add_column("Setting", style="cyan")
+    summary.add_column("Value", style="dim")
+    summary.add_row("Profile", profile)
+    summary.add_row("Provider preference", prefer_provider)
+    summary.add_row("Requested OpenAI surface", openai_surface_label(openai_surface))
+    summary.add_row("Effective OpenAI surface", openai_surface_label(effective_surface))
+    summary.add_row("Detected providers", ", ".join(providers) if providers else "none")
+    summary.add_row("Ollama ready", "yes" if ollama_available else "no")
+    console.print(summary)
+
+    roles = Table(title="Role Mapping")
+    roles.add_column("Role", style="cyan")
+    roles.add_column("Model", style="dim")
+    for role, model in recommended.model_dump().items():
+        roles.add_row(role, model)
+    console.print(roles)
+
+    if openai_surface != "auto" and effective_surface != openai_surface:
+        console.print(
+            "[yellow]OpenAI surface fallback:[/yellow] "
+            f"requested {openai_surface_label(openai_surface)}, "
+            f"but ForgeGod only detected {openai_surface_label(effective_surface)} today."
+        )
 
 
 @app.command()

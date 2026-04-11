@@ -35,6 +35,17 @@ STRINGS: dict[str, dict[str, str]] = {
         "provider_pref_auto": "Auto routing across all connected providers",
         "provider_pref_openai": "OpenAI-first (API builder + Codex reviewer when available)",
         "provider_pref_selected": "Provider preference: {provider}",
+        "openai_surface_prompt": "How should ForgeGod use OpenAI API and Codex surfaces?",
+        "openai_surface_body": (
+            "Auto keeps provider-agnostic routing. API-only uses OpenAI API only. "
+            "Codex-only stays on the ChatGPT/Codex subscription surface. API + Codex "
+            "splits builder roles onto the API and reviewer roles onto Codex."
+        ),
+        "openai_surface_auto": "Auto (keep provider-agnostic routing)",
+        "openai_surface_api_only": "OpenAI API only",
+        "openai_surface_codex_only": "Codex subscription only",
+        "openai_surface_hybrid": "OpenAI API + Codex subscription",
+        "openai_surface_selected": "OpenAI surface: {surface}",
         "opt_local": "Free local mode (Ollama - $0, runs on your machine)",
         "opt_openai": "OpenAI API key (GPT-5.4, GPT-5.4-mini)",
         "opt_openai_codex": "OpenAI ChatGPT subscription via Codex login",
@@ -146,6 +157,17 @@ STRINGS: dict[str, dict[str, str]] = {
         "provider_pref_auto": "Auto entre todos los proveedores conectados",
         "provider_pref_openai": "OpenAI-first (API builder + Codex reviewer si estan disponibles)",
         "provider_pref_selected": "Preferencia de proveedor: {provider}",
+        "openai_surface_prompt": "Como queres que ForgeGod use OpenAI API y Codex?",
+        "openai_surface_body": (
+            "Auto mantiene ruteo agnostico. API-only usa solo OpenAI API. "
+            "Codex-only se queda solo en la suscripcion ChatGPT/Codex. API + Codex "
+            "pone builder en la API y reviewer en Codex."
+        ),
+        "openai_surface_auto": "Auto (mantener ruteo agnostico)",
+        "openai_surface_api_only": "Solo OpenAI API",
+        "openai_surface_codex_only": "Solo suscripcion Codex",
+        "openai_surface_hybrid": "OpenAI API + suscripcion Codex",
+        "openai_surface_selected": "Superficie OpenAI: {surface}",
         "opt_local": "Modo local gratuito (Ollama - $0, corre en tu maquina)",
         "opt_openai": "Clave API de OpenAI (GPT-5.4, GPT-5.4-mini)",
         "opt_openai_codex": "Suscripcion ChatGPT de OpenAI via login de Codex",
