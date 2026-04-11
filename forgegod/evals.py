@@ -222,6 +222,44 @@ class EvalLiveMatrixReport(BaseModel):
     rows: list[EvalLiveMatrixRow] = Field(default_factory=list)
 
 
+class EvalLiveComparisonRow(BaseModel):
+    """One ranked runnable row from the live OpenAI comparison matrix."""
+
+    rank: int = 0
+    id: str
+    profile: str
+    requested_openai_surface: str
+    effective_openai_surface: str
+    status: str = "skipped"
+    score: float = 0.0
+    total_cost_usd: float = 0.0
+    call_count: int = 0
+    passed_probes: int = 0
+    total_probes: int = 0
+    score_delta_vs_recommended: float = 0.0
+    cost_delta_vs_recommended: float = 0.0
+    call_delta_vs_recommended: int = 0
+    detail: str = ""
+
+
+class EvalLiveComparisonReport(BaseModel):
+    """Comparison report built from runnable live OpenAI rows."""
+
+    timestamp: str
+    forgegod_version: str
+    matrix_name: str
+    source_matrix_name: str
+    detected_providers: list[str] = Field(default_factory=list)
+    total_rows: int = 0
+    runnable_rows: int = 0
+    passed_rows: int = 0
+    failed_rows: int = 0
+    skipped_rows: int = 0
+    recommended_row_id: str = ""
+    recommendation_reason: str = ""
+    rows: list[EvalLiveComparisonRow] = Field(default_factory=list)
+
+
 _BUILTIN_MANIFEST = {
     "name": "forgegod-harness-evals-v2",
     "description": (
@@ -705,6 +743,70 @@ class HarnessEvalRunner:
             output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
         return report
 
+    def run_openai_live_surface_comparison(
+        self,
+        *,
+        output_path: Path | None = None,
+    ) -> EvalLiveComparisonReport:
+        """Rank runnable live OpenAI rows and recommend the best current harness."""
+        live_report = self.run_openai_live_surface_matrix()
+        runnable_rows = [
+            row for row in live_report.rows if row.status in {"passed", "failed"}
+        ]
+        ranked_rows = sorted(runnable_rows, key=self._live_comparison_sort_key, reverse=True)
+
+        recommended = ranked_rows[0] if ranked_rows else None
+        comparison_rows: list[EvalLiveComparisonRow] = []
+        for index, row in enumerate(ranked_rows, start=1):
+            passed_probes = sum(1 for probe in row.probe_results if probe.passed)
+            total_probes = len(row.probe_results)
+            comparison_rows.append(
+                EvalLiveComparisonRow(
+                    rank=index,
+                    id=row.id,
+                    profile=row.profile,
+                    requested_openai_surface=row.requested_openai_surface,
+                    effective_openai_surface=row.effective_openai_surface,
+                    status=row.status,
+                    score=row.score,
+                    total_cost_usd=row.total_cost_usd,
+                    call_count=row.call_count,
+                    passed_probes=passed_probes,
+                    total_probes=total_probes,
+                    score_delta_vs_recommended=round(
+                        row.score - (recommended.score if recommended else row.score), 3
+                    ),
+                    cost_delta_vs_recommended=round(
+                        row.total_cost_usd
+                        - (recommended.total_cost_usd if recommended else row.total_cost_usd),
+                        6,
+                    ),
+                    call_delta_vs_recommended=row.call_count
+                    - (recommended.call_count if recommended else row.call_count),
+                    detail=row.detail,
+                )
+            )
+
+        report = EvalLiveComparisonReport(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            forgegod_version=__version__,
+            matrix_name="openai-live-compare-v1",
+            source_matrix_name=live_report.matrix_name,
+            detected_providers=list(live_report.detected_providers),
+            total_rows=live_report.total_rows,
+            runnable_rows=len(runnable_rows),
+            passed_rows=live_report.passed_rows,
+            failed_rows=live_report.failed_rows,
+            skipped_rows=live_report.skipped_rows,
+            recommended_row_id=recommended.id if recommended else "",
+            recommendation_reason=self._build_live_comparison_reason(recommended),
+            rows=comparison_rows,
+        )
+        if output_path is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+        return report
+
     def run_case(
         self,
         case: EvalCase,
@@ -977,6 +1079,48 @@ class HarnessEvalRunner:
                 await router.close()
 
         return asyncio.run(_run())
+
+    @staticmethod
+    def _live_comparison_sort_key(
+        row: EvalLiveMatrixRow,
+    ) -> tuple[int, float, int, int, float, int]:
+        """Prefer passing rows, then better scores, stronger splits, then lower cost."""
+        profile_priority = 1 if row.profile == "adversarial" else 0
+        surface_priority = {
+            "api+codex": 3,
+            "api-only": 2,
+            "codex-only": 1,
+            "auto": 0,
+        }.get(row.requested_openai_surface, 0)
+        return (
+            1 if row.status == "passed" else 0,
+            row.score,
+            profile_priority,
+            surface_priority,
+            -row.total_cost_usd,
+            -row.call_count,
+        )
+
+    @staticmethod
+    def _build_live_comparison_reason(recommended: EvalLiveMatrixRow | None) -> str:
+        """Explain why ForgeGod recommends the top live OpenAI row."""
+        if recommended is None:
+            return (
+                "No runnable live OpenAI rows were available. Link OpenAI API and/or "
+                "Codex automation, then rerun the comparison."
+            )
+        reasons = [f"highest live score ({recommended.score:.3f})"]
+        if recommended.profile == "adversarial":
+            reasons.append("prefers split builder/reviewer roles on ties")
+        if recommended.requested_openai_surface == "api+codex":
+            reasons.append("keeps API builder roles split from Codex review")
+        elif recommended.requested_openai_surface == "api-only":
+            reasons.append("keeps routing entirely on API-backed OpenAI models")
+        elif recommended.requested_openai_surface == "codex-only":
+            reasons.append("keeps every role on the Codex subscription surface")
+        if recommended.total_cost_usd == 0:
+            reasons.append("no billable API cost observed in probes")
+        return "; ".join(reasons)
 
     @staticmethod
     def _select_cases(

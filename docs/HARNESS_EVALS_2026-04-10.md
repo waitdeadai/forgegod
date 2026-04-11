@@ -233,6 +233,8 @@ Completed in the current repo baseline:
   - `api+codex`
 - `forgegod evals` now also ships a cheap live OpenAI probe matrix:
   `forgegod evals --matrix openai-live`
+- `forgegod evals` now also ships a live comparison matrix:
+  `forgegod evals --matrix openai-live-compare`
   - it uses real API/Codex auth surfaces only when they are actually ready
   - it skips requested surfaces honestly when auth is missing or unsupported
   - it keeps live cost low by probing `coder` and `reviewer` with exact-marker tasks

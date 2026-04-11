@@ -8,6 +8,8 @@ from typer.testing import CliRunner
 from forgegod.cli import app
 from forgegod.config import ForgeGodConfig
 from forgegod.evals import (
+    EvalLiveComparisonReport,
+    EvalLiveComparisonRow,
     EvalLiveMatrixReport,
     EvalLiveMatrixRow,
     EvalLiveProbeResult,
@@ -118,6 +120,7 @@ def test_evals_cli_lists_matrices():
     assert "Harness eval matrices" in result.stdout
     assert "openai-surfaces" in result.stdout
     assert "openai-live" in result.stdout
+    assert "openai-live-compare" in result.stdout
 
 
 def test_harness_eval_runner_runs_openai_surface_matrix(tmp_path):
@@ -335,3 +338,246 @@ def test_evals_cli_runs_openai_live_surface_matrix(tmp_path, monkeypatch):
     normalized = _normalize_cli_text(result.stdout)
     assert "Live OpenAI eval matrix complete" in normalized
     assert "Live probe summary" in normalized
+
+
+def test_harness_eval_runner_builds_openai_live_comparison(monkeypatch, tmp_path):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    fake_live_report = EvalLiveMatrixReport(
+        timestamp="2026-04-11T00:00:00+00:00",
+        forgegod_version="0.1.0",
+        matrix_name="openai-live-v1",
+        detected_providers=["openai", "openai-codex"],
+        codex_login_ready=True,
+        codex_automation_supported=True,
+        total_rows=4,
+        passed_rows=2,
+        failed_rows=1,
+        skipped_rows=1,
+        score=0.875,
+        rows=[
+            EvalLiveMatrixRow(
+                id="adversarial_api_codex",
+                profile="adversarial",
+                preferred_provider="openai",
+                requested_openai_surface="api+codex",
+                effective_openai_surface="api+codex",
+                detected_providers=["openai", "openai-codex"],
+                requested_surface_ready=True,
+                status="passed",
+                detail="2/2 live probes passed.",
+                score=1.0,
+                total_cost_usd=0.0018,
+                call_count=2,
+                probe_results=[
+                    EvalLiveProbeResult(
+                        name="coder",
+                        role="coder",
+                        expected="x",
+                        observed="x",
+                        passed=True,
+                    ),
+                    EvalLiveProbeResult(
+                        name="reviewer",
+                        role="reviewer",
+                        expected="y",
+                        observed="y",
+                        passed=True,
+                    ),
+                ],
+            ),
+            EvalLiveMatrixRow(
+                id="single_model_api_only",
+                profile="single-model",
+                preferred_provider="openai",
+                requested_openai_surface="api-only",
+                effective_openai_surface="api-only",
+                detected_providers=["openai", "openai-codex"],
+                requested_surface_ready=True,
+                status="passed",
+                detail="2/2 live probes passed.",
+                score=1.0,
+                total_cost_usd=0.0012,
+                call_count=2,
+                probe_results=[
+                    EvalLiveProbeResult(
+                        name="coder",
+                        role="coder",
+                        expected="x",
+                        observed="x",
+                        passed=True,
+                    ),
+                    EvalLiveProbeResult(
+                        name="reviewer",
+                        role="reviewer",
+                        expected="y",
+                        observed="y",
+                        passed=True,
+                    ),
+                ],
+            ),
+            EvalLiveMatrixRow(
+                id="adversarial_codex_only",
+                profile="adversarial",
+                preferred_provider="openai",
+                requested_openai_surface="codex-only",
+                effective_openai_surface="codex-only",
+                detected_providers=["openai", "openai-codex"],
+                requested_surface_ready=True,
+                status="failed",
+                detail="1/2 live probes passed.",
+                score=0.5,
+                total_cost_usd=0.0,
+                call_count=2,
+                probe_results=[
+                    EvalLiveProbeResult(
+                        name="coder",
+                        role="coder",
+                        expected="x",
+                        observed="x",
+                        passed=True,
+                    ),
+                    EvalLiveProbeResult(
+                        name="reviewer",
+                        role="reviewer",
+                        expected="y",
+                        observed="z",
+                        passed=False,
+                    ),
+                ],
+            ),
+            EvalLiveMatrixRow(
+                id="single_model_auto",
+                profile="single-model",
+                preferred_provider="openai",
+                requested_openai_surface="auto",
+                effective_openai_surface="api+codex",
+                detected_providers=["openai", "openai-codex"],
+                requested_surface_ready=False,
+                status="skipped",
+                detail="Skipped.",
+            ),
+        ],
+    )
+
+    monkeypatch.setattr(
+        HarnessEvalRunner,
+        "run_openai_live_surface_matrix",
+        lambda self: fake_live_report,
+    )
+
+    report = eval_runner.run_openai_live_surface_comparison(
+        output_path=tmp_path / "live-compare.json"
+    )
+
+    assert report.matrix_name == "openai-live-compare-v1"
+    assert report.runnable_rows == 3
+    assert report.passed_rows == 2
+    assert report.failed_rows == 1
+    assert report.skipped_rows == 1
+    assert report.recommended_row_id == "adversarial_api_codex"
+    assert "split builder/reviewer roles" in report.recommendation_reason
+    assert (tmp_path / "live-compare.json").exists()
+    assert report.rows[0].rank == 1
+    assert report.rows[1].score_delta_vs_recommended == 0.0
+    assert report.rows[1].cost_delta_vs_recommended < 0
+
+
+def test_harness_eval_runner_handles_no_runnable_live_comparison(monkeypatch):
+    config = ForgeGodConfig()
+    eval_runner = HarnessEvalRunner(config)
+
+    fake_live_report = EvalLiveMatrixReport(
+        timestamp="2026-04-11T00:00:00+00:00",
+        forgegod_version="0.1.0",
+        matrix_name="openai-live-v1",
+        detected_providers=[],
+        codex_login_ready=False,
+        codex_automation_supported=False,
+        total_rows=2,
+        passed_rows=0,
+        failed_rows=0,
+        skipped_rows=2,
+        score=0.0,
+        rows=[
+            EvalLiveMatrixRow(
+                id="adversarial_auto",
+                profile="adversarial",
+                preferred_provider="openai",
+                requested_openai_surface="auto",
+                effective_openai_surface="auto",
+                detected_providers=[],
+                requested_surface_ready=False,
+                status="skipped",
+                detail="Skipped.",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        HarnessEvalRunner,
+        "run_openai_live_surface_matrix",
+        lambda self: fake_live_report,
+    )
+
+    report = eval_runner.run_openai_live_surface_comparison()
+
+    assert report.runnable_rows == 0
+    assert report.recommended_row_id == ""
+    assert "No runnable live OpenAI rows were available" in report.recommendation_reason
+
+
+def test_evals_cli_runs_openai_live_compare_matrix(tmp_path, monkeypatch):
+    fake_report = EvalLiveComparisonReport(
+        timestamp="2026-04-11T00:00:00+00:00",
+        forgegod_version="0.1.0",
+        matrix_name="openai-live-compare-v1",
+        source_matrix_name="openai-live-v1",
+        detected_providers=["openai", "openai-codex"],
+        total_rows=8,
+        runnable_rows=2,
+        passed_rows=2,
+        failed_rows=0,
+        skipped_rows=6,
+        recommended_row_id="adversarial_api_codex",
+        recommendation_reason=(
+            "highest live score (1.000); prefers split builder/reviewer roles on "
+            "ties; keeps API builder roles split from Codex review"
+        ),
+        rows=[
+            EvalLiveComparisonRow(
+                rank=1,
+                id="adversarial_api_codex",
+                profile="adversarial",
+                requested_openai_surface="api+codex",
+                effective_openai_surface="api+codex",
+                status="passed",
+                score=1.0,
+                total_cost_usd=0.0018,
+                call_count=2,
+                passed_probes=2,
+                total_probes=2,
+            )
+        ],
+    )
+
+    monkeypatch.setattr(
+        "forgegod.evals.HarnessEvalRunner.run_openai_live_surface_comparison",
+        lambda self, output_path: fake_report,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "evals",
+            "--matrix",
+            "openai-live-compare",
+            "--output",
+            str(tmp_path / "compare.json"),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    normalized = _normalize_cli_text(result.stdout)
+    assert "Live OpenAI comparison complete" in normalized
+    assert "Recommended harness row: adversarial_api_codex" in normalized

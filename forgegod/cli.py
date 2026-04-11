@@ -1512,7 +1512,10 @@ def evals(
     matrix: Optional[str] = typer.Option(
         None,
         "--matrix",
-        help="Built-in eval matrix to run. Supported today: openai-surfaces, openai-live",
+        help=(
+            "Built-in eval matrix to run. Supported today: "
+            "openai-surfaces, openai-live, openai-live-compare"
+        ),
     ),
     case: list[str] | None = typer.Option(
         None,
@@ -1566,6 +1569,10 @@ def evals(
             "openai-live",
             "Run cheap live probes against real OpenAI API/Codex auth surfaces",
         )
+        matrix_table.add_row(
+            "openai-live-compare",
+            "Rank runnable live OpenAI surfaces and recommend the best current harness row",
+        )
         typer.echo(
             "openai-surfaces\t"
             "Compare adversarial vs single-model across OpenAI API/Codex surfaces"
@@ -1573,6 +1580,10 @@ def evals(
         typer.echo(
             "openai-live\t"
             "Run cheap live probes against real OpenAI API/Codex auth surfaces"
+        )
+        typer.echo(
+            "openai-live-compare\t"
+            "Rank runnable live OpenAI surfaces and recommend the best current harness row"
         )
         console.print(matrix_table)
         raise typer.Exit()
@@ -1655,9 +1666,65 @@ def evals(
             if live_report.failed_rows > 0:
                 raise typer.Exit(1)
             raise typer.Exit()
+        if matrix == "openai-live-compare":
+            comparison_report = runner.run_openai_live_surface_comparison(output_path=output)
+            summary = Table(title=f"ForgeGod eval matrix - {comparison_report.matrix_name}")
+            summary.add_column("Rank", justify="right")
+            summary.add_column("Row", style="cyan")
+            summary.add_column("Profile", style="white")
+            summary.add_column("Requested", style="yellow")
+            summary.add_column("Effective", style="yellow")
+            summary.add_column("Status", justify="center")
+            summary.add_column("Score", justify="right")
+            summary.add_column("Cost", justify="right")
+            for row in comparison_report.rows:
+                summary.add_row(
+                    str(row.rank),
+                    row.id,
+                    row.profile,
+                    row.requested_openai_surface,
+                    row.effective_openai_surface,
+                    row.status,
+                    f"{row.score:.3f}",
+                    f"${row.total_cost_usd:.4f}",
+                )
+            console.print(summary)
+            if comparison_report.recommended_row_id:
+                typer.echo(f"Recommended harness row: {comparison_report.recommended_row_id}")
+                typer.echo(f"Reason: {comparison_report.recommendation_reason}")
+                console.print(
+                    f"[bold green]Recommended harness row:[/bold green] "
+                    f"{comparison_report.recommended_row_id}"
+                )
+                console.print(f"[dim]{comparison_report.recommendation_reason}[/dim]")
+            else:
+                typer.echo("Recommended harness row: none")
+                typer.echo(f"Reason: {comparison_report.recommendation_reason}")
+                console.print("[yellow]No runnable live OpenAI rows were available.[/yellow]")
+                console.print(f"[dim]{comparison_report.recommendation_reason}[/dim]")
+            typer.echo(
+                f"Live OpenAI comparison complete ("
+                f"{comparison_report.runnable_rows} runnable, "
+                f"{comparison_report.passed_rows} passed, "
+                f"{comparison_report.failed_rows} failed, "
+                f"{comparison_report.skipped_rows} skipped)"
+            )
+            typer.echo(f"Report: {output}")
+            console.print(
+                f"\n[bold green]Live OpenAI comparison complete[/bold green] "
+                f"({comparison_report.runnable_rows} runnable, "
+                f"{comparison_report.passed_rows} passed, "
+                f"{comparison_report.failed_rows} failed, "
+                f"{comparison_report.skipped_rows} skipped)"
+            )
+            console.print(f"[dim]Report: {output}[/dim]")
+            if comparison_report.failed_rows > 0:
+                raise typer.Exit(1)
+            raise typer.Exit()
         if matrix != "openai-surfaces":
             raise typer.BadParameter(
-                "Unknown eval matrix. Supported today: openai-surfaces, openai-live"
+                "Unknown eval matrix. Supported today: "
+                "openai-surfaces, openai-live, openai-live-compare"
             )
         matrix_report = runner.run_openai_surface_matrix(
             eval_manifest,

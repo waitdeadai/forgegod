@@ -138,6 +138,7 @@ Release-grade matrix:
 ```bash
 forgegod evals --matrix openai-surfaces
 forgegod evals --matrix openai-live
+forgegod evals --matrix openai-live-compare
 ```
 
 That matrix compares:
@@ -172,6 +173,16 @@ is not actually ready. That means:
 - no fake `api+codex` result when only one auth surface is linked
 - no fake `codex-only` result on native Windows when Codex automation is unsupported
 - explicit skip reasons in the report instead of silent fallback pretending to be live coverage
+
+ForgeGod also exposes a ranking view built from those runnable live rows:
+
+```bash
+forgegod evals --matrix openai-live-compare
+```
+
+That command ranks only rows that really ran, prefers adversarial split roles
+when scores tie, prefers `api+codex` over weaker single-surface splits on the
+same score, and uses cost/call count only as late tie-breakers.
 
 ## Current status
 

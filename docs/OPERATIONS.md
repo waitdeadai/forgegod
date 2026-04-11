@@ -23,21 +23,22 @@ This document is the current system of record for day-to-day work in this reposi
 - Registered tools: `23`
 - Provider families: `8`
 - Route surfaces present in `forgegod/router.py`: `9`
-- Tests collected: `556`
+- Tests collected: `559`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 
 ## Verification Commands
 
 | Command | Observed result on 2026-04-11 |
 |:--------|:------------------------------|
-| `python -m pytest -m "not stress" -q` | `471 passed, 1 skipped, 84 deselected in 157.49s` |
+| `python -m pytest -m "not stress" -q` | `474 passed, 1 skipped, 84 deselected in 242.54s` |
 | `python -m pytest tests/stress/test_stress_budget.py::TestRapidCostRecording::test_1000_rapid_writes -q` | passes in `0.07s` |
-| `python scripts/run_stress_tests.py --markdown` | `84 passed in 102.53s` |
-| `python -m pytest tests -q` | `555 passed, 1 skipped in 259.44s` |
-| `python -m pytest --collect-only -q` | `556 tests collected` |
+| `python scripts/run_stress_tests.py --markdown` | `84 passed in 203.68s` |
+| `python -m pytest tests -q` | `558 passed, 1 skipped in 352.33s` |
+| `python -m pytest --collect-only -q` | `559 tests collected` |
 | `python -m forgegod evals --output .forgegod/evals/smoke_report.json --traces-dir .forgegod/evals/smoke_traces` | `10/10 passing, score=1.000` |
 | `python -m forgegod evals --matrix openai-surfaces --output .forgegod/evals/openai_surface_matrix.json --traces-dir .forgegod/evals/openai_surface_matrix_traces` | `8/8 rows passing, score=1.000` |
 | `python -m forgegod evals --matrix openai-live --output .forgegod/evals/openai_live_matrix.json` | no live OpenAI auth surface ready in this environment; command exits honestly with `0 failed, 8 skipped` |
+| `python -m forgegod evals --matrix openai-live-compare --output .forgegod/evals/openai_live_compare.json` | no runnable live OpenAI rows in this environment; command exits honestly with a comparison report and recommendation note |
 | `python -m ruff check forgegod tests scripts` | passes |
 | `python -m build` | passes; builds sdist and wheel |
 | `python scripts/smoke_glm_codex_harness.py` | passes; `zai:glm-5.1` planner + `openai-codex:gpt-5.4` reviewer |
@@ -145,6 +146,9 @@ This document is the current system of record for day-to-day work in this reposi
   probe matrix for real OpenAI API/Codex auth surfaces. It does not fake
   missing auth. Rows whose requested surface is not actually ready are skipped
   with an explicit reason.
+- ForgeGod now also ships `forgegod evals --matrix openai-live-compare`, which
+  ranks only runnable live rows and recommends the best currently executable
+  OpenAI harness row.
 - Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
   `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
   `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.

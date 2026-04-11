@@ -15,9 +15,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Provider families: `8`
 - Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
 - Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
-- Tests collected: `556`
-- Core suite: `python -m pytest -m "not stress" -q` -> `471 passed, 1 skipped, 84 deselected`
-- Full suite: `python -m pytest tests -q` -> `555 passed, 1 skipped`
+- Tests collected: `559`
+- Core suite: `python -m pytest -m "not stress" -q` -> `474 passed, 1 skipped, 84 deselected`
+- Full suite: `python -m pytest tests -q` -> `558 passed, 1 skipped`
 - Stress suite: `python scripts/run_stress_tests.py --markdown` -> `84 passed`
 - Lint status: `python -m ruff check forgegod tests scripts` -> passes
 - Build status: `python -m build` passes

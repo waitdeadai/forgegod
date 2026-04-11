@@ -641,6 +641,9 @@ OpenAI-first comparison surface:
   API story:
   - https://developers.openai.com/codex/learn/best-practices
   - https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+- Once honest live rows exist, recommendation logic should stay in a separate
+  comparison layer instead of being mixed into raw evidence collection. That
+  keeps trace/evidence capture and harness choice independently inspectable.
 
 Operational conclusion for ForgeGod: after making OpenAI surface selection
 explicit, the next correct step is not more copy. It is a deterministic matrix.
