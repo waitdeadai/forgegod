@@ -136,6 +136,10 @@ This document is the current system of record for day-to-day work in this reposi
   `forgegod evals --matrix openai-surfaces`. That matrix compares
   `adversarial` vs `single-model` across `auto`, `api-only`, `codex-only`, and
   `api+codex` routing assumptions without relying on anecdotal local runs.
+- ForgeGod evals now also expose local trace graders in reports and CLI
+  summaries. Today they grade transport-noise suppression, completion
+  discipline, permission transparency, strict-sandbox transparency, and loop
+  outcome summaries. This is the local bridge toward richer grader-backed evals.
 - Agent execution now sees bounded repo context docs, not just `AGENTS.md` and
   `DESIGN.md`. This aligns execution with checked-in `docs/PRD.md`,
   `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and related source-of-truth docs.
@@ -172,8 +176,10 @@ This document is the current system of record for day-to-day work in this reposi
 ## Recommended Next Work
 
 1. Add an opt-in real-Docker tier to `forgegod evals` so strict backend coverage can graduate from a separate smoke into a release-gated eval layer when the environment allows it.
-2. Add grader-backed trace analysis inside `forgegod evals`, especially for reviewer quality and verification quality, so score splits are not only expectation-driven.
-3. Expand the OpenAI matrix from deterministic routing coverage to live API/Codex comparisons when the user has both auth surfaces linked.
+2. Expand the local trace-grader layer toward reviewer quality and verification
+   quality, so score splits evolve beyond flow-level transparency checks.
+3. Expand the OpenAI matrix from deterministic routing coverage to live
+   API/Codex comparisons when the user has both auth surfaces linked.
 4. Add a stronger strict backend, such as Docker Sandboxes or another microVM/syscall-confined runtime, so ForgeGod is not limited to container isolation.
 5. Regenerate benchmark claims now that the benchmark path is fixed and the current stress suite is green, or keep benchmark docs explicitly historical.
 6. Decide whether OpenAI Codex coder-loop behavior is good enough to graduate from experimental status, using `forgegod evals` plus broader repo-local benchmarks instead of anecdotal runs.

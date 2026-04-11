@@ -651,6 +651,12 @@ inside `forgegod evals`, with traces and split scores. That is now a better
 2026-aligned way to reason about OpenAI routing changes than anecdotal "felt
 better locally" reports.
 
+The next extension after that is local trace grading before live-provider
+noise. OpenAI's eval guidance pushes toward graders and trace-aware evaluation;
+ForgeGod can mirror that direction first with deterministic local graders over
+its own CLI/request traces, then graduate to hosted graders or live-provider
+comparisons later.
+
 ## What Future Maintainers Should Re-Check
 
 - Whether OpenAI, Anthropic, OpenHands, and Aider still use the same file conventions.

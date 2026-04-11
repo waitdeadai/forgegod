@@ -79,6 +79,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 - That eval surface now also ships dimension-level scoring (`ux`, `safety`,
   `workflow`, `verification`) plus an OpenAI-first comparison matrix:
   `forgegod evals --matrix openai-surfaces`.
+- ForgeGod evals now also run local trace graders. Today they grade things like
+  transport-noise suppression, completion-discipline traces, permission
+  transparency, strict-sandbox transparency, and loop outcome summaries.
 - If a repo root contains `DESIGN.md`, ForgeGod now injects it into the agent prompt as the frontend design source of truth.
 - ForgeGod now ships `forgegod design` for importing `DESIGN.md` presets and `forgegod contribute` for contribution-aware planning/autonomous work that reads `CONTRIBUTING.md` plus repo rules.
 - Generated-code validation runs on writes and edits. In `strict` mode it blocks suspicious writes; in `standard` mode it remains advisory.

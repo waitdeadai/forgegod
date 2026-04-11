@@ -105,6 +105,7 @@ class EvalCaseResult(BaseModel):
     request_count: int = 0
     output_preview: str = ""
     checks: list[EvalCheckResult] = Field(default_factory=list)
+    trace_grades: list["EvalTraceGrade"] = Field(default_factory=list)
     trace_path: str = ""
     error: str = ""
 
@@ -120,7 +121,16 @@ class EvalReport(BaseModel):
     passed_cases: int = 0
     score: float = 0.0
     dimension_scores: dict[str, float] = Field(default_factory=dict)
+    trace_grade_scores: dict[str, float] = Field(default_factory=dict)
     results: list[EvalCaseResult] = Field(default_factory=list)
+
+
+class EvalTraceGrade(BaseModel):
+    """One local trace grader result."""
+
+    name: str
+    score: float = 0.0
+    detail: str = ""
 
 
 class EvalMatrixRow(BaseModel):
@@ -138,6 +148,7 @@ class EvalMatrixRow(BaseModel):
     total_cases: int = 0
     score: float = 0.0
     dimension_scores: dict[str, float] = Field(default_factory=dict)
+    trace_grade_scores: dict[str, float] = Field(default_factory=dict)
     passed: bool = False
     report_path: str = ""
     traces_dir: str = ""
@@ -430,6 +441,7 @@ class HarnessEvalRunner:
             passed_cases=passed_cases,
             score=score,
             dimension_scores=self._build_dimension_scores(cases, results),
+            trace_grade_scores=self._build_trace_grade_scores(results),
             results=results,
         )
         if output_path is not None:
@@ -510,6 +522,7 @@ class HarnessEvalRunner:
                     total_cases=report.total_cases,
                     score=report.score,
                     dimension_scores=report.dimension_scores,
+                    trace_grade_scores=report.trace_grade_scores,
                     passed=report.passed_cases == report.total_cases,
                     report_path=str(row_report_path) if row_report_path else "",
                     traces_dir=str(row_traces_dir) if row_traces_dir else "",
@@ -578,6 +591,12 @@ class HarnessEvalRunner:
                 exit_code=exit_code,
                 requests=started.server.requests,
             )
+            trace_grades = self._run_trace_graders(
+                workspace=workspace,
+                case=case,
+                output=output,
+                requests=started.server.requests,
+            )
             passed_checks = sum(1 for check in checks if check.passed)
             total_checks = len(checks) or 1
             score = round(passed_checks / total_checks, 3)
@@ -590,6 +609,7 @@ class HarnessEvalRunner:
                 request_count=len(started.server.requests),
                 output_preview=output[:500],
                 checks=checks,
+                trace_grades=trace_grades,
                 trace_path=trace_path,
             )
         except Exception as exc:
@@ -628,6 +648,21 @@ class HarnessEvalRunner:
         return {
             dimension: round(sum(scores) / len(scores), 3)
             for dimension, scores in sorted(grouped.items())
+            if scores
+        }
+
+    @staticmethod
+    def _build_trace_grade_scores(
+        results: list[EvalCaseResult],
+    ) -> dict[str, float]:
+        """Aggregate local trace grader scores across applicable cases."""
+        grouped: dict[str, list[float]] = {}
+        for result in results:
+            for grade in result.trace_grades:
+                grouped.setdefault(grade.name, []).append(grade.score)
+        return {
+            name: round(sum(scores) / len(scores), 3)
+            for name, scores in sorted(grouped.items())
             if scores
         }
 
@@ -1039,6 +1074,162 @@ class HarnessEvalRunner:
                         )
                     )
         return checks
+
+    def _run_trace_graders(
+        self,
+        *,
+        workspace: Path,
+        case: EvalCase,
+        output: str,
+        requests: list[dict[str, Any]],
+    ) -> list[EvalTraceGrade]:
+        """Run deterministic local trace graders over one eval case."""
+        grades: list[EvalTraceGrade] = []
+        grades.append(
+            self._grade_transport_noise_absent(case=case, output=output)
+        )
+
+        completion_grade = self._grade_completion_discipline(case=case, requests=requests)
+        if completion_grade is not None:
+            grades.append(completion_grade)
+
+        permission_grade = self._grade_permission_visibility(
+            workspace=workspace,
+            case=case,
+            output=output,
+            requests=requests,
+        )
+        if permission_grade is not None:
+            grades.append(permission_grade)
+
+        strict_grade = self._grade_strict_surface(case=case, output=output)
+        if strict_grade is not None:
+            grades.append(strict_grade)
+
+        loop_grade = self._grade_loop_summary(workspace=workspace, case=case, output=output)
+        if loop_grade is not None:
+            grades.append(loop_grade)
+
+        return grades
+
+    @staticmethod
+    def _iter_tool_names(requests: list[dict[str, Any]]) -> list[str]:
+        names: list[str] = []
+        for request in requests:
+            for tool in request.get("tools", []):
+                names.append(tool.get("function", {}).get("name", ""))
+        return names
+
+    @staticmethod
+    def _grade_transport_noise_absent(*, case: EvalCase, output: str) -> EvalTraceGrade:
+        """Ensure user-facing surfaces are not dominated by transport chatter."""
+        noisy_markers = [
+            "POST /v1/",
+            "HTTP/1.1",
+            "status_code",
+            "response_headers",
+            "\"choices\":",
+        ]
+        score = 1.0 if not any(marker in output for marker in noisy_markers) else 0.0
+        return EvalTraceGrade(
+            name="transport_noise_absent",
+            score=score,
+            detail=f"surface={case.surface}",
+        )
+
+    def _grade_completion_discipline(
+        self,
+        *,
+        case: EvalCase,
+        requests: list[dict[str, Any]],
+    ) -> EvalTraceGrade | None:
+        """Grade whether write-heavy verification flows show disciplined traces."""
+        if "verification" not in case.dimensions:
+            return None
+        tool_names = self._iter_tool_names(requests)
+        if "write_file" not in tool_names:
+            return None
+        saw_bash = "bash" in tool_names
+        saw_diff = "git_diff" in tool_names
+        score = 1.0 if saw_diff and (saw_bash or case.surface == "chat") else 0.0
+        return EvalTraceGrade(
+            name="completion_discipline",
+            score=score,
+            detail=f"bash={saw_bash}, git_diff={saw_diff}",
+        )
+
+    def _grade_permission_visibility(
+        self,
+        *,
+        workspace: Path,
+        case: EvalCase,
+        output: str,
+        requests: list[dict[str, Any]],
+    ) -> EvalTraceGrade | None:
+        """Grade whether approval/denial surfaces are visible and safe."""
+        if case.permission_mode != "read-only" and case.approval_mode != "prompt":
+            return None
+        tool_names = self._iter_tool_names(requests)
+        attempted_write = "write_file" in tool_names
+        if not attempted_write and case.approval_mode != "prompt":
+            return None
+
+        if case.approval_mode == "prompt":
+            score = 1.0 if "Approval required" in output else 0.0
+            detail = "prompt approval surfaced"
+        else:
+            blocked = "ForgeGod blocked tool 'write_file'" in output
+            leaked_write = (workspace / "blocked.txt").exists()
+            score = 1.0 if blocked and not leaked_write else 0.0
+            detail = f"blocked={blocked}, leaked_write={leaked_write}"
+        return EvalTraceGrade(
+            name="permission_visibility",
+            score=score,
+            detail=detail,
+        )
+
+    @staticmethod
+    def _grade_strict_surface(*, case: EvalCase, output: str) -> EvalTraceGrade | None:
+        """Grade strict-sandbox messaging on success/failure paths."""
+        if case.sandbox_mode != "strict":
+            return None
+        if case.sandbox_backend == "success":
+            score = 1.0 if "Strict sandbox reported" in output else 0.0
+            detail = "strict backend success surfaced"
+        else:
+            score = 1.0 if "backend is unavailable" in output else 0.0
+            detail = "strict backend failure surfaced"
+        return EvalTraceGrade(
+            name="strict_surface_transparency",
+            score=score,
+            detail=detail,
+        )
+
+    @staticmethod
+    def _grade_loop_summary(
+        *,
+        workspace: Path,
+        case: EvalCase,
+        output: str,
+    ) -> EvalTraceGrade | None:
+        """Grade whether loop cases surface a coherent story outcome."""
+        if case.surface != "loop":
+            return None
+        prd_path = workspace / ".forgegod" / "prd.json"
+        story_status = ""
+        if prd_path.exists():
+            payload = json.loads(prd_path.read_text(encoding="utf-8"))
+            for story in payload.get("stories", []):
+                if story.get("id") == case.story_id:
+                    story_status = story.get("status", "")
+                    break
+        output_has_summary = "Completed:" in output and "Failed:" in output
+        score = 1.0 if output_has_summary and story_status in {"done", "blocked"} else 0.0
+        return EvalTraceGrade(
+            name="loop_outcome_summary",
+            score=score,
+            detail=f"status={story_status}, summary={output_has_summary}",
+        )
 
     @staticmethod
     @contextmanager

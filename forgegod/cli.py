@@ -1622,12 +1622,22 @@ def evals(
                 "yes" if row.passed else "no",
             )
         console.print(summary)
+        graders = Table(title="Trace grader summary")
+        graders.add_column("Row", style="cyan")
+        graders.add_column("Trace graders", style="dim")
+        for row in matrix_report.rows:
+            rendered = ", ".join(
+                f"{name}={score:.3f}" for name, score in row.trace_grade_scores.items()
+            ) or "-"
+            graders.add_row(row.id, rendered)
+        console.print(graders)
         typer.echo(
             f"Harness eval matrix complete ({matrix_report.passed_rows}/{matrix_report.total_rows} "
             f"rows passing, score={matrix_report.score:.3f})"
         )
         typer.echo(f"Report: {output}")
         typer.echo(f"Traces root: {traces_dir}")
+        typer.echo("Trace grader summary")
         console.print(
             f"\n[bold green]Harness eval matrix complete[/bold green] "
             f"({matrix_report.passed_rows}/{matrix_report.total_rows} rows passing, "
@@ -1652,10 +1662,38 @@ def evals(
     )
     typer.echo(f"Report: {output}")
     typer.echo(f"Traces: {traces_dir}")
+    if report.dimension_scores:
+        typer.echo(
+            "Dimensions: "
+            + ", ".join(
+                f"{name}={score:.3f}" for name, score in report.dimension_scores.items()
+            )
+        )
+    if report.trace_grade_scores:
+        typer.echo(
+            "Trace graders: "
+            + ", ".join(
+                f"{name}={score:.3f}" for name, score in report.trace_grade_scores.items()
+            )
+        )
     console.print(
         f"\n[bold green]Harness evals complete[/bold green] "
         f"({report.passed_cases}/{report.total_cases} passing, score={report.score:.3f})"
     )
+    if report.dimension_scores:
+        console.print(
+            "[dim]Dimensions:[/dim] "
+            + ", ".join(
+                f"{name}={score:.3f}" for name, score in report.dimension_scores.items()
+            )
+        )
+    if report.trace_grade_scores:
+        console.print(
+            "[dim]Trace graders:[/dim] "
+            + ", ".join(
+                f"{name}={score:.3f}" for name, score in report.trace_grade_scores.items()
+            )
+        )
     console.print(f"[dim]Report: {output}[/dim]")
     console.print(f"[dim]Traces: {traces_dir}[/dim]")
     if report.passed_cases != report.total_cases:

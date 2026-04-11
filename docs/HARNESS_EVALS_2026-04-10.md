@@ -220,6 +220,9 @@ Completed in the current repo baseline:
 
 - scenario tags are now complemented by explicit eval dimensions
 - scores now split by UX, safety, workflow, and verification
+- local trace graders now score transport-noise suppression, completion
+  discipline, permission transparency, strict-sandbox transparency, and loop
+  outcome summaries
 - `forgegod evals` now ships an OpenAI-first matrix:
   `forgegod evals --matrix openai-surfaces`
 - that matrix compares:
