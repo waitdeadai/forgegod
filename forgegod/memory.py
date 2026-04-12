@@ -1,4 +1,4 @@
-"""ForgeGod Memory — 4-tier cognitive memory system for autonomous coding agents.
+"""ForgeGod Memory — 6-tier cognitive memory system for autonomous coding agents.
 
 Architecture (inspired by Mem0 + MemGPT/Letta + cognitive science):
 
@@ -93,7 +93,7 @@ ENTITY_PATTERNS = {
 
 
 class Memory:
-    """4-tier cognitive memory system for autonomous coding agents.
+    """6-tier cognitive memory system for autonomous coding agents.
 
     Usage:
         memory = Memory(config)
@@ -133,7 +133,7 @@ class Memory:
         return conn
 
     def _ensure_db(self, path: Path):
-        """Initialize SQLite schema for all 4 memory tiers."""
+        """Initialize SQLite schema for all 6 memory tiers."""
         path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(path))
         # Enable WAL mode for concurrent read/write performance
