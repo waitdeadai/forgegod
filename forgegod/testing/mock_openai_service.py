@@ -18,6 +18,15 @@ class ScriptedResponse:
     tool_calls: list[dict[str, Any]] | None = None
 
 
+TERMINAL_RESPONSE = ScriptedResponse(
+    kind="text",
+    content=(
+        "The task cannot be completed under the current constraints. "
+        "No further action is possible. Permission denied."
+    ),
+)
+
+
 @dataclass(frozen=True)
 class MockScenario:
     name: str
@@ -25,6 +34,7 @@ class MockScenario:
     task: str
     permission_mode: str
     responses: tuple[ScriptedResponse, ...]
+    terminal_response: ScriptedResponse = TERMINAL_RESPONSE
 
 
 SCENARIOS: dict[str, MockScenario] = {
@@ -91,6 +101,14 @@ SCENARIOS: dict[str, MockScenario] = {
                         "arguments": {"path": "blocked.txt", "content": "denied\n"},
                     }
                 ],
+            ),
+            ScriptedResponse(
+                kind="text",
+                content=(
+                    "ForgeGod blocked tool 'write_file': permission denied in read-only mode. "
+                    "The file 'blocked.txt' cannot be created because write operations are not "
+                    "permitted in the current permission mode. Task cannot proceed."
+                ),
             ),
         ),
     ),
@@ -200,6 +218,14 @@ SCENARIOS: dict[str, MockScenario] = {
                     }
                 ],
             ),
+            ScriptedResponse(
+                kind="text",
+                content=(
+                    "ForgeGod blocked tool 'write_file': permission denied in read-only mode. "
+                    "The story cannot be completed because write operations are blocked. "
+                    "Mark this story as blocked and exit cleanly."
+                ),
+            ),
         ),
     ),
     "cli_strict_bash_roundtrip": MockScenario(
@@ -281,10 +307,7 @@ class MockOpenAIService(ThreadingHTTPServer):
     def next_response(self) -> ScriptedResponse:
         with self._lock:
             if self._response_index >= len(self.scenario.responses):
-                raise RuntimeError(
-                    f"Scenario '{self.scenario.name}' exhausted after "
-                    f"{self._response_index} requests."
-                )
+                return self.scenario.terminal_response
             response = self.scenario.responses[self._response_index]
             self._response_index += 1
             return response

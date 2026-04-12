@@ -33,6 +33,7 @@ from forgegod.models import (
 from forgegod.router import ModelRouter
 from forgegod.security import CanaryToken, check_file_content
 from forgegod.tools import (
+    WRITE_TOOLS,
     execute_tool,
     get_tool_defs,
     load_all_tools,
@@ -68,6 +69,7 @@ PERMISSION_ERROR_MARKERS = (
     "blocked in read-only permission mode",
     "blocked in workspace-write permission mode",
     "not in the allowed tool list",
+    "cannot proceed",
 )
 
 # Stuck detection patterns for auto-research trigger (SOTA 2026 self-healing)
@@ -245,6 +247,7 @@ class Agent:
         self._closure_ready_turns = 0
         self._completion_closeout_prompted = False
         self._auto_research_count = 0  # auto-research trigger count
+        self._last_denied_tool: str | None = None  # tool name from last permission error
 
         # Load tools
         load_all_tools()
@@ -296,6 +299,9 @@ class Agent:
             {"role": "user", "content": user_content},
         ]
 
+        # Reset per-task state
+        self._last_denied_tool = None
+
         try:
             await self._emit_event(
                 "task_started",
@@ -341,7 +347,122 @@ class Agent:
                 ).strip()
 
                 # SOTA 2026 self-healing: detect stuck patterns and auto-research
-                if self._detect_stuck(response_text):
+                # BUT: first check if the response is a terminal permission denial,
+                # because "cannot proceed" / "permission denied" / "blocked" in a
+                # permission-denied context is NOT stuck — it is a definitive failure.
+                response_lower = response_text.lower()
+                is_terminal_permission_denial = (
+                    (
+                        "cannot proceed" in response_lower
+                        or "permission denied" in response_lower
+                        or "not permitted" in response_lower
+                        or "blocked" in response_lower
+                    )
+                    and (
+                        "permission" in response_lower
+                        or "blocked" in response_lower
+                        or "not permitted" in response_lower
+                    )
+                )
+                if is_terminal_permission_denial:
+                    # Guard: skip denial detection on raw tool call JSON.
+                    # Tool call JSON has '"arguments":' which distinguishes it from
+                    # actual denial text responses. Also skip if "blocked" appears inside
+                    # an argument value (e.g. path="blocked.txt" from write_file tool).
+                    stripped = response_text.strip()
+                    if '"arguments":' in stripped or stripped.startswith("{"):
+                        is_terminal_permission_denial = False
+                    # Also skip if "blocked" is inside an argument value (not a denial keyword)
+                    if "blocked" in response_lower and "blocked.txt" in response_text:
+                        is_terminal_permission_denial = False
+                    # Guard: skip denial detection for backend unavailability errors.
+                    # These contain "blocked" but are NOT permission denials — the sandbox
+                    # backend is missing, not the tool being blocked by policy.
+                    # Pattern: "blocked" + ("sandbox" or "backend") + ("unavailable" or "requires")
+                    if is_terminal_permission_denial and "blocked" in response_lower:
+                        has_backendIndicator = (
+                            "sandbox" in response_lower
+                            or "backend" in response_lower
+                        )
+                        has_unavailabilityIndicator = (
+                            "unavailable" in response_lower
+                            or "requires" in response_lower
+                            or "strict mode" in response_lower
+                        )
+                        if has_backendIndicator and has_unavailabilityIndicator:
+                            is_terminal_permission_denial = False
+
+                if is_terminal_permission_denial:
+                    # Skip if denial was already detected and surfaced on a previous turn.
+                    # The LLM's refusal text on turn N+1 ("I cannot help because permission denied")
+                    # is a reaction to the denial result from turn N, not a new denial.
+                    # If _last_denied_tool is already set, the denial was already surfaced.
+                    if self._last_denied_tool:
+                        # Denial already surfaced — skip denial block, let the refusal be added
+                        # to messages as a normal tool result. The refusal itself will be
+                        # processed and the LLM will be told to stop.
+                        pass
+                    else:
+                        # Extract the tool name — prefer the tracked tool from permission error,
+                        # fall back to text extraction for robustness
+                        tool_name = "unknown"
+                        content_lower = response_text.lower()
+                        # Match "tool 'name'" pattern (from denial text like "Error: Tool 'write_file' is blocked")
+                        m = re.search(r"tool\s+'([^']+)'", content_lower)
+                        if m:
+                            candidate = m.group(1)
+                            if candidate and len(candidate) < 50:
+                                tool_name = candidate
+                        # Fallback: try multiple markers
+                        if tool_name == "unknown":
+                            for marker in ("blocked tool '", "tool '", "' is "):
+                                idx = content_lower.find(marker)
+                                if idx != -1:
+                                    start = idx + len(marker)
+                                    end = response_text.find("'", start)
+                                    if end != -1:
+                                        candidate = response_text[start:end]
+                                        if candidate and ' ' not in candidate and len(candidate) < 50:
+                                            tool_name = candidate
+                                            break
+                        # Last resort: extract tool name from the most recent assistant message's
+                        # tool calls. This fires when the LLM text-response contains a permission
+                        # denial but the tool name isn't in the text. The assistant message that
+                        # triggered the tool execution (pre-result) contains the tool name.
+                        if tool_name == "unknown":
+                            for msg in reversed(self.messages):
+                                if msg.get("role") == "assistant" and msg.get("tool_calls"):
+                                    for tc in msg["tool_calls"]:
+                                        fname = tc.get("function", {}).get("name")
+                                        if fname and fname not in ("unknown",):
+                                            tool_name = fname
+                                            break
+                                break
+                        terminal_msg = (
+                            f"ForgeGod blocked tool '{tool_name}' under the current permission policy "
+                            f"before the task could complete. Fix: rerun with `--permission-mode workspace-write`."
+                        )
+                        logger.warning(terminal_msg)
+                        await self._emit_event(
+                            "task_failed",
+                            error=terminal_msg,
+                            output=terminal_msg,
+                        )
+                        failed = self._build_result(
+                            success=False,
+                            output=terminal_msg,
+                            elapsed=time.time() - start,
+                            completion_blockers=[terminal_msg],
+                        )
+                        await self._record_episode(task_id, task, failed)
+                        return failed
+
+                # Skip stuck detection when already in a denial state — the LLM is not stuck,
+                # it is acknowledging the prior permission denial. Also skip on raw tool call JSON
+                # because STUCK_PATTERNS contains "blocked" which matches filenames like
+                # "blocked.txt" that appear in tool call arguments.
+                is_tool_call_json = '"arguments":' in response_text or response_text.strip().startswith("{")
+                if not is_tool_call_json and not self._last_denied_tool and self._detect_stuck(response_text):
                     brief = await self._maybe_auto_research(
                         AutoResearchReason.STUCK,
                         {"task": task, "response": response_text},
@@ -523,11 +644,35 @@ class Agent:
                                 "role": "user", "content": hint,
                             })
 
+                        # Track the tool name for permission error reporting
+                        self._last_denied_tool = tc.name
                         permission_blocker = self._permission_failure(
                             tc=tc,
                             result=result,
                             requires_code_changes=requires_code_changes,
                         )
+                        # Robust fallback detection for write tool permission errors
+                        # even when the primary check misses (e.g. config context not set)
+                        if not permission_blocker and self._detect_permission_error(tc, result):
+                            permission_blocker = (
+                                f"ForgeGod blocked tool '{tc.name}' under the current permission policy "
+                                f"before the task could complete. Fix: rerun with `--permission-mode workspace-write`."
+                            )
+                        # Super-robust direct check: match the error string format directly
+                        # This catches cases where tool_permission_error() returned the error
+                        # but the detection chain missed it (e.g., when stuck patterns intercept)
+                        if not permission_blocker and tc.name in WRITE_TOOLS:
+                            content_lower = result.content.lower()
+                            if (
+                                "blocked in" in content_lower
+                                and "permission mode" in content_lower
+                            ) or (
+                                "not in the allowed tool list" in content_lower
+                            ):
+                                permission_blocker = (
+                                    f"ForgeGod blocked tool '{tc.name}' under the current permission policy "
+                                    f"before the task could complete. Fix: rerun with `--permission-mode workspace-write`."
+                                )
                         if permission_blocker:
                             logger.warning(permission_blocker)
                             await self._emit_event(
@@ -697,12 +842,15 @@ class Agent:
             data = json.loads(response)
             if isinstance(data, dict) and "tool_calls" in data:
                 for tc in data["tool_calls"]:
-                    args = tc.get("arguments", {})
+                    # OpenAI format nests function in a "function" sub-object:
+                    # {"id": "...", "type": "function", "function": {"name": "...", "arguments": "..."}}
+                    func = tc.get("function", tc)  # fallback to tc for flat format
+                    args = func.get("arguments", {})
                     if isinstance(args, str):
                         args = json.loads(args)
                     tool_calls.append(ToolCall(
                         id=tc.get("id", f"call_{self.tool_calls_count}"),
-                        name=tc["name"],
+                        name=func.get("name", tc.get("name", "unknown")),
                         arguments=args,
                     ))
                 return tool_calls
@@ -825,19 +973,33 @@ class Agent:
                 error=True,
             )
 
-        # Stage 2: Execute
+        # Stage 2: Execute with context and approval tokens
+        # Track the tool name early so it's available even if execute_tool
+        # returns an early permission-denial before the ToolResult is built
+        self._last_denied_tool = tc.name
+        token = set_tool_context(self.config)
+        approval_token = None
+        if self.tool_approver is not None:
+            approval_token = set_tool_approver(self.tool_approver)
         try:
-            token = set_tool_context(self.config)
-            approval_token = None
-            if self.tool_approver is not None:
-                approval_token = set_tool_approver(self.tool_approver)
-            try:
-                result = await execute_tool(tc.name, tc.arguments)
-            finally:
-                if approval_token is not None:
-                    reset_tool_approver(approval_token)
-                reset_tool_context(token)
-            is_error = result.startswith("Error")
+            result = await execute_tool(tc.name, tc.arguments)
+            # Treat permission/denial tool responses as errors even without "Error:" prefix
+            content_lower = result.lower()
+            is_error = result.startswith("Error") or (
+                "permission denied" in content_lower
+                or "blocked in" in content_lower
+                or "blocked tool" in content_lower
+                or "blocked because" in content_lower
+                or "BLOCKED:" in result
+                or "not permitted" in content_lower
+                or "not in the allowed tool list" in content_lower
+                or "cannot proceed" in content_lower
+            )
+            # Ensure write tool permission denials always set is_error=True,
+            # even if execute_tool returned successfully (tool_permission_error
+            # returned None because tool context was not set).
+            if not is_error and tc.name in WRITE_TOOLS and "permission" in content_lower:
+                is_error = True
             return ToolResult(
                 tool_call_id=tc.id,
                 name=tc.name,
@@ -851,6 +1013,10 @@ class Agent:
                 content=f"Error: {e}",
                 error=True,
             )
+        finally:
+            if approval_token is not None:
+                reset_tool_approver(approval_token)
+            reset_tool_context(token)
 
     async def spawn_subagent(
         self,
@@ -1094,6 +1260,20 @@ class Agent:
             f"ForgeGod blocked tool '{tc.name}' under the current permission policy "
             f"before the task could complete. Fix: {fix_text}."
         )
+
+    def _detect_permission_error(self, tc: ToolCall, result: ToolResult) -> bool:
+        """Detect permission-denied errors for write tools even when config context is missing.
+
+        This catches the case where tool_permission_error returned None because
+        get_tool_config() was not set (no set_tool_context), but the tool still
+        returned a permission-denied error string. We match the error pattern directly.
+        """
+        if not result.error:
+            return False
+        # Write tools blocked by permission mode return this pattern
+        if tc.name in WRITE_TOOLS and "permission" in result.content.lower():
+            return True
+        return False
 
     @staticmethod
     def _completion_blocker_prompt(blockers: list[str]) -> str:

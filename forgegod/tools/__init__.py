@@ -14,6 +14,7 @@ from forgegod.models import ToolDef
 _TOOLS: dict[str, tuple[ToolDef, Callable[..., Coroutine[Any, Any, str]]]] = {}
 _TOOL_CONFIG: ContextVar[Any | None] = ContextVar("forgegod_tool_config", default=None)
 _TOOL_APPROVER: ContextVar[Any | None] = ContextVar("forgegod_tool_approver", default=None)
+_LAST_DENIED_TOOL: ContextVar[str | None] = ContextVar("forgegod_last_denied_tool", default=None)
 
 __all__ = [
     "register_tool",
@@ -31,7 +32,19 @@ __all__ = [
     "reset_tool_approver",
     "set_tool_context",
     "reset_tool_context",
+    "WRITE_TOOLS",
 ]
+
+# Tools that perform writes — blocked by read-only permission mode
+WRITE_TOOLS = {
+    "write_file",
+    "edit_file",
+    "delete_file",
+    "bash",
+    "git_commit",
+    "git_worktree_create",
+    "git_branch",
+}
 
 READ_ONLY_TOOLS = {
     "read_file", "glob", "grep", "repo_map", "git_status",
@@ -192,19 +205,22 @@ def _read_only_bash_allowed(command: str) -> bool:
 def tool_permission_error(name: str, arguments: dict[str, Any]) -> str | None:
     """Return a permission error for a tool call, or None if allowed."""
     config = get_tool_config()
-    if not config:
-        return None
+    security = getattr(config, "security", None) if config else None
 
-    security = getattr(config, "security", None)
-    if not security:
-        return None
-
-    mode = getattr(security, "permission_mode", "workspace-write")
-    allowed_tools = {
-        str(tool).strip()
-        for tool in getattr(security, "allowed_tools", []) or []
-        if str(tool).strip()
-    }
+    # Determine effective permission mode: use config if available, otherwise
+    # default to read-only for write tools (fail-safe when context not set).
+    if security:
+        mode = getattr(security, "permission_mode", "workspace-write")
+        allowed_tools = {
+            str(tool).strip()
+            for tool in getattr(security, "allowed_tools", []) or []
+            if str(tool).strip()
+        }
+    else:
+        # No config context set — deny write tools as fail-safe.
+        # This prevents accidental writes when tool context is not initialized.
+        mode = "read-only"
+        allowed_tools = set()
 
     if allowed_tools and name not in allowed_tools:
         return (
@@ -220,7 +236,8 @@ def tool_permission_error(name: str, arguments: dict[str, Any]) -> str | None:
             return None
         if name == "bash" and _read_only_bash_allowed(str(arguments.get("command", ""))):
             return None
-        return f"Tool '{name}' is blocked in read-only permission mode"
+        # Return with "Error: " prefix so execute_tool detects it as an error
+        return f"Error: Tool '{name}' is blocked in read-only permission mode. Cannot proceed."
 
     if mode == "workspace-write":
         if name in WORKSPACE_WRITE_BLOCKED_TOOLS:
@@ -321,12 +338,23 @@ async def execute_tool(name: str, arguments: dict[str, Any]) -> str:
         return f"Error: Unknown tool '{name}'"
     permission_error = tool_permission_error(name, arguments)
     if permission_error and not await _tool_permission_approved(name, arguments, permission_error):
+        _LAST_DENIED_TOOL.set(name)  # track for terminal denial reporting
+        # Don't double-prefix if permission_error already starts with "Error: "
+        if permission_error.startswith("Error: "):
+            return permission_error
         return f"Error: {permission_error}"
     _, handler = _TOOLS[name]
     try:
         return await handler(**arguments)
     except Exception as e:
         return f"Error executing {name}: {e}"
+
+
+def _get_last_denied_tool() -> str | None:
+    """Return and clear the last denied tool name captured from execute_tool's early return."""
+    val = _LAST_DENIED_TOOL.get()
+    _LAST_DENIED_TOOL.set(None)
+    return val
 
 
 def load_all_tools():
