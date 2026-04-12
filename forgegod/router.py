@@ -284,6 +284,10 @@ class ModelRouter:
             text, usage_dict = await self._call_zai(
                 spec.model, prompt, system, json_mode, max_tokens, temperature, tools
             )
+        elif spec.provider == "minimax":
+            text, usage_dict = await self._call_minimax(
+                spec.model, prompt, system, json_mode, max_tokens, temperature, tools
+            )
         else:
             raise ValueError(f"Unknown provider: {spec.provider}")
 
@@ -1019,6 +1023,62 @@ class ModelRouter:
         }
         if self.config.zai.use_coding_plan and os.environ.get("ZAI_CODING_API_KEY"):
             usage_data["subscription_billing"] = True
+        return content, usage_data
+
+    async def _call_minimax(
+        self, model: str, prompt: str | list[dict], system: str,
+        json_mode: bool, max_tokens: int, temperature: float,
+        tools: list[dict] | None,
+    ) -> tuple[str, dict]:
+        """Call MiniMax via its OpenAI-compatible API."""
+        import os
+
+        import openai
+
+        api_key = os.environ.get("MINIMAX_API_KEY", "") or os.environ.get("OPENAI_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "error: No MiniMax API key set.\n"
+                "  Fix: export MINIMAX_API_KEY=...\n"
+                "  Get one at: https://platform.minimaxi.com"
+            )
+
+        messages = self._to_messages(prompt, system)
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if self.config.minimax.use_reasoning:
+            kwargs["extra_body"] = {"reasoning_split": True}
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+        if tools:
+            kwargs["tools"] = tools
+
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=self.config.minimax.base_url,
+            timeout=self.config.minimax.timeout,
+        )
+        resp = await client.chat.completions.create(**kwargs)
+
+        choice = resp.choices[0]
+        if choice.message.tool_calls:
+            tool_calls_json = [{
+                "id": tc.id,
+                "name": tc.function.name,
+                "arguments": tc.function.arguments,
+            } for tc in choice.message.tool_calls]
+            content = json.dumps({"tool_calls": tool_calls_json})
+        else:
+            content = choice.message.content or ""
+
+        usage_data = {
+            "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+            "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
+        }
         return content, usage_data
 
     # ── Helpers ──

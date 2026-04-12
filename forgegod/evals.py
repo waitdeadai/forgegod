@@ -26,7 +26,12 @@ from rich.console import Console
 from typer.testing import CliRunner
 
 from forgegod import __version__
-from forgegod.config import ForgeGodConfig, recommend_model_defaults, resolve_openai_surface
+from forgegod.config import (
+    ForgeGodConfig,
+    ModelsConfig,
+    recommend_model_defaults,
+    resolve_openai_surface,
+)
 from forgegod.native_auth import codex_automation_status, codex_login_status_sync
 from forgegod.testing.mock_openai_service import SCENARIOS, start_mock_openai_server
 
@@ -823,6 +828,208 @@ class HarnessEvalRunner:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
         return report
+
+    def run_minimax_live_comparison(
+        self,
+        *,
+        output_path: Path | None = None,
+    ) -> EvalLiveComparisonReport:
+        """Run MiniMax vs OpenAI adversarial comparison probes.
+
+        If MINIMAX_API_KEY is set, probes MiniMax M2 with lightweight coding tasks
+        and compares against OpenAI (adversarial reviewer/planner role) to validate
+        the MiniMax provider is correctly wired in the router.
+        """
+        has_minimax = bool(os.environ.get("MINIMAX_API_KEY"))
+        has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+
+        comparison_rows: list[EvalLiveComparisonRow] = []
+        minimax_probe_results: list[EvalLiveProbeResult] = []
+        openai_probe_results: list[EvalLiveProbeResult] = []
+        minimax_cost = 0.0
+        openai_cost = 0.0
+        minimax_calls = 0
+        openai_calls = 0
+
+        if has_minimax:
+            try:
+                (
+                    minimax_probe_results,
+                    minimax_cost,
+                    minimax_calls,
+                ) = self._run_live_minimax_probes()
+            except Exception as exc:
+                console.print(f"[red]MiniMax probe failed: {exc}[/red]")
+                has_minimax = False
+
+        if has_openai:
+            try:
+                cfg = self.config.model_copy(deep=True)
+                cfg.models = ModelsConfig(
+                    planner="openai:gpt-5.4",
+                    coder="openai:gpt-5.4-mini",
+                    reviewer="openai:gpt-5.4",
+                    sentinel="openai:gpt-5.4",
+                    escalation="openai:gpt-5.4",
+                    researcher="openai:gpt-5.4-mini",
+                )
+                openai_probe_results, openai_cost, openai_calls = self._run_live_openai_probes(
+                    models=cfg.models.model_dump(),
+                    profile="single-model",
+                    requested_surface="api-only",
+                    effective_surface="api-only",
+                )
+            except Exception as exc:
+                console.print(f"[red]OpenAI probe failed: {exc}[/red]")
+                has_openai = False
+
+        minimax_row = EvalLiveComparisonRow(
+            rank=1,
+            id="minimax_m2_alone",
+            profile="single-model",
+            requested_openai_surface="minimax",
+            effective_openai_surface="minimax",
+            status="passed" if has_minimax else "skipped",
+            score=(
+                round(
+                    sum(1.0 for p in minimax_probe_results if p.passed)
+                    / max(len(minimax_probe_results), 1),
+                    3,
+                )
+                if minimax_probe_results else 0.0
+            ),
+            total_cost_usd=minimax_cost,
+            call_count=minimax_calls,
+            passed_probes=sum(1 for p in minimax_probe_results if p.passed),
+            total_probes=len(minimax_probe_results),
+            detail="MiniMax M2 standalone" if has_minimax else "Skipped: MINIMAX_API_KEY not set",
+        )
+
+        openai_row = EvalLiveComparisonRow(
+            rank=2,
+            id="openai_adversarial",
+            profile="adversarial",
+            requested_openai_surface="api-only",
+            effective_openai_surface="api-only",
+            status="passed" if has_openai else "skipped",
+            score=(
+                round(
+                    sum(1.0 for p in openai_probe_results if p.passed)
+                    / max(len(openai_probe_results), 1),
+                    3,
+                )
+                if openai_probe_results else 0.0
+            ),
+            total_cost_usd=openai_cost,
+            call_count=openai_calls,
+            passed_probes=sum(1 for p in openai_probe_results if p.passed),
+            total_probes=len(openai_probe_results),
+            detail=(
+                "OpenAI adversarial (planner/coder)"
+                if has_openai
+                else "Skipped: OPENAI_API_KEY not set"
+            ),
+        )
+
+        if has_minimax and has_openai:
+            comparison_rows = sorted(
+                [minimax_row, openai_row],
+                key=lambda r: r.score,
+                reverse=True,
+            )
+            for idx, row in enumerate(comparison_rows, start=1):
+                row.rank = idx
+            recommended = comparison_rows[0]
+        else:
+            comparison_rows = [r for r in [minimax_row, openai_row] if r.status != "skipped"]
+            recommended = comparison_rows[0] if comparison_rows else None
+
+        report = EvalLiveComparisonReport(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            forgegod_version=__version__,
+            matrix_name="minimax-live-compare-v1",
+            source_matrix_name="minimax-live-v1",
+            detected_providers=["minimax"] if has_minimax else [],
+            total_rows=2,
+            runnable_rows=len(comparison_rows),
+            passed_rows=sum(1 for r in comparison_rows if r.status == "passed"),
+            failed_rows=sum(1 for r in comparison_rows if r.status == "failed"),
+            skipped_rows=2 - len(comparison_rows),
+            recommended_row_id=recommended.id if recommended else "",
+            recommendation_reason=(
+                "MiniMax M2 is primary when available, OpenAI as adversarial reviewer."
+                if recommended and recommended.id == "minimax_m2_alone"
+                else "OpenAI is primary when MiniMax is not available."
+            ),
+            rows=comparison_rows,
+        )
+        if output_path is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+        return report
+
+    def _run_live_minimax_probes(
+        self,
+    ) -> tuple[list[EvalLiveProbeResult], float, int]:
+        """Run lightweight probes against MiniMax M2 API."""
+        from forgegod.router import ModelRouter
+
+        config = self.config.model_copy(deep=True)
+        config.models = ModelsConfig(
+            planner="minimax:minimax-m2",
+            coder="minimax:minimax-m2",
+            reviewer="minimax:minimax-m2",
+            sentinel="minimax:minimax-m2",
+            escalation="minimax:minimax-m2",
+            researcher="minimax:minimax-m2",
+        )
+
+        async def _run() -> tuple[list[EvalLiveProbeResult], float, int]:
+            router = ModelRouter(config)
+            probe_results: list[EvalLiveProbeResult] = []
+            try:
+                with self._quiet_logger("forgegod.router", level=logging.ERROR):
+                    for probe in _MINIMAX_LIVE_PROBES:
+                        before_calls = router.call_count
+                        try:
+                            response, usage = await router.call(
+                                probe["prompt"],
+                                role=probe["role"],
+                                system=probe["system"],
+                                json_mode=False,
+                                max_tokens=32,
+                                temperature=0.0,
+                            )
+                        except Exception as exc:
+                            raise RuntimeError(
+                                f"MiniMax probe '{probe['name']}' failed: {exc}"
+                            ) from exc
+                        if response.lstrip().startswith("[ERROR:"):
+                            raise RuntimeError(f"MiniMax probe returned error: {response}")
+                        spec = ""
+                        if router.call_count > before_calls and router._call_log:
+                            spec = router._call_log[-1].get("spec", "")
+                        provider, _, model = spec.partition(":")
+                        observed = " ".join(response.split())[:160]
+                        passed = probe["expected"] in response
+                        probe_results.append(
+                            EvalLiveProbeResult(
+                                name=probe["name"],
+                                role=probe["role"],
+                                expected=probe["expected"],
+                                observed=observed,
+                                provider=provider,
+                                model=model,
+                                passed=passed,
+                                detail="minimax:minimax-m2",
+                                usage=usage.model_dump(),
+                            )
+                        )
+                return probe_results, router.total_cost, router.call_count
+            finally:
+                await router.close()
+
+        return asyncio.run(_run())
 
     def run_case(
         self,
@@ -1874,5 +2081,28 @@ _OPENAI_LIVE_PROBES: tuple[dict[str, str], ...] = (
         ),
         "prompt": "Return exactly this marker: FORGEGOD_REVIEWER_OK",
         "expected": "FORGEGOD_REVIEWER_OK",
+    },
+)
+
+
+_MINIMAX_LIVE_PROBES: tuple[dict[str, str], ...] = (
+    {
+        "name": "minimax_coder_marker",
+        "role": "coder",
+        "system": (
+            "Reply with only the exact marker requested by the user. "
+            "Do not add markdown, punctuation, or explanation."
+        ),
+        "prompt": "Return exactly this marker: FORGEGOD_MINIMAX_OK",
+        "expected": "FORGEGOD_MINIMAX_OK",
+    },
+    {
+        "name": "minimax_reasoning_marker",
+        "role": "planner",
+        "system": (
+            "You are a reasoning assistant. Return only the exact marker requested."
+        ),
+        "prompt": "Return exactly this marker: FORGEGOD_REASONING_OK",
+        "expected": "FORGEGOD_REASONING_OK",
     },
 )

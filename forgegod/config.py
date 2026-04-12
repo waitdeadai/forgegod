@@ -9,7 +9,7 @@ from typing import Any
 import toml
 from pydantic import BaseModel, Field
 
-from forgegod.models import BudgetMode
+from forgegod.models import BudgetMode, ResearchDepth
 
 # ── Defaults ──
 
@@ -55,6 +55,8 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     "kimi-k2.5": (0.60, 3.00),
     "kimi-k2-thinking": (0.60, 2.50),
     "kimi-k2-0905-preview": (0.60, 2.50),
+    # MiniMax (OpenAI-compatible — pricing from platform.minimaxi.com)
+    "minimax-m2": (0.50, 1.50),
     # OpenRouter (varies — user overrides)
 }
 
@@ -186,6 +188,14 @@ class ZAIConfig(BaseModel):
     use_coding_plan: bool = True
 
 
+class MiniMaxConfig(BaseModel):
+    """MiniMax M2 provider settings (OpenAI-compatible API)."""
+
+    timeout: float = 120.0
+    base_url: str = "https://api.minimaxi.com/v1"
+    use_reasoning: bool = False  # enables reasoning_split in extra_body
+
+
 class ReconConfig(BaseModel):
     """Reconnaissance mode — web research before planning."""
 
@@ -199,6 +209,39 @@ class ReconConfig(BaseModel):
     debate_rounds: int = 3
     min_approval_score: float = 7.0  # 0-10, plan must score above this
     cache_results: bool = True
+
+
+class AgentConfig(BaseModel):
+    """SOTA 2026 research-first agent configuration."""
+
+    research_before_code: bool = True
+    auto_research_on_stuck: bool = True
+    auto_research_on_bad_review: bool = True
+    auto_research_on_unknown_lib: bool = True
+    max_auto_research_per_task: int = 3
+    research_depth_default: ResearchDepth = ResearchDepth.SOTA
+    research_depth_on_stuck: ResearchDepth = ResearchDepth.DEEP
+    research_depth_on_bad_review: ResearchDepth = ResearchDepth.SOTA
+    min_confidence_to_proceed: str = "medium"
+
+
+class SubagentsConfig(BaseModel):
+    """Parallel subagent orchestration settings."""
+
+    enabled: bool = False
+    max_concurrency: int = 3
+    max_retries: int = 2
+    planner_model: str = "openai:gpt-5.4"
+    reviewer_model: str = "openai:gpt-5.4"
+    allowed_tools: list[str] = Field(default_factory=list)
+
+
+class HiveConfig(BaseModel):
+    """Hive multi-process coordinator settings."""
+
+    max_workers: int = 4
+    max_iterations: int = 10
+    scheduler_mode: str = "hybrid"  # hybrid | greedy | priority
 
 
 class ForgeGodConfig(BaseModel):
@@ -219,7 +262,11 @@ class ForgeGodConfig(BaseModel):
     openai_codex: OpenAICodexConfig = Field(default_factory=OpenAICodexConfig)
     kimi: KimiConfig = Field(default_factory=KimiConfig)
     zai: ZAIConfig = Field(default_factory=ZAIConfig)
+    minimax: MiniMaxConfig = Field(default_factory=MiniMaxConfig)
     recon: ReconConfig = Field(default_factory=ReconConfig)
+    agent: AgentConfig = Field(default_factory=AgentConfig)
+    subagents: SubagentsConfig = Field(default_factory=SubagentsConfig)
+    hive: HiveConfig = Field(default_factory=HiveConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR
@@ -298,6 +345,7 @@ def recommend_model_defaults(
     if profile == "single-model":
         unified = pick([
             "zai:glm-5.1",
+            "minimax:minimax-m2",
             "openai:gpt-5.4",
             "openai-codex:gpt-5.4",
             "openai:gpt-5.4-mini",
@@ -319,6 +367,7 @@ def recommend_model_defaults(
 
     planner = pick([
         "zai:glm-5.1",
+        "minimax:minimax-m2",
         "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
         "openai:gpt-5.4-mini",
@@ -334,6 +383,7 @@ def recommend_model_defaults(
 
     coder = pick([
         "openai:gpt-5.4-mini",
+        "minimax:minimax-m2",
         "openai:gpt-5.4",
         "zai:glm-5.1",
         "openai-codex:gpt-5.4",
@@ -349,6 +399,7 @@ def recommend_model_defaults(
 
     reviewer = pick([
         "openai-codex:gpt-5.4",
+        "minimax:minimax-m2",
         "openai:gpt-5.4",
         "openai:gpt-5.4-mini",
         "zai:glm-5.1",
@@ -365,6 +416,7 @@ def recommend_model_defaults(
     sentinel = pick([
         "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
+        "minimax:minimax-m2",
         "openai:gpt-5.4-mini",
         "zai:glm-5.1",
         "anthropic:claude-opus-4-6-20250610",

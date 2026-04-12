@@ -37,6 +37,30 @@ class LoopStatus(str, Enum):
     IDLE = "idle"
 
 
+class ResearchDepth(str, Enum):
+    """Depth of web research for SOTA 2026 research-first execution."""
+    QUICK = "quick"   # 1-2 sources, ~30s
+    DEEP = "deep"    # 5+ sources with debate, ~2min
+    SOTA = "sota"    # full provider ranking + PyPI + year filter, ~3min
+
+
+class AutoResearchReason(str, Enum):
+    """Trigger reasons for automatic research during agent execution."""
+    STUCK = "stuck"
+    BAD_REVIEW = "bad_review"
+    UNKNOWN_LIB = "unknown_lib"
+    ARCHITECTURE = "architecture"
+    MANUAL = "manual"
+
+
+class ParallelismMode(str, Enum):
+    """Parallelism strategy for task execution."""
+    SEQUENTIAL = "sequential"
+    SUBAGENTS = "subagents"
+    HIVE = "hive"
+    RESEARCH_FIRST = "research_first"
+
+
 # ── Model / Provider ──
 
 
@@ -112,6 +136,50 @@ class AgentResult(BaseModel):
     reviewed_final_diff: bool = False
     completion_blockers: list[str] = Field(default_factory=list)
     error: str = ""
+
+
+# -- Hive / Subagent orchestration --
+
+
+class HiveWorkerPayload(BaseModel):
+    """Payload passed to a hive worker process."""
+
+    task: str
+    story_id: str = ""
+    review: bool = True
+    model: str | None = None
+    permission_mode: str | None = None
+    approval_mode: str | None = None
+    allowed_tools: list[str] | None = None
+    terse: bool = False
+    subagents_enabled: bool = False
+
+
+class HiveWorkerResult(BaseModel):
+    """Result summary emitted by a hive worker."""
+
+    story_id: str = ""
+    success: bool = False
+    exit_code: int = 1
+    output: str = ""
+    files_modified: list[str] = Field(default_factory=list)
+    verification_commands: list[str] = Field(default_factory=list)
+    reviewed_final_diff: bool = False
+    completion_blockers: list[str] = Field(default_factory=list)
+    review_verdict: str = ""
+    review_reasoning: str = ""
+    error: str = ""
+    total_usage: ModelUsage = Field(default_factory=ModelUsage)
+
+
+class HiveState(BaseModel):
+    """Coordinator state for hive runs."""
+
+    status: str = "idle"
+    current_batch: list[str] = Field(default_factory=list)
+    stories_completed: int = 0
+    stories_failed: int = 0
+    total_iterations: int = 0
 
 
 # ── Code Generation ──
@@ -357,3 +425,16 @@ class WorkerStatus(BaseModel):
     story_id: str = ""
     status: str = "idle"  # idle, running, done, failed
     result: AgentResult | None = None
+
+
+# ── Parallelism Recommender ──
+
+
+class ParallelismRecommendation(BaseModel):
+    """Recommendation for parallelism strategy based on task complexity."""
+
+    mode: ParallelismMode
+    workers: int
+    reasoning: str
+    research_recommended: bool
+    estimated_speedup: str  # e.g., "2-3x faster"

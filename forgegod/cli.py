@@ -171,6 +171,7 @@ def _build_run_config(
     *,
     model: str | None = None,
     review: bool = True,
+    research: bool = True,
     permission_mode: str | None = None,
     approval_mode: str | None = None,
     allowed_tool: list[str] | None = None,
@@ -189,6 +190,7 @@ def _build_run_config(
     if model:
         config.models.coder = model
     config.review.always_review_run = review
+    config.agent.research_before_code = research
     if permission_mode:
         config.security.permission_mode = permission_mode
     if approval_mode:
@@ -299,6 +301,7 @@ def _run_task_entrypoint(
     *,
     model: str | None = None,
     review: bool = True,
+    research: bool = True,
     permission_mode: str | None = None,
     approval_mode: str | None = None,
     allowed_tool: list[str] | None = None,
@@ -966,6 +969,10 @@ def run(
     task: str = typer.Argument(..., help="Task description"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Override coder model"),
     review: bool = typer.Option(True, "--review/--no-review", help="Review output with frontier"),
+    research: bool = typer.Option(
+        True, "--research/--no-research",
+        help="SOTA 2026: perform web research before coding (default: enabled)",
+    ),
     permission_mode: Optional[str] = typer.Option(
         None,
         "--permission-mode",
@@ -992,6 +999,7 @@ def run(
             task,
             model=model,
             review=review,
+            research=research,
             permission_mode=permission_mode,
             approval_mode=approval_mode,
             allowed_tool=allowed_tool,
@@ -1541,7 +1549,7 @@ def evals(
         "--matrix",
         help=(
             "Built-in eval matrix to run. Supported today: "
-            "openai-surfaces, openai-live, openai-live-compare"
+            "openai-surfaces, openai-live, openai-live-compare, minimax-live-compare"
         ),
     ),
     case: list[str] | None = typer.Option(
@@ -1600,6 +1608,10 @@ def evals(
             "openai-live-compare",
             "Rank runnable live OpenAI surfaces and recommend the best current harness row",
         )
+        matrix_table.add_row(
+            "minimax-live-compare",
+            "Compare MiniMax M2 vs OpenAI adversarial — requires MINIMAX_API_KEY",
+        )
         typer.echo(
             "openai-surfaces\t"
             "Compare adversarial vs single-model across OpenAI API/Codex surfaces"
@@ -1611,6 +1623,10 @@ def evals(
         typer.echo(
             "openai-live-compare\t"
             "Rank runnable live OpenAI surfaces and recommend the best current harness row"
+        )
+        typer.echo(
+            "minimax-live-compare\t"
+            "Compare MiniMax M2 vs OpenAI adversarial — requires MINIMAX_API_KEY"
         )
         console.print(matrix_table)
         raise typer.Exit()
@@ -1748,10 +1764,47 @@ def evals(
             if comparison_report.failed_rows > 0:
                 raise typer.Exit(1)
             raise typer.Exit()
+        if matrix == "minimax-live-compare":
+            minimax_report = runner.run_minimax_live_comparison(output_path=output)
+            summary = Table(title=f"ForgeGod eval - {minimax_report.matrix_name}")
+            summary.add_column("Rank", justify="right")
+            summary.add_column("Row", style="cyan")
+            summary.add_column("Profile", style="white")
+            summary.add_column("Requested", style="yellow")
+            summary.add_column("Status", justify="center")
+            summary.add_column("Score", justify="right")
+            summary.add_column("Cost", justify="right")
+            for row in minimax_report.rows:
+                summary.add_row(
+                    str(row.rank),
+                    row.id,
+                    row.profile,
+                    row.requested_openai_surface,
+                    row.status,
+                    f"{row.score:.3f}",
+                    f"${row.total_cost_usd:.4f}",
+                )
+            console.print(summary)
+            if minimax_report.recommended_row_id:
+                console.print(
+                    f"[bold green]Recommended:[/bold green] {minimax_report.recommended_row_id}"
+                )
+                console.print(f"[dim]{minimax_report.recommendation_reason}[/dim]")
+            console.print(
+                f"\n[bold green]MiniMax live comparison complete[/bold green] "
+                f"({minimax_report.runnable_rows} runnable, "
+                f"{minimax_report.passed_rows} passed, "
+                f"{minimax_report.failed_rows} failed, "
+                f"{minimax_report.skipped_rows} skipped)"
+            )
+            console.print(f"[dim]Report: {output}[/dim]")
+            if minimax_report.failed_rows > 0:
+                raise typer.Exit(1)
+            raise typer.Exit()
         if matrix != "openai-surfaces":
             raise typer.BadParameter(
                 "Unknown eval matrix. Supported today: "
-                "openai-surfaces, openai-live, openai-live-compare"
+                "openai-surfaces, openai-live, openai-live-compare, minimax-live-compare"
             )
         matrix_report = runner.run_openai_surface_matrix(
             eval_manifest,
@@ -1925,6 +1978,90 @@ def benchmark(
         console.print(f"\n[bold green]{tr('bench_done')}[/bold green]")
 
     asyncio.run(_bench())
+
+
+@app.command()
+def research(
+    task: str = typer.Argument(..., help="Research query (e.g. 'async redis patterns 2026')"),
+    depth: str = typer.Option(
+        "sota", "--depth",
+        help="Research depth: quick, deep, sota",
+    ),
+    output: Path = typer.Option(
+        None, "--output", "-o",
+        help="Write research brief to file (JSON)",
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+):
+    """Standalone SOTA 2026 web research — no code execution.
+
+    Performs deep web research using arXiv, GitHub, and DuckDuckGo.
+    Useful for architecture decisions before implementing.
+
+    Example:
+        forgegod research "agentic AI patterns 2026" --depth sota
+        forgegod research "fastapi async best practices" --depth deep --output research.json
+    """
+    from forgegod.config import load_config
+    from forgegod.models import ResearchDepth
+    from forgegod.researcher import Researcher
+    from forgegod.router import ModelRouter
+
+    _ensure_project_bootstrap(announce=False)
+    config = load_config()
+    configure_cli_logging(
+        verbose=verbose,
+        log_file=config.project_dir / "logs" / "research.log",
+        stream=verbose,
+    )
+
+    # Map depth string to enum
+    depth_map = {
+        "quick": ResearchDepth.QUICK,
+        "deep": ResearchDepth.DEEP,
+        "sota": ResearchDepth.SOTA,
+    }
+    depth_enum = depth_map.get(depth.lower(), ResearchDepth.SOTA)
+
+    _print_banner(mini=True)
+    console.print(f"[cyan]Research depth:[/cyan] {depth_enum.value}")
+
+    async def _do_research():
+        router = ModelRouter(config)
+        researcher = Researcher(config, router)
+        brief = await researcher.research(task)
+        await router.close()
+        return brief
+
+    brief = asyncio.run(_do_research())
+
+    if output:
+        import json as _json
+        output.write_text(
+            _json.dumps(brief.model_dump(mode="json"), indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        console.print(f"[green]Research brief saved to {output}[/green]")
+
+    # Print summary
+    console.print("\n[bold cyan]=== SOTA 2026 Research Summary ===[/bold cyan]\n")
+    if brief.libraries:
+        console.print("[bold]Libraries:[/bold]")
+        for lib in brief.libraries[:5]:
+            console.print(f"  • {lib.name} v{lib.version}: {lib.why}")
+    if brief.architecture_patterns:
+        console.print("\n[bold]Architecture Patterns:[/bold]")
+        for pattern in brief.architecture_patterns[:5]:
+            console.print(f"  • {pattern}")
+    if brief.security_warnings:
+        console.print("\n[bold yellow]Security Warnings:[/bold yellow]")
+        for warning in brief.security_warnings[:5]:
+            console.print(f"  ⚠ {warning}")
+    if brief.best_practices:
+        console.print("\n[bold]Best Practices:[/bold]")
+        for bp in brief.best_practices[:5]:
+            console.print(f"  • {bp}")
+    console.print(f"\n[dim]Sources: {brief.search_count} queries, {len(brief.raw_results)} results[/dim]")
 
 
 if __name__ == "__main__":

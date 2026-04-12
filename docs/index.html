@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeGod - Research-Backed Autonomous Coding Agent</title>
-<meta name="description" content="Open-source autonomous coding agent with multi-model routing, optional research workflows, 5-tier cognitive memory, and $0 local mode. Audited and hardened against a verified 2026 baseline.">
-<meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
+<meta name="description" content="Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax M2 + OpenAI adversarial harness, 5-tier cognitive memory, and $0 local mode. Audited and hardened against a verified 2026 baseline.">
+<meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, MiniMax, OpenAI, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://forgegod.com">
 <meta property="og:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
@@ -36,7 +36,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Open-source autonomous coding agent with multi-model routing, optional research workflows, 5-tier cognitive memory, and a verified 2026 baseline.",
+  "description": "Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax M2 + OpenAI adversarial harness, 5-tier cognitive memory, and a verified 2026 baseline.",
   "url": "https://forgegod.com",
   "downloadUrl": "https://pypi.org/project/forgegod/",
   "softwareVersion": "0.1.0",
@@ -777,7 +777,7 @@ body::after {
 <!-- Stats -->
 <section class="stats">
   <div class="stat"><span class="stat-value">23</span><span data-i18n="stat_tools">Built-in Tools</span></div>
-  <div class="stat"><span class="stat-value">8</span><span data-i18n="stat_providers">LLM Providers</span></div>
+  <div class="stat"><span class="stat-value">9</span><span data-i18n="stat_providers">LLM Providers</span></div>
   <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Cognitive Memory</span></div>
   <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
   <div class="stat"><span class="stat-value">$0</span><span data-i18n="stat_local">Local Mode</span></div>
@@ -842,8 +842,8 @@ body::after {
       <div class="feature">
         <div class="feature-icon">&#9881;</div>
         <h3 data-i18n="feat_routing_title">Picks the Best AI for Each Job</h3>
-        <p data-i18n="feat_routing_desc">Connects to 8 AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.</p>
-        <span class="feature-tag" data-i18n="feat_routing_tag">8 providers + adversarial, single-model, or explicit OpenAI surfaces</span>
+        <p data-i18n="feat_routing_desc">Connects to 9 AI providers and supports native OpenAI Codex subscription auth plus Z.AI and MiniMax M2. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.</p>
+        <span class="feature-tag" data-i18n="feat_routing_tag">9 providers + adversarial, single-model, or explicit OpenAI surfaces</span>
       </div>
 
       <div class="feature">
@@ -1417,6 +1417,11 @@ body::after {
         <span class="provider-name">Z.AI</span>
         <div class="provider-free" style="font-size:0.6rem;" data-i18n="provider_zai">GLM-5.1 / Coding Plan</div>
       </div>
+      <div class="provider">
+        <div class="provider-icon">&#9711;</div>
+        <span class="provider-name">MiniMax</span>
+        <div class="provider-free" style="font-size:0.6rem;">M2 / M2.7 Â· OpenAI-compatible</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1433,7 +1438,7 @@ body::after {
       describe your task
     </p>
     <p class="install-note" style="margin-top: 0.5rem;" data-i18n-html="install_note">
-      Python 3.11+ &bull; Auto-bootstraps local config on first chat &bull; Add <code style="color:var(--cyan)">forgegod --terse</code> for caveman mode &bull; Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> to verify the harness itself &bull; Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults &bull; Works on macOS, Linux, Windows &bull;
+      Python 3.11+ &bull; Auto-bootstraps local config on first chat &bull; Add <code style="color:var(--cyan)">forgegod --terse</code> for caveman mode &bull; Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> or <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> to verify the harness itself &bull; Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults &bull; Works on macOS, Linux, Windows &bull;
       <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>
     </p>
   </div>
@@ -1636,7 +1641,7 @@ var STRINGS = {
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod</code> \u2192 describe your task',
-    install_note: 'Python 3.11+ \u2022 Auto-bootstraps local config on first chat \u2022 Add <code style="color:var(--cyan)">forgegod --terse</code> for caveman mode \u2022 Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> to verify the harness itself \u2022 Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults \u2022 Use <code style="color:var(--cyan)">forgegod init</code> when you want the guided wizard \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
+    install_note: 'Python 3.11+ \u2022 Auto-bootstraps local config on first chat \u2022 Add <code style="color:var(--cyan)">forgegod --terse</code> for caveman mode \u2022 Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> or <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> to verify the harness itself \u2022 Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults \u2022 Use <code style="color:var(--cyan)">forgegod init</code> when you want the guided wizard \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
     footer_contributors: "Contributors",
     footer_contributing: "Contributing",
     footer_security: "Security",
@@ -1646,7 +1651,7 @@ var STRINGS = {
   es: {
     page_title: "ForgeGod - Agente de Codigo Autonomo Respaldado por Investigacion",
     meta_desc: "Agente de c\u00f3digo aut\u00f3nomo con ruteo multi-modelo, workflows opcionales de investigaci\u00f3n, memoria cognitiva de 5 niveles, y modo local $0.",
-    nav_features: "Características",
+    nav_features: "Caracterï¿½sticas",
     nav_results: "Resultados",
     nav_moats: "Por Qu\u00e9",
     nav_compare: "Comparar",
@@ -1655,18 +1660,18 @@ var STRINGS = {
     stat_tools: "Herramientas",
     stat_providers: "Proveedores LLM",
     stat_memory: "Memoria Cognitiva",
-    stat_autonomous: "Autónomo",
+    stat_autonomous: "Autï¿½nomo",
     stat_local: "Modo Local",
-    title_features: "QUÉ LO HACE DIFERENTE",
+    title_features: "QUï¿½ LO HACE DIFERENTE",
     title_memory: "MEMORIA COGNITIVA DE 5 NIVELES",
-    title_how: "CÓMO FUNCIONA",
-    title_compare: "CÓMO NOS COMPARAMOS",
-    cmp_hint: "Deslizá horizontalmente para comparar.",
+    title_how: "Cï¿½MO FUNCIONA",
+    title_compare: "Cï¿½MO NOS COMPARAMOS",
+    cmp_hint: "Deslizï¿½ horizontalmente para comparar.",
     title_providers: "PROVEEDORES SOPORTADOS",
-    title_install: "EMPEZÁ EN 30 SEGUNDOS",
+    title_install: "EMPEZï¿½ EN 30 SEGUNDOS",
     feat_routing_title: "Elige la Mejor IA para Cada Tarea",
-    feat_routing_desc: "ForgeGod se conecta a 8 proveedores de IA distintos y soporta auth nativa de OpenAI Codex más Z.AI. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explícitas: auto, api-only, codex-only o api+codex.",
-    feat_routing_tag: "8 proveedores + harness adversarial, single-model o superficies OpenAI explícitas",
+    feat_routing_desc: "ForgeGod se conecta a 8 proveedores de IA distintos y soporta auth nativa de OpenAI Codex mï¿½s Z.AI. Podï¿½s usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explï¿½citas: auto, api-only, codex-only o api+codex.",
+    feat_routing_tag: "8 proveedores + harness adversarial, single-model o superficies OpenAI explï¿½citas",
     feat_loop_title: "Trabaja Mientras Dorm\u00eds",
     feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso despu\u00e9s de cada una, y sigue 24/7. Volv\u00e9 a la ma\u00f1ana y encontr\u00e1 el proyecto terminado con un historial limpio de cada cambio.",
     feat_loop_tag: "Funciona 24/7",
@@ -1682,9 +1687,9 @@ var STRINGS = {
     feat_sica_title: "Mejora Solo",
     feat_sica_desc: "Despu\u00e9s de cada tarea, ForgeGod analiza qu\u00e9 funcion\u00f3 y qu\u00e9 no, y ajusta su enfoque para la pr\u00f3xima vez. Reescribe sus propias instrucciones, cambia qu\u00e9 IA prefiere, y refina su estrategia. Seis capas de seguridad aseguran que solo mejore y nunca se desv\u00ede.",
     feat_sica_tag: "Auto-mejorable",
-    feat_terse_title: "Modo Caverní\u0063ola",
+    feat_terse_title: "Modo Cavernï¿½\u0063ola",
     feat_terse_desc: "Un modo especial que reduce los costos de IA un 50-75% sin perder calidad. Usa instrucciones m\u00e1s cortas y eficientes internamente. Probado por 5 estudios de investigaci\u00f3n independientes en 2026. Agreg\u00e1 --terse a forgegod, run, plan o loop.",
-    feat_terse_tag: "Ahorrá 50-75% en costos de IA",
+    feat_terse_tag: "Ahorrï¿½ 50-75% en costos de IA",
     feat_security_title: "Seguridad Integrada",
     feat_security_desc: "Acceso a archivos acotado al workspace, escaneo de inyecci\u00f3n de prompts, redacci\u00f3n de secretos y dos niveles de ejecuci\u00f3n. El modo standard sigue local con guardrails. El modo strict corre comandos en un sandbox real con Docker, sin red, y se bloquea si faltan Docker o la imagen requerida. `forgegod doctor` ahora chequea esos prerequisitos directamente.",
     feat_security_tag: "Sandbox real en strict",
@@ -1697,7 +1702,7 @@ var STRINGS = {
     feat_memoryagent_title: "Agente de Memoria Dedicado",
     feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. La inteligencia de tu agente se acumula autom\u00e1ticamente.",
     feat_memoryagent_tag: "Extracci\u00f3n con LLM",
-    feat_routing_desc: "Se conecta a 8 proveedores de IA y soporta auth nativa de OpenAI Codex más Z.AI. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explícitas: auto, api-only, codex-only o api+codex.",
+    feat_routing_desc: "Se conecta a 8 proveedores de IA y soporta auth nativa de OpenAI Codex mï¿½s Z.AI. Podï¿½s usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explï¿½citas: auto, api-only, codex-only o api+codex.",
     feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso y sigue 24/7. Volv\u00e9 y encontr\u00e1 el proyecto terminado.",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Empieza con IA local gratis, escala a IA de nube m\u00e1s inteligente si es necesario. Valida la correcci\u00f3n en cada paso antes de avanzar.",
     feat_budget_desc: "Configur\u00e1 un presupuesto diario y ForgeGod lo respeta. Al acercarte al l\u00edmite, cambia a modelos m\u00e1s baratos. \u00bfLlegaste al l\u00edmite? Cambia a IA local gratis o se pausa. Corr\u00e9 100% gratis para siempre.",
@@ -1718,7 +1723,7 @@ var STRINGS = {
     moat_1_desc: "ForgeGod ahora trata la investigaci\u00f3n profunda 2026 como parte del contrato del repositorio para cambios de arquitectura, dependencias, seguridad, benchmarks, workflows y claims p\u00fablicos. Eso es m\u00e1s fuerte que confiar solo en la memoria del modelo y mantiene el proyecto alineado con evidencia actual en vez de supuestos viejos.",
     moat_2_title: "Dos IAs Debaten Primero",
     moat_2_stat: "90%+ de problemas detectables eliminados en 3 rondas",
-    moat_2_desc: "Una IA revisora hostil ataca tu plan antes de programar. Puntúa 6 dimensiones: SOTA, seguridad, arquitectura, completitud, dependencias y novedad. Solo Devin tiene cr\u00edtico \u2014 una ronda, no configurable.",
+    moat_2_desc: "Una IA revisora hostil ataca tu plan antes de programar. Puntï¿½a 6 dimensiones: SOTA, seguridad, arquitectura, completitud, dependencias y novedad. Solo Devin tiene cr\u00edtico \u2014 una ronda, no configurable.",
     moat_3_title: "Loop Aut\u00f3nomo 24/7",
     moat_3_stat: "Contexto fresco por tarea \u2014 cero degradaci\u00f3n",
     moat_3_desc: "Dale un PRD con 10 stories. Andate. Cada story recibe un agente limpio \u2014 sin degradaci\u00f3n de contexto. Si una falla, reintenta con un modelo m\u00e1s inteligente. Ning\u00fan otro agente OSS tiene un loop aut\u00f3nomo de producci\u00f3n.",
@@ -1746,15 +1751,15 @@ var STRINGS = {
     mem_errors_desc: "Cuando resuelve un error, recuerda la soluci\u00f3n. La pr\u00f3xima vez que aparece el mismo error, ya sabe qu\u00e9 hacer \u2014 sin perder tiempo redescubriendo la soluci\u00f3n.",
     mem_subtitle: "La memoria m\u00e1s avanzada de cualquier IA de programaci\u00f3n \u2014 gratuita o paga. Cursor elimin\u00f3 su funci\u00f3n de memoria completamente. Aider no tiene ninguna. Claude Code guarda notas en archivos de texto simples. ForgeGod tiene 5 capas de memoria estructurada que se limpian, fusionan y fortalecen autom\u00e1ticamente.",
     mem_flow_label: "El ciclo de aprendizaje \u2014 cada tarea hace a ForgeGod m\u00e1s inteligente:",
-    provider_openai: "API + suscripción Codex",
-    provider_deepseek: "22x más barato",
+    provider_openai: "API + suscripciï¿½n Codex",
+    provider_deepseek: "22x mï¿½s barato",
     provider_kimi: "Moonshot directo",
     provider_zai: "GLM-5.1 / Coding Plan",
     cmp_consolidation: "Limpieza autom\u00e1tica de memoria",
     how_plan_title: "Describ\u00ed",
     how_plan_desc: "Decile a ForgeGod qu\u00e9 quer\u00e9s construir. Puede investigar herramientas actuales, reunir documentaci\u00f3n y refinar el plan antes de programar cuando la vigencia importa.",
     how_loop_title: "Construye",
-    how_loop_desc: "ForgeGod trabaja cada tarea por su cuenta \u2014 escribiendo c\u00f3digo, probándolo, guardando su trabajo, y pasando a la siguiente. Funciona las 24 horas hasta terminar todo.",
+    how_loop_desc: "ForgeGod trabaja cada tarea por su cuenta \u2014 escribiendo c\u00f3digo, probï¿½ndolo, guardando su trabajo, y pasando a la siguiente. Funciona las 24 horas hasta terminar todo.",
     how_ship_title: "Revis\u00e1",
     how_ship_desc: "El trabajo verificado queda en diffs revisables antes de cerrarse. Los commits quedan bajo control del usuario en vez de forzarse autom\u00e1ticamente desde el loop.",
     cmp_routing: "Elige la mejor IA autom\u00e1ticamente",
@@ -1777,13 +1782,13 @@ var STRINGS = {
     results_per_task: "por tarea",
     results_best_desc: "Tu IA local escribe c\u00f3digo gratis. Una IA de nube lo revisa y detecta errores. La mejor relaci\u00f3n calidad-precio.",
     results_best_tag: "2 modelos \u2014 recomendado",
-    results_max_badge: "MÁXIMO",
+    results_max_badge: "Mï¿½XIMO",
     results_max_title: "Nube + Local + Nube",
     results_max_desc: "Una IA de nube planifica el panorama general, tu IA local escribe c\u00f3digo gratis, y otra IA de nube revisa todo. Calidad profesional para equipos y agencias.",
     results_max_tag: "3+ modelos",
-    results_why: '\u00bfPor qu\u00e9 funciona? La investigaci\u00f3n muestra que <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">las herramientas alrededor de una IA importan tanto como la IA misma</a> \u2014 la misma IA puntúa muy diferente dependiendo del framework en que corre. <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">Dos IAs trabajando juntas lograron los mejores resultados a 14x menos costo</a> que una IA sola. ForgeGod asigna 5 roles distintos y elige la mejor IA para cada uno. El split premium research-backed actual es GLM-5.1 para planificar/construir y Codex para revisar/escalar. ForgeGod también soporta superficies OpenAI explícitas para API-only, Codex-only o ruteo híbrido API+Codex. Ese contrato está <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/OPENAI_SURFACES_2026-04-10.md" target="_blank" rel="noopener">documentado aquí</a>. El camino con Coding Plan funciona hoy dentro de ForgeGod, pero sigue siendo experimental hasta que Z.AI reconozca explícitamente a ForgeGod.',
+    results_why: '\u00bfPor qu\u00e9 funciona? La investigaci\u00f3n muestra que <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">las herramientas alrededor de una IA importan tanto como la IA misma</a> \u2014 la misma IA puntï¿½a muy diferente dependiendo del framework en que corre. <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">Dos IAs trabajando juntas lograron los mejores resultados a 14x menos costo</a> que una IA sola. ForgeGod asigna 5 roles distintos y elige la mejor IA para cada uno. El split premium research-backed actual es GLM-5.1 para planificar/construir y Codex para revisar/escalar. ForgeGod tambiï¿½n soporta superficies OpenAI explï¿½citas para API-only, Codex-only o ruteo hï¿½brido API+Codex. Ese contrato estï¿½ <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/OPENAI_SURFACES_2026-04-10.md" target="_blank" rel="noopener">documentado aquï¿½</a>. El camino con Coding Plan funciona hoy dentro de ForgeGod, pero sigue siendo experimental hasta que Z.AI reconozca explï¿½citamente a ForgeGod.',
     nav_benchmarks: "Benchmarks",
-    title_bench: "BENCHMARKS E INVESTIGACIÓN",
+    title_bench: "BENCHMARKS E INVESTIGACIï¿½N",
     bench_scaffolding_title: "Cu\u00e1nto Importan las Herramientas (SWE-bench)",
     bench_bare: "IA sola, sin herramientas",
     bench_basic_scaffold: "+ Herramientas b\u00e1sicas",
@@ -1801,7 +1806,7 @@ var STRINGS = {
     bench_arena_title: "Ranking de IA para C\u00f3digo (Abr 2026)",
     bench_src_swe: 'Fuente: <a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Morph LLM Benchmarks 2026</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Epoch AI SWE-bench</a>',
     bench_src_aider: 'Fuente: <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider LLM Leaderboards</a> \u2022 <a href="https://aider.chat/2025/01/24/r1-sonnet.html" target="_blank" rel="noopener">R1+Sonnet SOTA</a>',
-    bench_src_cost: "Estimado desde pricing público de proveedores (Abr 2026). Las superficies de auth por suscripción se contabilizan como $0 dentro de ForgeGod porque el billing ocurre fuera de la telemetría del repo.",
+    bench_src_cost: "Estimado desde pricing pï¿½blico de proveedores (Abr 2026). Las superficies de auth por suscripciï¿½n se contabilizan como $0 dentro de ForgeGod porque el billing ocurre fuera de la telemetrï¿½a del repo.",
     bench_src_arena: 'Fuente: <a href="https://lmcouncil.ai/benchmarks" target="_blank" rel="noopener">LM Council Benchmarks Abr 2026</a>',
     bench_stress_title: "Snapshot del Motor (Hist\u00f3rico)",
     bench_stress_router: "Rendimiento del router",
@@ -1821,13 +1826,13 @@ var STRINGS = {
     bench_callout: '<strong>La conclusi\u00f3n:</strong> Las herramientas y el framework alrededor de una IA importan tanto como qu\u00e9 IA us\u00e1s. La misma IA puede resolver 11 problemas m\u00e1s cuando tiene herramientas adecuadas. El ruteo inteligente, el c\u00f3digo auto-verificado y la memoria de 5 capas de ForgeGod <em>son</em> esas herramientas.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">An\u00e1lisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
     provider_free: "$0 / GRATIS",
-    install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describí tu tarea',
-    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usá <code style="color:var(--cyan)">forgegod --terse</code> para modo cavernícola \u2022 Corré <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> para verificar el harness \u2022 Inspeccioná superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Usá <code style="color:var(--cyan)">forgegod init</code> si querés el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
+    install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describï¿½ tu tarea',
+    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usï¿½ <code style="color:var(--cyan)">forgegod --terse</code> para modo cavernï¿½cola \u2022 Corrï¿½ <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccionï¿½ superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Usï¿½ <code style="color:var(--cyan)">forgegod init</code> si querï¿½s el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentaciï¿½n completa en GitHub</a>',
     footer_contributors: "Colaboradores",
     footer_contributing: "Contribuir",
     footer_security: "Seguridad",
     footer_built: 'Hecho por <a href="https://waitdead.com">WAITDEAD</a>',
-    footer_mascot: 'Diseño oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
+    footer_mascot: 'Diseï¿½o oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
   }
 };
 
@@ -1870,7 +1875,7 @@ function getTerminalLines() {
     return [
             { cmd: 'forgegod init --profile adversarial --lang es', delay: 1200, output: [
         { text: '  ForgeGod - Inicializando proyecto', cls: 'output' },
-      { text: '  + Suscripción OpenAI Codex detectada', cls: 'success' },
+      { text: '  + Suscripciï¿½n OpenAI Codex detectada', cls: 'success' },
       { text: '  + Z.AI Coding Plan detectado', cls: 'success' },
       { text: '  + Harness: adversarial (recomendado)', cls: 'success' },
       { text: '  + Superficie OpenAI: api+codex', cls: 'success' },
@@ -1882,7 +1887,7 @@ function getTerminalLines() {
       ]},
       { cmd: 'forgegod auth status', delay: 1200, output: [
         { text: '  ForgeGod Auth Status', cls: 'output' },
-        { text: '  openai-codex: ready (suscripción)', cls: 'success' },
+        { text: '  openai-codex: ready (suscripciï¿½n)', cls: 'success' },
         { text: '  openai-api: no listo (set OPENAI_API_KEY)', cls: 'output' },
         { text: '  zai-coding-plan: listo', cls: 'success' },
         { text: '  openrouter: no listo', cls: 'output' },
@@ -1892,26 +1897,26 @@ function getTerminalLines() {
       { text: '  + Harness: adversarial (recomendado)', cls: 'success' },
       { text: '  + Superficie OpenAI: api+codex', cls: 'success' },
       { text: '  + Reviewer adversarial activo', cls: 'success' },
-        { text: '  Escribí lo que querés construir o cambiar', cls: 'output' },
+        { text: '  Escribï¿½ lo que querï¿½s construir o cambiar', cls: 'output' },
       ]},
       { cmd: 'Agrega endpoint /health con info de uptime', delay: 1500, output: [
         { text: '  \u25b6 ORIENT: leyendo codebase...', cls: 'output' },
-        { text: '  \u25b6 LOCATE: encontré server.py', cls: 'output' },
+        { text: '  \u25b6 LOCATE: encontrï¿½ server.py', cls: 'output' },
         { text: '  \u25b6 IMPLEMENT: agregando ruta /health', cls: 'output' },
-        { text: '  \u25b6 VERIFY: pytest pasó (12/12)', cls: 'success' },
+        { text: '  \u25b6 VERIFY: pytest pasï¿½ (12/12)', cls: 'success' },
         { text: '  \u2714 Tarea completada', cls: 'success' },
         { text: '  Costo: $0.0023 | Tokens: 4,210', cls: 'cost' },
       ]},
       { cmd: 'forgegod recon "Dashboard de analytics en tiempo real"', delay: 1500, output: [
         { text: '  RECON: buscando en la web...', cls: 'output' },
-        { text: '  + 12 búsquedas ejecutadas (SearXNG)', cls: 'success' },
-        { text: '  + Librerías: Plotly 6.1, Socket.IO 5.x, FastAPI 0.115', cls: 'success' },
+        { text: '  + 12 bï¿½squedas ejecutadas (SearXNG)', cls: 'success' },
+        { text: '  + Librerï¿½as: Plotly 6.1, Socket.IO 5.x, FastAPI 0.115', cls: 'success' },
         { text: '  + Docs actuales y paquetes revisados', cls: 'success' },
         { text: '  DEBATE: Ronda 1/3... Ronda 2/3... Aprobado', cls: 'output' },
         { text: '  Score final: 8.2/10 | 7 stories generadas', cls: 'cost' },
       ]},
     { cmd: 'forgegod memory', delay: 1000, output: [
-        { text: '  Episódica: 47  |  Semántica: 23  |  Procedimental: 8', cls: 'output' },
+        { text: '  Episï¿½dica: 47  |  Semï¿½ntica: 23  |  Procedimental: 8', cls: 'output' },
         { text: '  Errores-Soluciones: 12  |  Entidades: 89', cls: 'output' },
         { text: '  Salud: 92%  |  Confianza prom: 71%', cls: 'success' },
       ]},
@@ -1973,7 +1978,7 @@ function copyInstall() {
   navigator.clipboard.writeText('pip install forgegod').then(function() {
     var btn = document.querySelector('.hero-cta .command');
     var orig = btn.textContent;
-    btn.textContent = currentLang === 'es' ? '¡Copiado!' : 'Copied!';
+    btn.textContent = currentLang === 'es' ? 'ï¿½Copiado!' : 'Copied!';
     btn.style.color = '#00ff88';
     setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
   });

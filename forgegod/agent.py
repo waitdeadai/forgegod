@@ -21,7 +21,15 @@ from forgegod.budget import BudgetTracker
 from forgegod.cli_ux import emit_cli_event
 from forgegod.config import ForgeGodConfig
 from forgegod.memory import Memory
-from forgegod.models import AgentResult, BudgetMode, ModelUsage, ToolCall, ToolResult
+from forgegod.models import (
+    AgentResult,
+    AutoResearchReason,
+    BudgetMode,
+    ModelUsage,
+    ResearchBrief,
+    ToolCall,
+    ToolResult,
+)
 from forgegod.router import ModelRouter
 from forgegod.security import CanaryToken, check_file_content
 from forgegod.tools import (
@@ -60,6 +68,17 @@ PERMISSION_ERROR_MARKERS = (
     "blocked in read-only permission mode",
     "blocked in workspace-write permission mode",
     "not in the allowed tool list",
+)
+
+# Stuck detection patterns for auto-research trigger (SOTA 2026 self-healing)
+STUCK_PATTERNS = (
+    r"no puedo", r"no sé", r"no tengo idea",
+    r"stuck", r"cannot proceed", r"unable to",
+    r"don't know", r"dont know", r"do not know",
+    r"no estoy seguro", r"not sure", r"uncertain",
+    r"no tengo acceso", r"cannot access",
+    r"no encuentro", r"cannot find", r"cannot locate",
+    r"blocked", r"blocked by", r"impossible",
 )
 
 CODELIKE_EXTENSIONS = {
@@ -225,6 +244,7 @@ class Agent:
         self._reviewed_final_diff = False
         self._closure_ready_turns = 0
         self._completion_closeout_prompted = False
+        self._auto_research_count = 0  # auto-research trigger count
 
         # Load tools
         load_all_tools()
@@ -319,6 +339,15 @@ class Agent:
                 response_text = re.sub(
                     r"<think>.*?</think>", "", response_text, flags=re.DOTALL
                 ).strip()
+
+                # SOTA 2026 self-healing: detect stuck patterns and auto-research
+                if self._detect_stuck(response_text):
+                    brief = await self._maybe_auto_research(
+                        AutoResearchReason.STUCK,
+                        {"task": task, "response": response_text},
+                    )
+                    if brief:
+                        continue  # re-send enriched messages to LLM
 
                 # Parse tool calls from response
                 tool_calls = self._parse_tool_calls(response_text)
@@ -1270,6 +1299,130 @@ class Agent:
             info.append("Git: initialized")
 
         return "\n".join(info) if len(info) > 1 else ""
+
+    # ── SOTA 2026 Self-Healing: Auto-Research ────────────────────────────────
+
+    def _detect_stuck(self, last_output: str) -> bool:
+        """Detect if the agent output indicates being stuck.
+
+        Checks for stuck patterns in the last LLM output text.
+        Used to trigger automatic web research (SOTA 2026 self-healing pattern).
+        """
+        if not last_output:
+            return False
+        last_output_lower = last_output.lower()
+        for pattern in STUCK_PATTERNS:
+            if re.search(pattern, last_output_lower):
+                logger.warning(f"Stuck pattern detected: {pattern}")
+                return True
+        return False
+
+    async def _maybe_auto_research(
+        self,
+        reason: AutoResearchReason,
+        context: dict,
+    ) -> ResearchBrief | None:
+        """Automatically perform web research when triggered.
+
+        Triggers:
+        - STUCK: Agent output matches stuck patterns
+        - BAD_REVIEW: Reviewer verdict != APPROVE
+        - UNKNOWN_LIB: Tool uses library not in prior brief
+        - ARCHITECTURE: Task contains architecture keywords
+        - MANUAL: Flag --research-first is active
+
+        Returns ResearchBrief or None if research not needed/failed.
+        """
+        # Check if auto-research is enabled for this reason
+        if reason == AutoResearchReason.STUCK and not self.config.agent.auto_research_on_stuck:
+            return None
+        if reason == AutoResearchReason.BAD_REVIEW and not self.config.agent.auto_research_on_bad_review:
+            return None
+        if reason == AutoResearchReason.UNKNOWN_LIB and not self.config.agent.auto_research_on_unknown_lib:
+            return None
+
+        # Check max auto-research limit
+        auto_research_count = getattr(self, "_auto_research_count", 0)
+        if auto_research_count >= self.config.agent.max_auto_research_per_task:
+            logger.warning(f"Max auto-research limit reached ({auto_research_count})")
+            return None
+
+        try:
+            from forgegod.researcher import Researcher
+
+            # Determine research depth
+            if reason == AutoResearchReason.STUCK:
+                depth = self.config.agent.research_depth_on_stuck
+            elif reason == AutoResearchReason.BAD_REVIEW:
+                depth = self.config.agent.research_depth_on_bad_review
+            else:
+                depth = self.config.agent.research_depth_default
+
+            logger.info(f"Auto-research triggered: reason={reason.value}, depth={depth.value}")
+
+            # Increment counter
+            self._auto_research_count = auto_research_count + 1
+
+            # Perform research
+            researcher = Researcher(self.config, self.router)
+            task = context.get("task", "")
+            brief = await researcher.research(task)
+
+            # Inject research findings into messages
+            if brief:
+                research_prompt = self._format_research_injection(brief, reason)
+                self.messages.append({
+                    "role": "user",
+                    "content": research_prompt,
+                })
+
+            return brief
+
+        except Exception as e:
+            logger.warning(f"Auto-research failed: {e}")
+            return None
+
+    def _format_research_injection(
+        self,
+        brief: ResearchBrief,
+        reason: AutoResearchReason,
+    ) -> str:
+        """Format research findings for injection into agent messages."""
+        lines = [
+            f"\n[ AUTO-RESEARCH ({reason.value.upper()}) — SOTA 2026 Findings ]\n",
+        ]
+
+        if brief.libraries:
+            lines.append("### Recommended Libraries")
+            for lib in brief.libraries[:5]:
+                lines.append(f"- **{lib.name}** v{lib.version}: {lib.why}")
+                if lib.alternatives:
+                    lines.append(f"  (Avoid: {', '.join(lib.alternatives)})")
+            lines.append("")
+
+        if brief.architecture_patterns:
+            lines.append("### Architecture Patterns")
+            for pattern in brief.architecture_patterns[:5]:
+                lines.append(f"- {pattern}")
+            lines.append("")
+
+        if brief.security_warnings:
+            lines.append("### Security Warnings")
+            for warning in brief.security_warnings[:5]:
+                lines.append(f"- {warning}")
+            lines.append("")
+
+        if brief.best_practices:
+            lines.append("### Best Practices")
+            for bp in brief.best_practices[:5]:
+                lines.append(f"- {bp}")
+            lines.append("")
+
+        lines.append(
+            "Use these SOTA 2026 findings to inform your next action. "
+            "Apply any relevant libraries, patterns, or warnings above."
+        )
+        return "\n".join(lines)
 
     @staticmethod
     def _load_skills_summary(cwd: Path | None = None) -> str:

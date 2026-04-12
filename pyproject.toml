@@ -58,6 +58,10 @@ select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "forgegod/memory.py" = ["E501"]  # SQL strings + data tuples exceed 100 chars
+"forgegod/agent.py" = ["E501"]  # SOTA 2026 research-injection lines exceed 100 chars
+"forgegod/subagents.py" = ["E501"]  # research-aware prompt strings exceed 100 chars
+"forgegod/cli.py" = ["E501"]  # research command output lines exceed 100 chars
+"forgegod/hive.py" = ["E501"]  # pre-existing long prompt lines
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
