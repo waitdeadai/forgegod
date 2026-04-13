@@ -9,7 +9,7 @@ This document is the current system of record for day-to-day work in this reposi
 - Before changing architecture or task loops, audit the relevant subsystem end to end first. Do not patch blind.
 - Before committing meaningful changes, do extensive current-year research with primary or official sources and build a concrete understanding of both ForgeGod and the subsystem being changed.
 - `https://github.com/ultraworkers/claw-code` is the historical origin baseline. ForgeGod should understand that lineage and exceed it on architecture, workflow reliability, and harness quality.
-- The currently preferred cost-effective harness pairing is `openai-codex` plus `zai:glm-5.1`, but ForgeGod should stay provider-agnostic because the best pairing can change quickly.
+- The currently preferred harness is **MiniMax 2.7 High Speed** as the operational default, with `openai-codex` plus `zai:glm-5.1` as verified fallback options. ForgeGod stays provider-agnostic; the default is a working convention, not a hard constraint.
 - Default to maximum effort. For harness changes, do not stop at the first passing check; expand audit, verification, and documentation until the result is defensible and reproducible.
 - Rule 8: when a real harness blocker appears, do fresh current-year web research before spending hours brute-forcing locally. Prefer official docs and proven cases from the relevant ecosystem, then encode the working pattern into ForgeGod so the fix is repeatable.
 - That target is only credible when backed by current primary or official 2026 sources and confirmed by local repo evidence such as passing tests, reproducible benchmarks, or documented verification steps.
@@ -21,8 +21,8 @@ This document is the current system of record for day-to-day work in this reposi
 - Python: `3.13.5`
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider families: `8`
-- Route surfaces present in `forgegod/router.py`: `9`
+- Provider families: `9` (ollama, openai, openai-codex, anthropic, openrouter, gemini, deepseek, kimi, zai, minimax)
+- Route surfaces present in `forgegod/router.py`: `10` (added minimax)
 - Tests collected: `567`
 - Git remote audited: `https://github.com/waitdeadai/forgegod.git`
 

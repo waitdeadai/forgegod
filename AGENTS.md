@@ -12,9 +12,9 @@ This file is the repo-local operating contract for coding agents working on Forg
 ## Verified Baseline (2026-04-11)
 - Package version: `forgegod 0.1.0`
 - Registered tools: `23`
-- Provider families: `8`
-- Native auth surfaces: `2` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key)
-- Route surfaces: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`)
+- Provider families: `9` (`ollama`, `openai`, `openai-codex`, `anthropic`, `openrouter`, `gemini`, `deepseek`, `kimi`, `zai`, `minimax`)
+- Native auth surfaces: `3` (`openai-codex` via ChatGPT/Codex login, `zai` via Coding Plan/API key, `minimax` via API key)
+- Route surfaces: `10` (the 9 providers above, with `minimax` added)
 - Tests collected: `567`
 - Core suite: `python -m pytest -m "not stress" -q` -> `483 passed, 1 skipped, 84 deselected`
 - Full suite: `python -m pytest tests -q` -> `566 passed, 1 skipped`
@@ -94,12 +94,25 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Agent execution now sees the same checked-in repo docs that planning does. `docs/README.md`, `docs/PRD.md`, `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and `docs/RUNBOOK.md` are injected in bounded form so execution loops are less likely to drift away from repo-defined intent.
 - Residual risk remains because ForgeGod does not yet provide microVM/syscall-level isolation, and strict mode depends on a usable local Docker backend plus a pre-pulled sandbox image.
 
+## SOTA 2026 Patterns (Claude Code-aligned)
+
+ForgeGod inherits these patterns from current-year Claude Code best practices:
+
+1. **Verify-first**: every task must include verification evidence (tests, lint output, or expected output) before declaring done. Never rely on the model's self-assessment alone — use external signals.
+2. **Explore → Plan → Implement**: for uncertain changes, use Plan mode first to separate research from execution. Fix problems at the root, not the symptom.
+3. **Context management**: run `/clear` between unrelated tasks. Compacting context aggressively prevents performance degradation. Use subagents for investigation work to keep the main session clean.
+4. **Subagent pattern**: delegate research, parallel investigation, or focused review to subagents running in separate context. Report back summaries, not raw file dumps.
+5. **Memory**: update session notes after every work session. Write feedback files for lessons learned; update project memory for continuity across sessions.
+6. **Skills + hooks**: use `.claude/rules/` for path-specific rules (e.g., strict-mode-only enforcement) and `.claude/hooks.json` for deterministic pre/post actions.
+7. **Permission modes as first-class surface**: ForgeGod's `--permission-mode` and `--approval-mode` flags are part of the core UX, not hidden config. Inspect them with `forgegod permissions`.
+8. **Provider-agnostic by default**: prefer MiniMax 2.7 High Speed, but the architecture should route to whatever provider is available and verified.
+
 ## Working Rules
 - Your primary objective in the current year is to make ForgeGod the strongest harness possible for autonomous coding work. In 2026, that means aiming to be the strongest harness on the market, not merely a good demo.
 - Before making architecture or loop changes, audit the full relevant architecture first. Do not patch blind.
 - Before committing meaningful changes, do extensive current-year research with primary or official sources and build a complete understanding of both the repo and the specific subsystem being changed.
 - Treat `https://github.com/ultraworkers/claw-code` as the origin baseline that ForgeGod must understand and exceed. Compare against it explicitly when auditing architecture, workflow, and harness behavior.
-- The current preferred cost-effective harness is `openai-codex` plus `zai:glm-5.1`, but the architecture should remain provider-agnostic because that best pair can change quickly.
+- The current preferred harness is **MiniMax 2.7 High Speed** as the operational default, with `openai-codex` plus `zai:glm-5.1` as verified fallback options. The architecture remains provider-agnostic; MiniMax is a working convention, not a hard constraint.
 - Do not solve showcase products manually outside ForgeGod as a substitute for harness quality. The product is the benchmark; the harness is the thing being improved.
 - Rule 7: default to maximum effort. For harness changes, do not stop at the first passing check; expand audit, verification, and documentation until the change is defensible, reproducible, and hard to fake.
 - Rule 8: when the harness hits a real blocker, do fresh current-year web research before grinding locally for hours. Prefer official docs and proven real-world cases, then encode what works into ForgeGod so the fix is repeatable.
