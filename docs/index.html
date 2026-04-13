@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeGod - Research-Backed Autonomous Coding Agent</title>
-<meta name="description" content="Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax M2 + OpenAI adversarial harness, 5-tier cognitive memory, and $0 local mode. Audited and hardened against a verified 2026 baseline.">
+<meta name="description" content="Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax 2.7 + OpenAI adversarial harness, 5-tier cognitive memory, and $0 local mode. Audited and hardened against a verified 2026 baseline.">
 <meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, MiniMax, OpenAI, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://forgegod.com">
@@ -36,7 +36,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax M2 + OpenAI adversarial harness, 5-tier cognitive memory, and a verified 2026 baseline.",
+  "description": "Open-source autonomous coding agent with multi-model routing, research-first SOTA workflows, MiniMax 2.7 + OpenAI adversarial harness, 5-tier cognitive memory, and a verified 2026 baseline.",
   "url": "https://forgegod.com",
   "downloadUrl": "https://pypi.org/project/forgegod/",
   "softwareVersion": "0.1.0",
@@ -777,7 +777,7 @@ body::after {
 <!-- Stats -->
 <section class="stats">
   <div class="stat"><span class="stat-value">23</span><span data-i18n="stat_tools">Built-in Tools</span></div>
-  <div class="stat"><span class="stat-value">9</span><span data-i18n="stat_providers">LLM Providers</span></div>
+  <div class="stat"><span class="stat-value">10</span><span data-i18n="stat_providers">LLM Providers</span></div>
   <div class="stat"><span class="stat-value">5-Tier</span><span data-i18n="stat_memory">Cognitive Memory</span></div>
   <div class="stat"><span class="stat-value">24/7</span><span data-i18n="stat_autonomous">Autonomous</span></div>
   <div class="stat"><span class="stat-value">$0</span><span data-i18n="stat_local">Local Mode</span></div>
@@ -842,8 +842,8 @@ body::after {
       <div class="feature">
         <div class="feature-icon">&#9881;</div>
         <h3 data-i18n="feat_routing_title">Picks the Best AI for Each Job</h3>
-        <p data-i18n="feat_routing_desc">Connects to 9 AI providers and supports native OpenAI Codex subscription auth plus Z.AI and MiniMax M2. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.</p>
-        <span class="feature-tag" data-i18n="feat_routing_tag">9 providers + adversarial, single-model, or explicit OpenAI surfaces</span>
+        <p data-i18n="feat_routing_desc">Connects to 10 AI providers and supports native OpenAI Codex subscription auth plus Z.AI and MiniMax 2.7. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.</p>
+        <span class="feature-tag" data-i18n="feat_routing_tag">10 providers + adversarial, single-model, or explicit OpenAI surfaces</span>
       </div>
 
       <div class="feature">
@@ -1484,8 +1484,8 @@ var STRINGS = {
     title_providers: "SUPPORTED PROVIDERS",
     title_install: "GET STARTED IN 30 SECONDS",
     feat_routing_title: "Picks the Best AI for Each Job",
-    feat_routing_desc: "ForgeGod connects to 9 different AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
-    feat_routing_tag: "9 providers + adversarial, single-model, or explicit OpenAI surfaces",
+    feat_routing_desc: "ForgeGod connects to 10 different AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
+    feat_routing_tag: "10 providers + adversarial, single-model, or explicit OpenAI surfaces",
     feat_loop_title: "Works While You Sleep",
     feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back in the morning to a finished project with a clean history of every change.",
     feat_loop_tag: "Runs 24/7",
@@ -1516,7 +1516,7 @@ var STRINGS = {
     feat_memoryagent_title: "Dedicated Memory Agent",
     feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent\u2019s intelligence compounds automatically.",
     feat_memoryagent_tag: "LLM-powered extraction",
-    feat_routing_desc: "Connects to 9 AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
+    feat_routing_desc: "Connects to 10 AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
     feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back to a finished project.",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.",
     feat_budget_desc: "Set a daily budget and ForgeGod respects it. As you approach your limit, it shifts to cheaper models. Hit the limit? It switches to free local AI or pauses. Run 100% free forever.",
@@ -1826,13 +1826,13 @@ var STRINGS = {
     bench_callout: '<strong>La conclusi\u00f3n:</strong> Las herramientas y el framework alrededor de una IA importan tanto como qu\u00e9 IA us\u00e1s. La misma IA puede resolver 11 problemas m\u00e1s cuando tiene herramientas adecuadas. El ruteo inteligente, el c\u00f3digo auto-verificado y la memoria de 5 capas de ForgeGod <em>son</em> esas herramientas.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">An\u00e1lisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
     provider_free: "$0 / GRATIS",
-    install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describ� tu tarea',
-    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Us� <code style="color:var(--cyan)">forgegod --terse</code> para modo cavern�cola \u2022 Corr� <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccion� superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Us� <code style="color:var(--cyan)">forgegod init</code> si quer�s el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentaci�n completa en GitHub</a>',
+    install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describe tu tarea',
+    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usá <code style="color:var(--cyan)">forgegod --terse</code> para modo cavernícola \u2022 Corrè <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccioná superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Usá <code style="color:var(--cyan)">forgegod init</code> si querés el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
     footer_contributors: "Colaboradores",
     footer_contributing: "Contribuir",
     footer_security: "Seguridad",
     footer_built: 'Hecho por <a href="https://waitdead.com">WAITDEAD</a>',
-    footer_mascot: 'Dise�o oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
+    footer_mascot: 'Diseño oficial de la mascota por <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
   }
 };
 
