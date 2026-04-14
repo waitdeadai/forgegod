@@ -157,7 +157,12 @@ class TestFallbackChain:
     def test_fallback_chain_reviewer(self):
         """Reviewer role fallback chain."""
         chain = FALLBACK_CHAINS["reviewer"]
-        assert chain == ["reviewer", "sentinel", "escalation"]
+        assert chain == ["reviewer", "taste", "sentinel", "escalation"]
+
+    def test_fallback_chain_taste(self):
+        """Taste role fallback chain."""
+        chain = FALLBACK_CHAINS["taste"]
+        assert chain == ["taste", "sentinel", "escalation"]
 
     def test_fallback_chain_planner(self):
         """Planner role fallback chain."""

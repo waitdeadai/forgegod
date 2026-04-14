@@ -1,7 +1,7 @@
 """ForgeGod Model Router — multi-provider with circuit breaker and fallback.
 
 Ported from forge/forge_llm.py (Phase 80, 5-tier cascade).
-Adapted: Redis → local tracking, MiniMax → OpenAI, added OpenRouter.
+Adapted: Redis -> local tracking, MiniMax -> OpenAI, added OpenRouter.
 """
 
 from __future__ import annotations
@@ -101,14 +101,15 @@ class CircuitBreaker:
         self._open_until.pop(provider, None)
 
 
-# Role → fallback chain (most expensive last)
+# Role -> fallback chain (most expensive last)
 FALLBACK_CHAINS: dict[str, list[str]] = {
     "planner": ["planner", "coder"],
     "coder": ["coder", "reviewer", "escalation"],
-    "reviewer": ["reviewer", "sentinel", "escalation"],
+    "reviewer": ["reviewer", "taste", "sentinel", "escalation"],
     "sentinel": ["sentinel", "escalation"],
     "escalation": ["escalation"],
     "researcher": ["researcher", "planner", "coder"],
+    "taste": ["taste", "sentinel", "escalation"],
 }
 
 
@@ -122,6 +123,23 @@ class ModelRouter:
         self._call_log: list[dict] = []
         self._clients: dict[str, httpx.AsyncClient] = {}
         self._http2_fallback_warned = False
+
+        # Step 3: wire_logger for debug_wire tracing
+        self.wire_logger = logging.getLogger("wire")
+        if self.config.debug_wire:
+            self.wire_logger.setLevel(logging.DEBUG)
+            wire_handler = logging.FileHandler(
+                str(self.config.project_dir / "wire.log")
+            )
+            wire_handler.setLevel(logging.DEBUG)
+            wire_handler.setFormatter(logging.Formatter(
+                "%(asctime)s | %(message)s",
+                datefmt="%H:%M:%S"
+            ))
+            self.wire_logger.addHandler(wire_handler)
+            self.wire_logger.propagate = False
+        else:
+            self.wire_logger.setLevel(logging.CRITICAL)
 
     def _get_client(
         self, provider: str, timeout: float = 120.0,
@@ -204,10 +222,14 @@ class ModelRouter:
                 specs.append(ModelSpec.parse(model_str))
                 seen_specs.add(model_str)
 
-        # Throttle mode: prepend local model
+        # Throttle mode: prepend local model (mark as seen to avoid circuit-skip
+        # of the same model later in the chain when the prepended call fails)
         if self.config.budget.mode == BudgetMode.THROTTLE:
             local = ModelSpec(provider="ollama", model=self.config.ollama.model)
-            specs.insert(0, local)
+            local_key = f"{local.provider}:{local.model}"
+            if local_key not in seen_specs:
+                specs.insert(0, local)
+                seen_specs.add(local_key)
 
         last_error = ""
         for spec in specs:
@@ -466,12 +488,25 @@ class ModelRouter:
 
         client = self._get_client("ollama", timeout=self.config.ollama.timeout)
         try:
+            # Boundary 1 — what goes IN to the LLM
+            self.wire_logger.debug(
+                ">> SENT [%s] | %d msgs | msgs=%r",
+                model,
+                len(messages),
+                messages,
+            )
             resp = await client.post(
                 f"{self.config.ollama.host}/api/chat",
                 json=body,
             )
             resp.raise_for_status()
             data = resp.json()
+            # Boundary 2 — what comes OUT of the LLM
+            self.wire_logger.debug(
+                "<< RECV [%s] | raw=%r",
+                model,
+                data,
+            )
         except httpx.ConnectError as e:
             raise RuntimeError(
                 f"error: Cannot connect to Ollama at {self.config.ollama.host}\n"
@@ -610,9 +645,37 @@ class ModelRouter:
             base_url=base_url,
             timeout=self.config.openai.timeout,
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
+
+        # BUG #3 FIX: Preserve reasoning_details from MiniMax reasoning_split=True.
+        # When MiniMax uses reasoning_split=True, it returns a reasoning_details field
+        # containing the model's chain-of-thought. Must prepend to content so it
+        # survives in the message history for subsequent turns.
+        reasoning_text = ""
+        reasoning_details = getattr(choice.message, 'reasoning_details', None)
+        if reasoning_details is not None:
+            if hasattr(reasoning_details, 'text'):
+                reasoning_text = reasoning_details.text or ""
+            elif isinstance(reasoning_details, str):
+                reasoning_text = reasoning_details
         # Handle tool calls
         if choice.message.tool_calls:
             tool_calls_json = []
@@ -626,6 +689,9 @@ class ModelRouter:
         else:
             content = choice.message.content or ""
 
+        # Prepend reasoning to content so it survives in message history
+        if reasoning_text:
+            content = "<think>\n" + reasoning_text + "\n</think>\n" + content
         usage_data = {
             "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
             "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
@@ -675,7 +741,20 @@ class ModelRouter:
                 })
             kwargs["tools"] = anthropic_tools
 
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.messages.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | raw=%r",
+            model,
+            resp.model_dump() if hasattr(resp, 'model_dump') else str(resp)[:500],
+        )
 
         # Parse response — handle both text and tool_use blocks
         content = ""
@@ -729,6 +808,13 @@ class ModelRouter:
             body["tools"] = tools
 
         client = self._get_client("openrouter", timeout=120.0)
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            body["messages"],
+        )
         resp = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
@@ -739,6 +825,12 @@ class ModelRouter:
         )
         resp.raise_for_status()
         data = resp.json()
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | raw=%r",
+            model,
+            data,
+        )
 
         choice = data["choices"][0]
         msg = choice.get("message", {})
@@ -800,7 +892,23 @@ class ModelRouter:
             api_key=api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
         if choice.message.tool_calls:
@@ -868,7 +976,23 @@ class ModelRouter:
             api_key=api_key,
             base_url="https://api.deepseek.com/v1",
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
         if choice.message.tool_calls:
@@ -932,7 +1056,23 @@ class ModelRouter:
             base_url=self.config.kimi.base_url,
             timeout=self.config.kimi.timeout,
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
         if choice.message.tool_calls:
@@ -1002,7 +1142,23 @@ class ModelRouter:
             base_url=base_url,
             timeout=self.config.zai.timeout,
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
         if choice.message.tool_calls:
@@ -1062,7 +1218,23 @@ class ModelRouter:
             base_url=self.config.minimax.base_url,
             timeout=self.config.minimax.timeout,
         )
+        # Boundary 1 — what goes IN to the LLM
+        self.wire_logger.debug(
+            ">> SENT [%s] | %d msgs | msgs=%r",
+            model,
+            len(messages),
+            messages,
+        )
         resp = await client.chat.completions.create(**kwargs)
+        # Boundary 2 — what comes OUT of the LLM
+        self.wire_logger.debug(
+            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+            model,
+            getattr(resp.choices[0], 'finish_reason', None),
+            bool(resp.choices[0].message.tool_calls),
+            len(resp.choices[0].message.content or ""),
+            resp.choices[0].message.model_dump(),
+        )
 
         choice = resp.choices[0]
         if choice.message.tool_calls:
