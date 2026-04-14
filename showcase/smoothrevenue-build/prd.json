@@ -1,0 +1,289 @@
+{
+  "project": "Smoothrevenue.com — Elite Claude Partner Implementation Firm",
+  "tagline": "The Execution Layer for Claude at Enterprise Scale",
+  "project_root": "showcase/smoothrevenue-build",
+  "stories": [
+    {
+      "id": "sr-01",
+      "title": "Project scaffold — HTML/CSS foundation",
+      "description": "Create the pure HTML/CSS/JS foundation for smoothrevenue.com. Dark institutional elegance. No frameworks. No Tailwind. Custom CSS properties for all design tokens. Responsive 375px → 1440px.",
+      "acceptance_criteria": [
+        "index.html with full HTML5 structure (nav, hero, services, methodology, social proof, case studies, FAQ, lead form, footer)",
+        "styles.css with CSS custom properties for ALL design tokens from taste.md",
+        "app.js with i18n EN/ES system",
+        "Fonts loaded from Google Fonts (Sora, Inter, JetBrains Mono)",
+        "No Tailwind, no Bootstrap, no CSS frameworks",
+        "All text content specific — no generic copy",
+        "JSON-LD Organization schema in <head>",
+        "ruff check . → 0 errors"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-02",
+      "title": "Navigation bar (sticky)",
+      "description": "Sticky nav with backdrop blur. Logo left, links center, language toggle + CTA right. Mobile hamburger with full-screen overlay.",
+      "acceptance_criteria": [
+        "Sticky: backdrop-filter: blur(12px) + bg rgba(10,10,11,0.85) on scroll",
+        "All nav links navigate to correct sections (#services, #methodology, etc.)",
+        "Mobile: hamburger icon → full-screen overlay drawer",
+        "Active section: orange underline indicator",
+        "EN/ES toggle works — nav text changes",
+        "Keyboard navigation works (Tab through all items)"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-03",
+      "title": "Hero section",
+      "description": "Full-viewport hero. H1 + H2 + dual CTA + trust badges. Subtle animated dot grid background. The most important section — must convey authority.",
+      "acceptance_criteria": [
+        "H1: 'The Execution Layer for Claude at Enterprise Scale'",
+        "H2: 'We implement. We operationalize. We deliver revenue from your AI investments.'",
+        "CTA 1 (orange): 'Schedule Architecture Review' → #contact",
+        "CTA 2 (ghost): 'View Case Studies' → #case-studies",
+        "Trust badges: Claude Partner Network + AWS Partner + Google Cloud AI Partner (SVG)",
+        "Background: subtle animated dot grid (opacity 0.04)",
+        "Staggered fade-in animation on page load",
+        "Responsive: stacks correctly at 375px, 768px, 1440px"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-04",
+      "title": "Logo cloud section",
+      "description": "Asymmetric grid of enterprise-style logos. Grayscale, opacity 0.4. Auto-scrolling marquee on mobile.",
+      "acceptance_criteria": [
+        "8-10 enterprise-style SVG logos (grayscale, opacity 0.4)",
+        "Responsive: 2 columns on mobile, full grid on desktop",
+        "Marquee animation on mobile",
+        "No generic stock images"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-05",
+      "title": "Services matrix (bento grid)",
+      "description": "6 service cards in asymmetric bento layout. Each card: Lucide icon (orange) + title + description + subtle arrow link. Glass card styling.",
+      "acceptance_criteria": [
+        "All 6 services from taste.md with unique specific descriptions",
+        "Lucide inline SVG icons (orange) — no CDN, no emoji",
+        "Bento asymmetric layout — not a uniform grid",
+        "Glass card styling: backdrop-filter blur, border glow on hover",
+        "Hover: translateY(-2px) + border-glow + enhanced shadow",
+        "No generic 'We help companies...' copy"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-06",
+      "title": "Methodology section",
+      "description": "Horizontal 5-step timeline with connector line. Each step: title + duration + description. Scroll-triggered animations.",
+      "acceptance_criteria": [
+        "5 steps: Discovery, Architecture, Development, Rollout, Optimization",
+        "Connector line between steps (CSS border or SVG)",
+        "Each step: title + duration + 1-sentence description",
+        "Scroll-triggered fade-in animation (staggered)",
+        "Responsive: horizontal on desktop, vertical on mobile"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-07",
+      "title": "Social proof section",
+      "description": "2-3 testimonials with real job titles, specific metrics, geometric avatar patterns. Not stock photos.",
+      "acceptance_criteria": [
+        "2-3 testimonials with job titles (CTO, VP Engineering, Head of AI)",
+        "Specific metrics: 'reduced deployment time by 67%' — not vague",
+        "Geometric pattern avatars (not photos)",
+        "Company context: 'Fortune 500 financial services firm' or similar",
+        "Card styling: glass card with hover effects"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-08",
+      "title": "Case studies section",
+      "description": "2 case studies. Each: Problem → Solution → Impact with metrics. JSON-LD TechArticle + CaseStudy schema.",
+      "acceptance_criteria": [
+        "2 case studies with Problem / Solution / Impact structure",
+        "Specific metrics in Impact section",
+        "TechArticle + CaseStudy JSON-LD schema in <head>",
+        "CTA to full case study",
+        "Card styling consistent with services section"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-09",
+      "title": "FAQ accordion",
+      "description": "8 real objection-handling FAQ questions using <details>/<summary>. Custom chevron animation. FAQPage JSON-LD schema.",
+      "acceptance_criteria": [
+        "All 8 questions from taste.md (real objections, not strawman)",
+        "<details>/<summary> element — no JS framework",
+        "Custom Lucide ChevronDown SVG (rotates 180° when open)",
+        "max-height transition 300ms ease",
+        "FAQPage JSON-LD schema in <head>",
+        "No placeholder or generic questions"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-10",
+      "title": "Lead capture form (10 fields)",
+      "description": "High-friction 10-field qualification form. All fields required except phone. Inline validation. Success message on submit.",
+      "acceptance_criteria": [
+        "All 10 fields from taste.md (company, industry, size, AI maturity, budget, use case, timeline, email, phone)",
+        "Industry dropdown: Financial Services, Manufacturing, Retail/Logistics, Healthcare, Energy, Other",
+        "AI maturity: visual 1-5 scale with labels",
+        "Work email: required, email format validation",
+        "Primary use case: textarea, 200 char minimum",
+        "Error states: red border + error message below",
+        "On submit: 'We'll review your submission and respond within 24 hours.'",
+        "No 'name + email + message' — this is enterprise B2B"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-11",
+      "title": "Final CTA section",
+      "description": "Final push before footer. Compelling headline + orange CTA button.",
+      "acceptance_criteria": [
+        "H2: 'Ready to stop experimenting and start executing?'",
+        "CTA: 'Schedule a no-commitment Architecture Review' (orange)",
+        "Centered, generous whitespace",
+        "Background slightly elevated from page bg"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-12",
+      "title": "Footer",
+      "description": "Footer with logo, nav links, certification badges, LinkedIn, legal links, copyright.",
+      "acceptance_criteria": [
+        "Logo + tagline",
+        "Navigation links (Services, Methodology, Case Studies, FAQ)",
+        "Claude Partner Network certification badge",
+        "LinkedIn link (required)",
+        "Legal links (Privacy, Terms, Impressum)",
+        "Copyright line",
+        "Dark background slightly different from page"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-13",
+      "title": "Legal pages (Terms, Privacy, Impressum)",
+      "description": "Three standalone legal pages. GDPR-compliant privacy policy. Enterprise consulting terms. German-style impressum.",
+      "acceptance_criteria": [
+        "terms.html: Terms of service for enterprise consulting",
+        "privacy.html: GDPR-compliant privacy policy",
+        "impressum.html: Legal notice (company info, registration, VAT)",
+        "All three linked from footer",
+        "Consistent styling with main site",
+        "No Lorem ipsum — real legal language"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-14",
+      "title": "llms.txt",
+      "description": "Plain text AI-readable descriptor at root. Describes the site semantically for AI agents and crawlers.",
+      "acceptance_criteria": [
+        "Exists at root: llms.txt",
+        "Plain text, semantic directives for AI agents",
+        "Describes: what the site is, what it offers, who it's for",
+        "No marketing fluff — factual description"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-15",
+      "title": "Final verification",
+      "description": "Full quality checklist pass. All sections review. i18n fully working. No console errors.",
+      "acceptance_criteria": [
+        "All 15 stories complete",
+        "i18n toggle: ALL visible text changes EN ↔ ES",
+        "All internal links navigate correctly",
+        "All external resources (fonts) return HTTP 200",
+        "No placeholder content anywhere",
+        "No console errors",
+        "WCAG 2.1 AA: 4.5:1 contrast, keyboard nav",
+        "prefers-reduced-motion: animations disabled when set",
+        "JSON-LD schemas valid (Organization, FAQPage, TechArticle, CaseStudy)",
+        "ruff check . → 0 errors"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-13b",
+      "title": "Privacy policy page (GDPR)",
+      "description": "Create privacy.html at project root — GDPR-compliant privacy policy for enterprise B2B consulting firm Smoothrevenue. Link from footer under legal links. Match styles.css design system. No Lorem ipsum.",
+      "acceptance_criteria": [
+        "privacy.html exists at project root",
+        "GDPR-compliant content: data controller info, processing basis, data subject rights, retention periods, contact details",
+        "Linked from footer navigation under legal section",
+        "Consistent styling with main site (same CSS classes as terms.html)",
+        "Real policy language — not placeholder or generated boilerplate"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-13c",
+      "title": "Impressum page (German legal notice)",
+      "description": "Create impressum.html at project root — German-style legal notice for Smoothrevenue enterprise consulting. Company name, registration court, VAT ID, managing director, address. Linked from footer.",
+      "acceptance_criteria": [
+        "impressum.html exists at project root",
+        "Content: company legal name, registered office, commercial register entry, VAT ID (USt-IdNr), managing director, contact email",
+        "Linked from footer under legal section",
+        "Consistent styling with main site (same CSS classes as terms.html)"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-14",
+      "title": "llms.txt — AI-readable descriptor",
+      "description": "Create llms.txt at project root. Plain text semantic descriptor for AI agents and crawlers. Describes what the site is, who it's for, what services are offered. No marketing language.",
+      "acceptance_criteria": [
+        "llms.txt exists at project root",
+        "Describes: Smoothrevenue is an enterprise Claude implementation firm",
+        "Lists the 6 core services offered",
+        "States target audience: Fortune 500, regulated industries (finance, healthcare, logistics)",
+        "Plain text format, no HTML, no marketing fluff"
+      ],
+      "effort_required": "thorough",
+      "taste_required": true
+    },
+    {
+      "id": "sr-16",
+      "title": "Spanish i18n — full ES translations",
+      "description": "Create i18n_es.json with complete Spanish translations for ALL data-i18n keys in index.html. Then update app.js to include the ES translations in the translations object. Verify the EN/ES toggle changes every visible text element.",
+      "acceptance_criteria": [
+        "i18n_es.json exists and has every key from i18n_en.json translated to Spanish",
+        "app.js has the full ES translations object merged into translations.en/es structure",
+        "Toggle to ES changes: nav links, hero text, services titles and descriptions, methodology steps, FAQ questions and answers, form labels, footer links",
+        "No hardcoded English text visible when ES is selected",
+        "Run _check_i18n_full.py to verify completeness"
+      ],
+      "effort_required": "thorough",
+      "taste_required": false
+    }
+  ]
+}

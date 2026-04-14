@@ -1,0 +1,90 @@
+{
+  "project": "Smoothrevenue.com — Full Quality Audit & Content Enhancement",
+  "tagline": "Complete fresh audit with taste + effort gates enforced",
+  "project_root": "showcase/smoothrevenue-build",
+  "stories": [
+    {
+      "id": "sr-audit-01",
+      "title": "Accessibility and Performance Audit — WCAG 2.1 AA + Core Web Vitals",
+      "description": "Perform a comprehensive accessibility and performance audit of smoothrevenue.com. Read index.html, styles.css, privacy.html, impressum.html, terms.html. Check and FIX:\n1. All images must have meaningful alt text (no empty alt=\"\")\n2. All interactive elements must have focus states\n3. Color contrast ratios must be 4.5:1 minimum for normal text, 3:1 for large text\n4. All form fields must have associated <label> elements\n5. The page must have proper heading hierarchy (h1 → h2 → h3, no skips)\n6. All external links must have rel=\"noopener noreferrer\"\n7. The page must be keyboard-navigable (no tabindex=-1 traps)\n8. Check that prefers-reduced-motion is respected\n\nDo NOT just report — actually fix all found issues in the HTML files.",
+      "effort_required": "thorough",
+      "taste_required": true,
+      "files_touched": ["index.html", "privacy.html", "impressum.html", "terms.html"],
+      "acceptance_criteria": [
+        "Read ALL HTML files and styles.css",
+        "Run accessibility checks manually (no automated tools needed — read the HTML and verify patterns)",
+        "Fix ALL found accessibility issues in the HTML files",
+        "Verify all images have alt text",
+        "Verify all form fields have labels",
+        "Verify heading hierarchy is correct",
+        "Verify color contrast is sufficient (check CSS custom properties for colors)",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    },
+    {
+      "id": "sr-audit-02",
+      "title": "JSON-LD Schema Audit — Organization, FAQPage, TechArticle, CaseStudy",
+      "description": "Audit all JSON-LD structured data schemas in smoothrevenue.com. Read index.html and verify:\n1. Organization schema exists in <head> with correct fields (name, url, logo, contactPoint)\n2. FAQPage schema exists and matches the actual FAQ questions in the page\n3. TechArticle schema exists for case studies\n4. CaseStudy schema exists with proper articleBody, author, datePublished\n5. All schema @type values are valid Schema.org types\n6. All required fields for each schema type are present\n\nFix any invalid or incomplete schemas. Add missing schemas if needed.",
+      "effort_required": "thorough",
+      "taste_required": true,
+      "files_touched": ["index.html"],
+      "acceptance_criteria": [
+        "Read index.html and extract ALL JSON-LD script blocks",
+        "Parse each schema and verify it against Schema.org specification",
+        "Fix invalid schemas (wrong @type, missing required fields)",
+        "Add missing schemas",
+        "Verify FAQPage schema questions match actual FAQ questions in HTML",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    },
+    {
+      "id": "sr-audit-03",
+      "title": "Content Quality Deep Dive — eliminate all generic B2B filler language",
+      "description": "Read index.html completely. Go through EVERY section (hero, services, methodology, testimonials, case studies, FAQ, form, footer). Replace ALL generic B2B filler language with specific, concrete, credible content.\n\nSpecific things to check and fix:\n1. Hero: 'enterprise-grade', 'cutting-edge', 'innovative' — replace with specific claims\n2. Services: each description must have a specific example of what the service delivers\n3. Methodology: 'seamless', 'robust', 'efficient' — replace with what this actually means\n4. Testimonials: must have specific metrics (numbers, percentages, timeframes)\n5. Case studies: must have Problem → Solution → Impact with real numbers\n6. FAQ: answers must be specific, not generic 'it depends'\n\nThis is a taste and effort gate — do NOT accept generic language. Be specific.",
+      "effort_required": "thorough",
+      "taste_required": true,
+      "files_touched": ["index.html"],
+      "acceptance_criteria": [
+        "Read index.html FULLY before making any changes",
+        "Search for and replace ALL generic phrases listed above",
+        "Add specific metrics and numbers to testimonials",
+        "Make FAQ answers specific and actionable",
+        "No section should have generic marketing language",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    },
+    {
+      "id": "sr-audit-04",
+      "title": "i18n Completeness Audit — verify every visible string is translated",
+      "description": "Run the i18n check script and verify full EN/ES translation coverage. Read all HTML files and check:\n1. Run: python showcase/smoothrevenue-build/_check_i18n_full.py\n2. Every data-i18n key must have BOTH en and es translations\n3. The Spanish translations must be professional B2B Spanish (not just a literal translation)\n4. Check that app.js properly loads i18n JSON files\n5. Verify the language toggle in the nav actually changes all visible text\n\nFix any missing translations. Improve any that are literal/poor translations.",
+      "effort_required": "thorough",
+      "taste_required": true,
+      "files_touched": ["i18n_en.json", "i18n_es.json", "app.js"],
+      "acceptance_criteria": [
+        "Run: python showcase/smoothrevenue-build/_check_i18n_full.py → 0 missing keys",
+        "Read i18n_es.json and verify all translations are professional Spanish",
+        "Fix any poor or literal translations",
+        "Verify app.js loads translations correctly",
+        "No English text should be visible when ES is active (check for hardcoded strings in HTML)",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    },
+    {
+      "id": "sr-audit-05",
+      "title": "Legal Pages Coherence Audit — unify entity, jurisdiction, policy language",
+      "description": "Read privacy.html, impressum.html, and terms.html. Verify COHERENCE across all three:\n1. Company name must be identical in all three (Smoothrevenue LLC, Wyoming)\n2. Address must be consistent (Wyoming, not Delaware, not Madrid)\n3. Contact email must be the same in all three\n4. Privacy policy and impressum must agree on data protection approach\n5. Terms of service must reference the correct company\n6. GDPR compliance statements in privacy.html must be accurate (EU representative if needed)\n7. Cookie policy must be complete\n\nFix ANY inconsistencies across the three legal pages.",
+      "effort_required": "thorough",
+      "taste_required": true,
+      "files_touched": ["privacy.html", "impressum.html", "terms.html"],
+      "acceptance_criteria": [
+        "Read all three legal pages before making any changes",
+        "Extract company name, address, email, jurisdiction from each",
+        "Identify ALL inconsistencies across the three pages",
+        "Fix inconsistencies: company name, address, jurisdiction, contact info",
+        "Ensure GDPR language is accurate and consistent",
+        "Verify impressum and privacy both reference Wyoming LLC",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    }
+  ]
+}

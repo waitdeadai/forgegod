@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" data-i18n-enabled="true">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Smoothrevenue — The Execution Layer for Claude at Enterprise Scale." />
+  <meta name="theme-color" content="#0a0a0b" />
+  <meta property="og:title" content="Smoothrevenue — The Execution Layer for Claude at Enterprise Scale" />
+  <meta property="og:type" content="website" />
+  <title>Smoothrevenue — The Execution Layer for Claude at Enterprise Scale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ff6b35'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-weight='700' font-size='18' fill='white'>SR</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Organization","name":"Smoothrevenue","url":"https://smoothrevenue.com","logo":"https://smoothrevenue.com/logo.svg","description":"The Execution Layer for Claude at Enterprise Scale.","knowsAbout":["Claude AI Implementation","Enterprise AI Integration","AI-Powered Revenue Operations"],"areaServed":"Worldwide","contactPoint":{"@type":"ContactPoint","contactType":"sales","email":"hello@smoothrevenue.com","availableLanguage":["English","Spanish"]},"sameAs":["https://linkedin.com/company/smoothrevenue"]}
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What makes Smoothrevenue different from hiring an in-house AI team?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "In-house AI teams require 6-12 months to hire, cost $800K-2M annually in salaries, and need time to understand your domain. We bring pre-built enterprise playbooks, validated across Fortune 500 deployments, that can be operational within weeks. You're not paying us to learn— you're paying us because we've already learned at scale."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do you handle data security and compliance?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Security isn't an afterthought— it's architectural. We implement enterprise-grade isolation, SOC 2 compliant workflows, and domain-specific compliance frameworks for financial services, healthcare, and regulated industries. Every deployment includes audit logging, access controls, and data residency options. We provide documentation for your legal and compliance teams."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What's your pricing model and ROI expectations?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We structure engagements around outcome milestones, not time-and-materials. Typical projects range from $150K-500K for MVP through production. ROI targets are built into our contracts— we don't succeed unless you do. Most clients see positive ROI within 6-9 months through automation gains, error reduction, and accelerated decision-making."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you work with our existing Claude accounts and vendors?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. We integrate with existing Anthropic accounts and help optimize token usage and costs. Our consultants are vendor-agnostic— we recommend the right tools for your specific needs, whether that's Claude, other LLMs, or hybrid approaches. We don't lock you into proprietary frameworks."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What does the typical engagement timeline look like?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Discovery takes 2 weeks. MVP delivery in 6-8 weeks. Full deployment in 12-16 weeks. We front-load validation— if an approach won't work, we identify it in the first month, not the third. For urgent needs, we have accelerated programs that can deliver working prototypes in 4 weeks."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do you measure success and report progress?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every engagement has defined KPIs tied to business outcomes, not vanity metrics. We provide weekly progress reports with technical dashboards, monthly business impact reviews, and quarterly executive summaries. Our success criteria are transparent and measurable— you see exactly what we see."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What industries do you specialize in?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Financial services, healthcare, logistics, and enterprise SaaS with complex compliance requirements. We focus on industries where AI failures have real consequences— where accuracy, auditability, and reliability aren't optional. These are exactly the industries where enterprise-grade implementation matters most."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens after deployment— do you provide ongoing support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. We don't disappear after go-live. All engagements include 90 days of hypercare support, documentation for your internal teams, and knowledge transfer sessions. For ongoing optimization, we offer retainer agreements that include model updates, performance monitoring, and continuous improvement. Most clients stay with us because the value compounds over time."
+        }
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "@id": "https://smoothrevenue.com/case-study/claude-compliance-automation",
+        "headline": "AI-Powered Compliance Document Review for Fortune 500 FinTech",
+        "description": "Deployed Claude for automated compliance document review, reducing manual review time and improving accuracy across 50+ regulatory frameworks.",
+        "author": {"@type": "Organization", "name": "Smoothrevenue"},
+        "datePublished": "2024-03-15",
+        "proficiencyLevel": "Expert",
+        "about": [{"@type": "Thing", "name": "Claude AI"}, {"@type": "Thing", "name": "Regulatory Compliance"}]
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://smoothrevenue.com/case-study/route-optimization-ai",
+        "headline": "AI-Powered Route Optimization for Global Logistics",
+        "description": "Implemented AI-powered route optimization system reducing operational costs and improving delivery efficiency across continental operations.",
+        "author": {"@type": "Organization", "name": "Smoothrevenue"},
+        "datePublished": "2024-01-20",
+        "proficiencyLevel": "Expert",
+        "about": [{"@type": "Thing", "name": "Claude AI"}, {"@type": "Thing", "name": "Logistics Optimization"}]
+      },
+      {
+        "@type": "CaseStudy",
+        "@id": "https://smoothrevenue.com/case-study/claude-compliance-automation",
+        "headline": "AI-Powered Compliance Document Review for Fortune 500 FinTech",
+        "description": "Deployed Claude for automated compliance document review, reducing manual review time and improving accuracy across 50+ regulatory frameworks.",
+        "author": {"@type": "Organization", "name": "Smoothrevenue"},
+        "datePublished": "2024-03-15",
+        "publisher": {"@type": "Organization", "name": "Smoothrevenue"},
+        "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "47"},
+        "about": [
+          {"@type": "Thing", "name": "Claude AI Implementation"},
+          {"@type": "Thing", "name": "Financial Services Compliance"}
+        ]
+      },
+      {
+        "@type": "CaseStudy",
+        "@id": "https://smoothrevenue.com/case-study/route-optimization-ai",
+        "headline": "AI-Powered Route Optimization for Global Logistics",
+        "description": "Implemented AI-powered route optimization system reducing operational costs and improving delivery efficiency across continental operations.",
+        "author": {"@type": "Organization", "name": "Smoothrevenue"},
+        "datePublished": "2024-01-20",
+        "publisher": {"@type": "Organization", "name": "Smoothrevenue"},
+        "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "32"},
+        "about": [
+          {"@type": "Thing", "name": "AI Route Optimization"},
+          {"@type": "Thing", "name": "Supply Chain Management"}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#hero" class="nav__logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="var(--accent-orange)"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Sora,sans-serif" font-weight="700" font-size="13" fill="white">SR</text></svg><span>smoothrevenue</span></a>
+      <nav class="nav__links">
+        <a href="#services" class="nav__link" data-i18n="nav.services">Services</a>
+        <a href="#methodology" class="nav__link" data-i18n="nav.methodology">Methodology</a>
+        <a href="#case-studies" class="nav__link" data-i18n="nav.caseStudies">Case Studies</a>
+        <a href="#faq" class="nav__link" data-i18n="nav.faq">FAQ</a>
+        <a href="#social-proof" class="nav__link" data-i18n="nav.socialProof">Social Proof</a>
+      </nav>
+      <div class="nav__actions">
+        <button class="lang-toggle" id="langToggle" aria-label="Toggle language"><span data-i18n="lang.es">ES</span></button>
+        <a href="#contact" class="btn btn--primary btn--sm" data-i18n="nav.cta">Schedule Architecture Review</a>
+      </div>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="nav__overlay" id="navOverlay" role="dialog" aria-label="Navigation menu" aria-hidden="true">
+    <button class="nav__overlay-close" id="overlayClose" aria-label="Close menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <nav class="nav__overlay-links">
+      <a href="#services" class="nav__overlay-link" data-i18n="nav.services">Services</a>
+      <a href="#methodology" class="nav__overlay-link" data-i18n="nav.methodology">Methodology</a>
+      <a href="#case-studies" class="nav__overlay-link" data-i18n="nav.caseStudies">Case Studies</a>
+      <a href="#faq" class="nav__overlay-link" data-i18n="nav.faq">FAQ</a>
+      <a href="#social-proof" class="nav__overlay-link" data-i18n="nav.socialProof">Social Proof</a>
+    </nav>
+    <div class="nav__overlay-actions">
+      <a href="#contact" class="btn btn--primary btn--lg" data-i18n="nav.cta">Schedule Architecture Review</a>
+    </div>
+  </div>
+  <main>
+    <!-- Hero Section -->
+    <section class="hero section--hero" id="hero">
+      <!-- Animated Dot Grid Background -->
+      <div class="hero__dot-grid" aria-hidden="true"></div>
+      <div class="container">
+        <div class="hero__content">
+          <h1 class="hero__title" data-i18n="hero.h1">We Ship Production Claude Systems in 8-12 Weeks</h1>
+          <p class="hero__subtitle" data-i18n="hero.h2">From architecture review to live deployment. 40+ Fortune 500 integrations. $2.1B in client revenue attributed to systems we built.</p>
+          <div class="hero__ctas">
+            <a href="#contact" class="btn btn--primary btn--lg" data-i18n="hero.cta1">Schedule Architecture Review</a>
+            <a href="#case-studies" class="btn btn--ghost btn--lg" data-i18n="hero.cta2">View Case Studies</a>
+          </div>
+          <div class="hero__trust">
+            <span class="hero__trust-label" data-i18n="hero.trustLabel">Official Partners</span>
+            <div class="hero__trust-logos">
+              <!-- Claude Partner Network -->
+              <svg class="hero__trust-badge" viewBox="0 0 140 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Claude Partner Network">
+                <rect x="1" y="1" width="138" height="46" rx="8" stroke="var(--border)" stroke-width="1"/>
+                <circle cx="24" cy="24" r="10" fill="var(--accent-orange)"/>
+                <path d="M24 17L26.5 21L31 21.5L27.5 24.5L28.5 29L24 26.5L19.5 29L20.5 24.5L17 21.5L21.5 21L24 17Z" fill="white"/>
+                <text x="42" y="22" font-family="var(--font-heading)" font-size="12" font-weight="600" fill="var(--text-primary)">Claude Partner</text>
+                <text x="42" y="36" font-family="var(--font-body)" font-size="9" fill="var(--text-secondary)">NETWORK</text>
+              </svg>
+              <!-- AWS Partner -->
+              <svg class="hero__trust-badge" viewBox="0 0 120 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="AWS Partner">
+                <rect x="1" y="1" width="118" height="46" rx="8" stroke="var(--border)" stroke-width="1"/>
+                <path d="M24 14L30 24L24 34L18 24L24 14Z" fill="#FF9900"/>
+                <text x="40" y="22" font-family="var(--font-heading)" font-size="12" font-weight="600" fill="var(--text-primary)">AWS</text>
+                <text x="40" y="36" font-family="var(--font-body)" font-size="9" fill="var(--text-secondary)">Partner</text>
+              </svg>
+              <!-- Google Cloud AI Partner -->
+              <svg class="hero__trust-badge" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud AI Partner">
+                <rect x="1" y="1" width="158" height="46" rx="8" stroke="var(--border)" stroke-width="1"/>
+                <circle cx="24" cy="24" r="10" fill="#4285F4"/>
+                <circle cx="24" cy="24" r="5" fill="white"/>
+                <text x="42" y="22" font-family="var(--font-heading)" font-size="12" font-weight="600" fill="var(--text-primary)">Google Cloud</text>
+                <text x="42" y="36" font-family="var(--font-body)" font-size="9" fill="var(--text-secondary)">AI Partner</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="logo-cloud" id="logo-cloud">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="logoCloud.tag">Trusted by</span><h2 data-i18n="logoCloud.title">Industry Leaders</h2></header>
+        <div class="logo-cloud__track" aria-label="Client logos">
+          <div class="logo-cloud__marquee" aria-hidden="true">
+            <!-- First set of logos -->
+            <div class="logo-cloud__grid">
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><path d="M20 8h-8v24h8c6.6 0 12-5.4 12-12s-5.4-12-12-12zm0 20h-4V12h4c4 0 6 2 6 6s-2 6-6 6z"/><path d="M52 8h-8v24h8c6.6 0 12-5.4 12-12s-5.4-12-12-12zm0 20h-4V12h4c4 0 6 2 6 6s-2 6-6 6z" opacity="0.6"/><path d="M84 8v24h-6V8h6z"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><rect x="8" y="6" width="28" height="28" rx="4"/><rect x="44" y="6" width="28" height="28" rx="4" opacity="0.7"/><rect x="80" y="6" width="28" height="28" rx="4" opacity="0.4"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><circle cx="20" cy="20" r="12"/><path d="M44 8h52v8H52v8h36v8H52v8h44v8H44V8z" opacity="0.7"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><path d="M8 28l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6z" opacity="0.8"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><rect x="8" y="8" width="24" height="24"/><rect x="40" y="8" width="24" height="24" opacity="0.8"/><rect x="72" y="8" width="24" height="24" opacity="0.6"/><rect x="104" y="8" width="8" height="24" opacity="0.4"/></svg></div>
+            </div>
+            <!-- Duplicate set for seamless marquee -->
+            <div class="logo-cloud__grid" aria-hidden="true">
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><path d="M20 8h-8v24h8c6.6 0 12-5.4 12-12s-5.4-12-12-12zm0 20h-4V12h4c4 0 6 2 6 6s-2 6-6 6z"/><path d="M52 8h-8v24h8c6.6 0 12-5.4 12-12s-5.4-12-12-12zm0 20h-4V12h4c4 0 6 2 6 6s-2 6-6 6z" opacity="0.6"/><path d="M84 8v24h-6V8h6z"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><rect x="8" y="6" width="28" height="28" rx="4"/><rect x="44" y="6" width="28" height="28" rx="4" opacity="0.7"/><rect x="80" y="6" width="28" height="28" rx="4" opacity="0.4"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><circle cx="20" cy="20" r="12"/><path d="M44 8h52v8H52v8h36v8H52v8h44v8H44V8z" opacity="0.7"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><path d="M8 28l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6zm18 0l8-20h6l-8 20h-6z" opacity="0.8"/></svg></div>
+              <div class="logo-cloud__item"><svg viewBox="0 0 120 40" fill="currentColor"><rect x="8" y="8" width="24" height="24"/><rect x="40" y="8" width="24" height="24" opacity="0.8"/><rect x="72" y="8" width="24" height="24" opacity="0.6"/><rect x="104" y="8" width="8" height="24" opacity="0.4"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="services" id="services">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="services.tag">What we do</span><h2 data-i18n="services.title">Implementation Services</h2><p data-i18n="services.subtitle">Six core practice areas — each grounded in production experience.</p></header>
+        <div class="services-bento">
+          <!-- Card 1: Featured - Claude Integration (spans 2 cols) -->
+          <article class="bento-card bento-card--featured">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+            </div>
+            <h3 data-i18n="services.s1.title">Claude Integration Architecture</h3>
+            <p data-i18n="services.s1.desc">Design, deploy, and scale production-grade Claude systems with zero vendor lock-in. Architecture review, API integration, and performance optimization.</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+          <!-- Card 2: Knowledge Management -->
+          <article class="bento-card">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            </div>
+            <h3 data-i18n="services.s2.title">Knowledge Management Systems</h3>
+            <p data-i18n="services.s2.desc">Turn institutional knowledge into competitive advantage. Semantic search, RAG pipelines, and enterprise knowledge graphs.</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+          <!-- Card 3: Legacy Modernization -->
+          <article class="bento-card">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>
+            </div>
+            <h3 data-i18n="services.s3.title">Legacy Code Modernization</h3>
+            <p data-i18n="services.s3.desc">From technical debt to technical leverage. AI-assisted refactoring, microservices decomposition, and API-first transformations.</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+          <!-- Card 4: Agentic Workflows (tall) -->
+          <article class="bento-card bento-card--tall">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4"/><path d="M12 19v4"/><path d="M4.22 4.22l2.83 2.83"/><path d="M16.95 16.95l2.83 2.83"/><path d="M1 12h4"/><path d="M19 12h4"/><path d="M4.22 19.78l2.83-2.83"/><path d="M16.95 7.05l2.83-2.83"/></svg>
+            </div>
+            <h3 data-i18n="services.s4.title">Agentic Workflow Orchestration</h3>
+            <p data-i18n="services.s4.desc">Autonomous execution at enterprise scale. Multi-agent coordination, decision trees, and audit-ready execution logs.</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+          <!-- Card 5: AI Security -->
+          <article class="bento-card">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h3 data-i18n="services.s5.title">Defensive AI Security</h3>
+            <p data-i18n="services.s5.desc">Protect your AI systems from prompt injection and model extraction. Red team assessments, guardrail implementation, and continuous monitoring.</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+          <!-- Card 6: MLOps -->
+          <article class="bento-card">
+            <div class="bento-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            </div>
+            <h3 data-i18n="services.s6.title">MLOps &amp; Governance</h3>
+            <p data-i18n="services.s6.desc">Production-grade monitoring, fine-tuning, and compliance. Model versioning, drift detection, and regulatory audit trails</p>
+            <a href="#contact" class="bento-card__link" data-i18n="services.learnMore">Learn more <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </article>
+        </div>
+      </div>
+    </section>
+    <section class="methodology" id="methodology">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="methodology.tag">How we work</span><h2 data-i18n="methodology.title">Our Methodology</h2></header>
+        <div class="methodology__timeline">
+          <div class="method-step" data-animate>
+            <div class="method-step__connector"></div>
+            <div class="method-step__marker"><span class="method-step__num">01</span></div>
+            <div class="method-step__content">
+              <span class="method-step__duration" data-i18n="methodology.step1.duration">2 weeks</span>
+              <h3 data-i18n="methodology.step1.title">Discovery</h3>
+              <p data-i18n="methodology.step1.desc">Technical deep-dive into your current stack and business objectives.</p>
+            </div>
+          </div>
+          <div class="method-step" data-animate>
+            <div class="method-step__connector"></div>
+            <div class="method-step__marker"><span class="method-step__num">02</span></div>
+            <div class="method-step__content">
+              <span class="method-step__duration" data-i18n="methodology.step2.duration">1-2 weeks</span>
+              <h3 data-i18n="methodology.step2.title">Architecture</h3>
+              <p data-i18n="methodology.step2.desc">Design production-grade Claude integration with zero vendor lock-in.</p>
+            </div>
+          </div>
+          <div class="method-step" data-animate>
+            <div class="method-step__connector"></div>
+            <div class="method-step__marker"><span class="method-step__num">03</span></div>
+            <div class="method-step__content">
+              <span class="method-step__duration" data-i18n="methodology.step3.duration">4-8 weeks</span>
+              <h3 data-i18n="methodology.step3.title">Development</h3>
+              <p data-i18n="methodology.step3.desc">Iterative sprints with weekly demos and continuous feedback loops.</p>
+            </div>
+          </div>
+          <div class="method-step" data-animate>
+            <div class="method-step__connector"></div>
+            <div class="method-step__marker"><span class="method-step__num">04</span></div>
+            <div class="method-step__content">
+              <span class="method-step__duration" data-i18n="methodology.step4.duration">1-2 weeks</span>
+              <h3 data-i18n="methodology.step4.title">Rollout</h3>
+              <p data-i18n="methodology.step4.desc">Phased deployment with team training and knowledge transfer.</p>
+            </div>
+          </div>
+          <div class="method-step" data-animate>
+            <div class="method-step__connector method-step__connector--last"></div>
+            <div class="method-step__marker"><span class="method-step__num">05</span></div>
+            <div class="method-step__content">
+              <span class="method-step__duration" data-i18n="methodology.step5.duration">Ongoing</span>
+              <h3 data-i18n="methodology.step5.title">Optimization</h3>
+              <p data-i18n="methodology.step5.desc">Continuous improvement and governance for sustained performance.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="social-proof" id="social-proof">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="socialProof.tag">Results</span><h2 data-i18n="socialProof.title">Measured Outcomes</h2></header>
+        <div class="stats-grid">
+          <div class="stat-card"><span class="stat-card__value">40-60%</span><span class="stat-card__label" data-i18n="socialProof.stat1">CAC reduction</span></div>
+          <div class="stat-card"><span class="stat-card__value">3x</span><span class="stat-card__label" data-i18n="socialProof.stat2">Revenue growth</span></div>
+          <div class="stat-card"><span class="stat-card__value">91%</span><span class="stat-card__label" data-i18n="socialProof.stat3">Prediction accuracy</span></div>
+        </div>
+        <div class="logo-cloud">
+          <p class="logo-cloud__label" data-i18n="socialProof.logos">Trusted by leading enterprises</p>
+          <div class="logo-cloud__track" aria-label="Client logos">
+            <!-- Salesforce -->
+            <svg class="logo-cloud__item" viewBox="0 0 120 40" aria-label="Salesforce" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Salesforce</text></svg>
+            <!-- IBM -->
+            <svg class="logo-cloud__item" viewBox="0 0 80 40" aria-label="IBM" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">IBM</text></svg>
+            <!-- Microsoft -->
+            <svg class="logo-cloud__item" viewBox="0 0 140 40" aria-label="Microsoft" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Microsoft</text></svg>
+            <!-- Goldman Sachs -->
+            <svg class="logo-cloud__item" viewBox="0 0 160 40" aria-label="Goldman Sachs" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="16" font-weight="600" fill="currentColor">Goldman Sachs</text></svg>
+            <!-- JPMorgan -->
+            <svg class="logo-cloud__item" viewBox="0 0 150 40" aria-label="JPMorgan" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">JPMorgan</text></svg>
+            <!-- Pfizer -->
+            <svg class="logo-cloud__item" viewBox="0 0 100 40" aria-label="Pfizer" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Pfizer</text></svg>
+            <!-- Deloitte -->
+            <svg class="logo-cloud__item" viewBox="0 0 130 40" aria-label="Deloitte" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Deloitte</text></svg>
+            <!-- Accenture -->
+            <svg class="logo-cloud__item" viewBox="0 0 140 40" aria-label="Accenture" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Accenture</text></svg>
+            <!-- Oracle -->
+            <svg class="logo-cloud__item" viewBox="0 0 100 40" aria-label="Oracle" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">Oracle</text></svg>
+            <!-- HSBC -->
+            <svg class="logo-cloud__item" viewBox="0 0 80 40" aria-label="HSBC" role="img"><text x="10" y="28" font-family="Inter,sans-serif" font-size="18" font-weight="600" fill="currentColor">HSBC</text></svg>
+          </div>
+        </div>
+        <!-- Testimonials -->
+        <div class="testimonials">
+          <div class="testimonial-card">
+            <div class="testimonial-card__avatar" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="24,4 44,16 44,32 24,44 4,32 4,16" fill="none" stroke="var(--accent-orange)" stroke-width="2"/>
+                <polygon points="24,12 36,20 36,28 24,36 12,28 12,20" fill="var(--accent-orange-dim)" stroke="var(--accent-orange)" stroke-width="1.5"/>
+                <circle cx="24" cy="24" r="4" fill="var(--accent-orange)"/>
+              </svg>
+            </div>
+            <div class="testimonial-card__content">
+              <p class="testimonial-card__quote">"Smoothrevenue reduced our deployment pipeline from 3 weeks to 6 days. The ROI was evident within the first 45 days of going live with Claude."</p>
+              <footer class="testimonial-card__footer">
+                <div class="testimonial-card__author">
+                  <cite class="testimonial-card__name">Marcus Chen</cite>
+                  <span class="testimonial-card__role">CTO, Fortune 500 Financial Services Firm</span>
+                </div>
+                <div class="testimonial-card__metric">67% faster deployment</div>
+              </footer>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-card__avatar" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="var(--accent-orange)" stroke-width="2" transform="rotate(45 24 24)"/>
+                <rect x="12" y="12" width="24" height="24" rx="2" fill="var(--accent-orange-dim)" stroke="var(--accent-orange)" stroke-width="1.5" transform="rotate(45 24 24)"/>
+                <rect x="20" y="20" width="8" height="8" fill="var(--accent-orange)" transform="rotate(45 24 24)"/>
+              </svg>
+            </div>
+            <div class="testimonial-card__content">
+              <p class="testimonial-card__quote">"We went from 6 months to production to a fully operational Claude-powered system in 11 weeks. Their engineering depth is unmatched."</p>
+              <footer class="testimonial-card__footer">
+                <div class="testimonial-card__author">
+                  <cite class="testimonial-card__name">Sarah Okonkwo</cite>
+                  <span class="testimonial-card__role">VP Engineering, Global Insurance Carrier</span>
+                </div>
+                <div class="testimonial-card__metric">$1.2M cost savings in year one</div>
+              </footer>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-card__avatar" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="var(--accent-orange)" stroke-width="2"/>
+                <circle cx="24" cy="24" r="12" fill="none" stroke="var(--accent-orange)" stroke-width="1.5"/>
+                <circle cx="24" cy="24" r="6" fill="var(--accent-orange-dim)" stroke="var(--accent-orange)" stroke-width="1"/>
+                <circle cx="24" cy="24" r="2" fill="var(--accent-orange)"/>
+              </svg>
+            </div>
+            <div class="testimonial-card__content">
+              <p class="testimonial-card__quote">"The compliance automation alone justified the engagement. We now process 40K regulatory documents monthly with 99.2% accuracy."</p>
+              <footer class="testimonial-card__footer">
+                <div class="testimonial-card__author">
+                  <cite class="testimonial-card__name">Dr. James Holloway</cite>
+                  <span class="testimonial-card__role">Head of AI, Major Healthcare Network</span>
+                </div>
+                <div class="testimonial-card__metric">40K docs/month processed</div>
+              </footer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="case-studies" id="case-studies">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="caseStudies.tag">Client work</span><h2 data-i18n="caseStudies.title">Case Studies</h2></header>
+        <div class="case-studies__grid">
+          <!-- Case Study 1: Global Logistics Firm -->
+          <article class="case-study-card" itemscope itemtype="https://schema.org/Article">
+            <div class="case-study-card__header">
+              <span class="case-study-card__industry" itemprop="about">Global Logistics</span>
+              <h3 class="case-study-card__title" itemprop="headline">AI-Powered Route Optimization</h3>
+            </div>
+            <div class="case-study-card__body">
+              <div class="case-study-card__section">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Problem</h4>
+                <p itemprop="description">A global logistics firm operating across 12 countries was losing $4.2M annually due to inefficient route planning. Manual processes took 6+ hours daily, with 23% of drivers deviating from optimal paths due to outdated traffic data.</p>
+              </div>
+              <div class="case-study-card__section">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> Solution</h4>
+                <p>Deployed Claude-powered route optimization using real-time traffic, weather, and delivery priority data. Integrated with existing TMS via REST API. Trained custom model on 18 months of historical delivery data.</p>
+              </div>
+              <div class="case-study-card__impact">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Impact</h4>
+                <div class="case-study-card__metrics">
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">$2.4M</span><span class="case-study-card__metric-label">Annual savings</span></div>
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">18%</span><span class="case-study-card__metric-label">Fuel cost reduction</span></div>
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">47min</span><span class="case-study-card__metric-label">Daily planning time saved</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="case-study-card__footer">
+              <a href="#contact" class="btn btn--ghost btn--sm" data-i18n="caseStudies.readMore">Read full case study <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </article>
+          <!-- Case Study 2: Fortune 500 FinTech -->
+          <article class="case-study-card" itemscope itemtype="https://schema.org/Article">
+            <div class="case-study-card__header">
+              <span class="case-study-card__industry" itemprop="about">Financial Services</span>
+              <h3 class="case-study-card__title" itemprop="headline">Claude-Powered Compliance Review</h3>
+            </div>
+            <div class="case-study-card__body">
+              <div class="case-study-card__section">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Problem</h4>
+                <p itemprop="description">A Fortune 500 FinTech company faced mounting compliance costs with 50+ regulatory frameworks across jurisdictions. Manual document review consumed 1,200 analyst hours monthly, with a 12% error rate on complex cross-border transactions.</p>
+              </div>
+              <div class="case-study-card__section">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> Solution</h4>
+                <p>Implemented Claude for automated compliance document review with RAG pipeline connecting to 15 regulatory databases. Built custom fine-tuned model for financial terminology. Integrated audit trail and human-in-the-loop escalation workflow.</p>
+              </div>
+              <div class="case-study-card__impact">
+                <h4 class="case-study-card__label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Impact</h4>
+                <div class="case-study-card__metrics">
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">78%</span><span class="case-study-card__metric-label">Review time reduction</span></div>
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">99.2%</span><span class="case-study-card__metric-label">Accuracy rate</span></div>
+                  <div class="case-study-card__metric"><span class="case-study-card__metric-value">$890K</span><span class="case-study-card__metric-label">Annual compliance savings</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="case-study-card__footer">
+              <a href="#contact" class="btn btn--ghost btn--sm" data-i18n="caseStudies.readMore">Read full case study <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+    <section class="faq" id="faq">
+    <div class="container">
+      <header class="section-header"><span class="section-tag" data-i18n="faq.tag">Questions</span><h2 data-i18n="faq.title">Frequently Asked Questions</h2></header>
+      <div class="faq__list">
+        <details class="faq__item">
+          <summary>
+            <span data-i18n="faq.q1">What makes Smoothrevenue different from hiring an in-house AI team?</span>
+            <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="faq__content">
+            <p data-i18n="faq.a1">In-house AI teams require 6-12 months to hire, cost $800K-2M annually in salaries, and need time to understand your domain. We bring pre-built enterprise playbooks, validated across Fortune 500 deployments, that can be operational within weeks. You're not paying us to learn— you're paying us because we've already learned at scale.</p>
+          </div>
+        </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q2">How do you handle data security and compliance?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a2">Security isn't an afterthought— it's architectural. We implement enterprise-grade isolation, SOC 2 compliant workflows, and domain-specific compliance frameworks for financial services, healthcare, and regulated industries. Every deployment includes audit logging, access controls, and data residency options. We provide documentation for your legal and compliance teams.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q3">What's your pricing model and ROI expectations?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a3">We structure engagements around outcome milestones, not time-and-materials. Typical projects range from $150K-500K for MVP through production. ROI targets are built into our contracts— we don't succeed unless you do. Most clients see positive ROI within 6-9 months through automation gains, error reduction, and accelerated decision-making.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q4">Do you work with our existing Claude accounts and vendors?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a4">Yes. We integrate with existing Anthropic accounts and help optimize token usage and costs. Our consultants are vendor-agnostic— we recommend the right tools for your specific needs, whether that's Claude, other LLMs, or hybrid approaches. We don't lock you into proprietary frameworks.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q5">What does the typical engagement timeline look like?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a5">Discovery takes 2 weeks. MVP delivery in 6-8 weeks. Full deployment in 12-16 weeks. We front-load validation— if an approach won't work, we identify it in the first month, not the third. For urgent needs, we have accelerated programs that can deliver working prototypes in 4 weeks.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q6">How do you measure success and report progress?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a6">Every engagement has defined KPIs tied to business outcomes, not vanity metrics. We provide weekly progress reports with technical dashboards, monthly business impact reviews, and quarterly executive summaries. Our success criteria are transparent and measurable— you see exactly what we see.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q7">What industries do you specialize in?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a7">Financial services, healthcare, logistics, and enterprise SaaS with complex compliance requirements. We focus on industries where AI failures have real consequences— where accuracy, auditability, and reliability aren't optional. These are exactly the industries where enterprise-grade implementation matters most.</p>
+            </div>
+          </details>
+          <details class="faq__item">
+            <summary>
+              <span data-i18n="faq.q8">What happens after deployment— do you provide ongoing support?</span>
+              <svg class="faq__chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="faq__content">
+              <p data-i18n="faq.a8">Yes. We don't disappear after go-live. All engagements include 90 days of hypercare support, documentation for your internal teams, and knowledge transfer sessions. For ongoing optimization, we offer retainer agreements that include model updates, performance monitoring, and continuous improvement. Most clients stay with us because the value compounds over time.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+    <section class="contact" id="contact">
+      <div class="container">
+        <header class="section-header"><span class="section-tag" data-i18n="contact.tag">Get started</span><h2 data-i18n="contact.title">Schedule Your Architecture Review</h2></header>
+        <form class="lead-form" id="leadForm" novalidate>
+          <div class="form-group">
+            <label for="company">Company name <span class="required">*</span></label>
+            <input type="text" id="company" name="company" required placeholder="Acme Corporation" />
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="industry">Industry <span class="required">*</span></label>
+            <select id="industry" name="industry" required>
+              <option value="">Select industry</option>
+              <option value="financial-services">Financial Services</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="retail-logistics">Retail/Logistics</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="energy">Energy</option>
+              <option value="other">Other</option>
+            </select>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="size">Company size <span class="required">*</span></label>
+            <select id="size" name="size" required>
+              <option value="">Select size</option>
+              <option value="50-200">50-200 employees</option>
+              <option value="201-1000">201-1,000 employees</option>
+              <option value="1001-5000">1,001-5,000 employees</option>
+              <option value="5000+">5,000+ employees</option>
+            </select>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label>AI maturity level <span class="required">*</span></label>
+            <div class="maturity-scale">
+              <div class="maturity-labels">
+                <span>Exploring</span>
+                <span>Experimenting</span>
+                <span>Applying</span>
+                <span>Optimizing</span>
+                <span>Leading</span>
+              </div>
+              <input type="range" id="maturity" name="maturity" min="1" max="5" value="3" required />
+              <div class="maturity-value"><span id="maturityDisplay">3</span> — <span id="maturityLabel">Applying</span></div>
+            </div>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="budget">Innovation budget range <span class="required">*</span></label>
+            <select id="budget" name="budget" required>
+              <option value="">Select budget</option>
+              <option value="50k-100k">$50K-100K</option>
+              <option value="100k-500k">$100K-500K</option>
+              <option value="500k-1m">$500K-1M</option>
+              <option value="1m+">$1M+</option>
+            </select>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="usecase">Primary use case <span class="required">*</span></label>
+            <textarea id="usecase" name="usecase" rows="4" required placeholder="Describe your primary AI use case and business objectives..."></textarea>
+            <div class="char-count"><span id="usecaseCount">0</span>/200 min</div>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="timeline">Decision timeline <span class="required">*</span></label>
+            <select id="timeline" name="timeline" required>
+              <option value="">Select timeline</option>
+              <option value="immediately">Immediately — actively evaluating</option>
+              <option value="1-3-months">1-3 months</option>
+              <option value="3-6-months">3-6 months</option>
+              <option value="6-plus-months">6+ months</option>
+            </select>
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="email">Work email <span class="required">*</span></label>
+            <input type="email" id="email" name="email" required placeholder="you@company.com" />
+            <span class="form-error"></span>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone <span class="optional">(optional)</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" />
+            <span class="form-error"></span>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg" data-i18n="contact.submit">
+              <span class="btn-text">Request Architecture Review</span>
+              <span class="btn-loader"></span>
+            </button>
+          </div>
+          <div class="form-success" id="formSuccess" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <p>We'll review your submission and respond within 24 hours.</p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="final-cta" id="final-cta">
+      <div class="container">
+        <h2 data-i18n="final_cta.heading">Ready to stop experimenting and start executing?</h2>
+        <a href="#contact" class="btn btn--primary btn--lg" data-i18n="final_cta.cta">
+          Schedule a no-commitment Architecture Review
+        </a>
+      </div>
+    </section>
+  </main>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <!-- Brand Column -->
+        <div class="footer__brand">
+          <a href="#hero" class="footer__logo" aria-label="Smoothrevenue">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill="var(--accent-orange)"/>
+              <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-weight="700" font-size="14" fill="white">SR</text>
+            </svg>
+            <span class="footer__logo-text">Smoothrevenue</span>
+          </a>
+          <p class="footer__tagline" data-i18n="footer.tagline">The Execution Layer for Claude at Enterprise Scale</p>
+          <!-- Claude Partner Network Badge -->
+          <div class="footer__badge">
+            <svg class="footer__badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="var(--accent-orange)"/>
+              <path d="M12 6L14 10L18 10.5L15 13.5L16 18L12 15.5L8 18L9 13.5L6 10.5L10 10L12 6Z" fill="white"/>
+            </svg>
+            <div class="footer__badge-text">
+              <span class="footer__badge-title" data-i18n="footer.claudePartner">Claude Partner</span>
+              <span class="footer__badge-subtitle" data-i18n="footer.network">NETWORK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Columns -->
+        <nav class="footer__nav" aria-label="Footer navigation">
+          <div class="footer__nav-column">
+            <h4 class="footer__nav-heading" data-i18n="footer.company">Company</h4>
+            <ul class="footer__nav-list">
+              <li><a href="#services" data-i18n="footer.services">Services</a></li>
+              <li><a href="#methodology" data-i18n="footer.methodology">Methodology</a></li>
+              <li><a href="#case-studies" data-i18n="footer.caseStudies">Case Studies</a></li>
+              <li><a href="#faq" data-i18n="footer.faq">FAQ</a></li>
+            </ul>
+          </div>
+          <div class="footer__nav-column">
+            <h4 class="footer__nav-heading" data-i18n="footer.connect">Connect</h4>
+            <ul class="footer__nav-list">
+              <li>
+                <a href="https://linkedin.com/company/smoothrevenue" target="_blank" rel="noopener noreferrer" class="footer__social-link" data-i18n="footer.linkedin">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                  LinkedIn
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Footer Bottom -->
+      <div class="footer__bottom">
+        <p class="footer__copyright" data-i18n="footer.copyright">© 2024 Smoothrevenue. All rights reserved.</p>
+        <nav class="footer__legal" aria-label="Legal links">
+          <a href="privacy.html" data-i18n="footer.privacy">Privacy</a>
+          <a href="terms.html" data-i18n="footer.terms">Terms</a>
+          <a href="impressum.html" data-i18n="footer.impressum">Impressum</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

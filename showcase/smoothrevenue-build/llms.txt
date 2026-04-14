@@ -1,0 +1,9 @@
+---
+url: https://smoothrevenue.com
+site: Smoothrevenue.com
+description: Enterprise Claude AI implementation firm. Designs, deploys, and scales production-grade Claude systems for Fortune 500 and regulated industries.
+services: Claude Integration Architecture, Knowledge Management Systems, Legacy Code Modernization, Agentic Workflow Orchestration, Defensive AI Security, MLOps and Governance
+industries: Financial Services, Healthcare, Logistics, Enterprise SaaS
+pricing: Project engagements $150K-500K MVP to production. ROI-guaranteed contracts.
+contact: legal@smoothrevenue.com
+---
