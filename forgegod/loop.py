@@ -461,28 +461,51 @@ class RalphLoop:
         """Apply reviewer gates, patch transfer, and final story state updates."""
         if result.success:
             if not result.files_modified:
-                self.state.total_iterations -= 1
-                if story.iterations >= self.config.loop.story_max_retries:
-                    story.status = StoryStatus.BLOCKED
-                    story.error_log.append(
-                        f"Max retries ({self.config.loop.story_max_retries}) "
-                        f"exceeded with 0 tool calls"
+                # files_modified only tracks Write/Edit tool calls; the agent may
+                # have edited existing files via other means.  Check git diff for
+                # real changes before treating this as "no work done".
+                git_has_changes = False
+                try:
+                    diff_proc = await asyncio.create_subprocess_exec(
+                        "git", "diff", "--name-only", "HEAD",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(self._workspace_root),
                     )
-                    self.state.stories_failed += 1
-                    logger.error(
-                        f"Story [{story.id}] BLOCKED after "
-                        f"{story.iterations} retries with no output"
-                    )
-                else:
-                    story.status = StoryStatus.TODO
-                    story.error_log.append("Agent produced no output (0 tool calls)")
-                    logger.warning(
-                        f"Story [{story.id}] produced no work, will retry "
-                        f"(attempt {story.iterations}"
-                        f"/{self.config.loop.story_max_retries})"
-                    )
-                self._save_prd()
-                return
+                    diff_out, _ = await diff_proc.communicate()
+                    if diff_out:
+                        changed = {
+                            p.strip() for p in diff_out.decode(errors="replace").splitlines()
+                            if p.strip()
+                        }
+                        touched = set(story.files_touched or [])
+                        git_has_changes = bool(changed) if not touched else bool(changed & touched)
+                except Exception:
+                    pass
+
+                if not git_has_changes:
+                    self.state.total_iterations -= 1
+                    if story.iterations >= self.config.loop.story_max_retries:
+                        story.status = StoryStatus.BLOCKED
+                        story.error_log.append(
+                            f"Max retries ({self.config.loop.story_max_retries}) "
+                            f"exceeded with 0 tool calls"
+                        )
+                        self.state.stories_failed += 1
+                        logger.error(
+                            f"Story [{story.id}] BLOCKED after "
+                            f"{story.iterations} retries with no output"
+                        )
+                    else:
+                        story.status = StoryStatus.TODO
+                        story.error_log.append("Agent produced no output (0 tool calls)")
+                        logger.warning(
+                            f"Story [{story.id}] produced no work, will retry "
+                            f"(attempt {story.iterations}"
+                            f"/{self.config.loop.story_max_retries})"
+                        )
+                    self._save_prd()
+                    return
 
             # ── Effort Gate ──────────────────────────────────────────────────────
             if self.effort_gate:
@@ -799,7 +822,20 @@ Do NOT commit or push unless the user explicitly asked for it.
         config: ForgeGodConfig,
         **kwargs,
     ) -> "RalphLoop":
-        """Create a RalphLoop from a PRD JSON file."""
-        data = json.loads(prd_path.read_text(encoding="utf-8"))
+        """Create a RalphLoop from a PRD JSON file.
+
+        Resume-from-saved-state behaviour: the loop persists PRD state to
+        ``config.project_dir / "prd.json"`` (typically ``.forgegod/prd.json``)
+        after every story tick.  When this saved copy exists we prefer it over
+        the CLI-supplied ``prd_path`` so that story progress (TODO → done,
+        blocked, etc.) is preserved across re-runs.
+        """
+        saved_path = config.project_dir / "prd.json"
+        load_path = saved_path if saved_path.exists() else prd_path
+        if saved_path.exists():
+            logger.info(f"Resuming from saved state: {saved_path}")
+        else:
+            logger.info(f"Loading PRD from: {prd_path}")
+        data = json.loads(load_path.read_text(encoding="utf-8"))
         prd = PRD(**data)
         return cls(config=config, prd=prd, **kwargs)
