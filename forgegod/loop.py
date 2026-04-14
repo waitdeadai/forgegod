@@ -75,6 +75,25 @@ class RalphLoop:
         # Reviewer (SOTA: sample-based quality gate)
         self.reviewer = Reviewer(config=config, router=self.router)
 
+        # Taste Agent (adversarial design director)
+        self.taste_agent = None
+        if config.taste.enabled:
+            try:
+                from forgegod.taste import TasteAgent
+
+                self.taste_agent = TasteAgent(config=config, router=self.router)
+            except Exception:
+                logger.debug("TasteAgent unavailable")
+
+        # Effort Gate (max_effort quality enforcement)
+        self.effort_gate = None
+        if self.config.effort.enabled or self.config.harness.profile == "max_effort":
+            try:
+                from forgegod.effort_gate import EffortGate
+                self.effort_gate = EffortGate(config=self.config)
+            except Exception as e:
+                logger.debug(f"EffortGate unavailable: {e}")
+
         # Memory system — shared across all story ticks
         self.memory = None
         if self.config.memory.enabled:
@@ -309,7 +328,19 @@ class RalphLoop:
         # 4. Build task prompt for agent
         task_prompt = await self._build_story_prompt(story)
 
-        # 5. Spawn fresh agent (context rotation — each story gets clean context)
+        # 5. Remove stale stub files so the agent cannot falsely conclude
+        # the story is already done (MiniMax sees existing files + content
+        # and skips write_file, causing infinite loops).
+        for stub in ("index.html", "styles.css", "app.js"):
+            stub_path = self.config.project_dir / stub
+            if stub_path.exists():
+                try:
+                    stub_path.unlink()
+                    logger.info(f"Removed stale stub file: {stub}")
+                except OSError as e:
+                    logger.warning(f"Failed to remove stale stub {stub}: {e}")
+
+        # 6. Spawn fresh agent (context rotation — each story gets clean context)
         agent = Agent(
             config=self.config,
             router=self.router,
@@ -338,6 +369,10 @@ class RalphLoop:
                 timeout=True,
             )
             return
+
+        # Record draft after agent completes
+        if self.effort_gate:
+            self.effort_gate.record_draft(story.id, result.output if result else "")
 
         await self._finalize_story_result(story, result)
 
@@ -449,6 +484,28 @@ class RalphLoop:
                 self._save_prd()
                 return
 
+            # ── Effort Gate ──────────────────────────────────────────────────────
+            if self.effort_gate:
+                try:
+                    effort_result = await self.effort_gate.check(
+                        story_id=story.id,
+                        result=result,
+                        conversation_text=result.output,
+                    )
+                    if not effort_result.passed:
+                        shortcut = effort_result.shortcut_type
+                        logger.warning(f"Story [{story.id}] blocked by effort_gate: {shortcut}")
+                        self.effort_gate.apply_to_story(story, effort_result)
+                        if effort_result.suggestions:
+                            suggestions = "; ".join(effort_result.suggestions[:2])
+                            msg = f"[{story.id}] Effort feedback: {suggestions}"
+                            self.prd.learnings.append(msg)
+                        self._save_prd()
+                        return
+                except Exception as e:
+                    logger.debug(f"Effort gate skipped: {e}")
+            # ── End Effort Gate ─────────────────────────────────────────────────
+
             story_idx = self.prd.stories.index(story)
             if self.reviewer.should_review(
                 story_idx,
@@ -474,6 +531,52 @@ class RalphLoop:
                         )
                 except Exception as e:
                     logger.debug(f"Review skipped: {e}")
+
+            # Taste evaluation — runs after reviewer approves (or review was skipped)
+            if self.taste_agent and self.taste_agent.is_enabled:
+                try:
+                    # Collect diff for taste evaluation
+                    diff_output = ""
+                    if result.files_modified:
+                        try:
+                            proc = await asyncio.create_subprocess_exec(
+                                "git", "diff", "--", *result.files_modified,
+                                stdout=asyncio.subprocess.PIPE,
+                                stderr=asyncio.subprocess.PIPE,
+                                cwd=str(self._workspace_root),
+                            )
+                            stdout, _ = await proc.communicate()
+                            diff_output = stdout.decode(errors="replace")
+                        except Exception:
+                            diff_output = ""
+
+                    taste_result = await self.taste_agent.evaluate(
+                        task=story.title,
+                        output_files=result.files_modified,
+                        diff=diff_output,
+                    )
+                    if taste_result.verdict == "reject":
+                        logger.warning(
+                            f"Story [{story.id}] REJECTED by taste agent: {taste_result.reasoning}"
+                        )
+                        story.status = StoryStatus.TODO
+                        story.error_log.append(
+                            f"Taste rejected: {taste_result.reasoning[:200]}"
+                        )
+                        if taste_result.issues:
+                            self.prd.learnings.append(
+                                f"[{story.id}] Taste issues: {'; '.join(taste_result.issues[:3])}"
+                            )
+                        self._save_prd()
+                        return
+                    if taste_result.verdict == "revise" and taste_result.suggestions:
+                        taste_msg = "; ".join(taste_result.suggestions[:3])
+                        self.prd.learnings.append(f"[{story.id}] Taste feedback: {taste_msg}")
+                        logger.info(
+                            f"Story [{story.id}] taste revise: {taste_result.reasoning[:100]}"
+                        )
+                except Exception as e:
+                    logger.debug(f"Taste evaluation skipped: {e}")
 
             if apply_patch is not None:
                 patch_result = await apply_patch()
@@ -646,7 +749,7 @@ class RalphLoop:
 1. Call `repo_map` to orient yourself in the codebase
 2. Call `read_file` on the specific files relevant to this story
 3. Call `write_file` or `edit_file` to CREATE/MODIFY actual files — you MUST produce file changes
-4. Call `bash` to run `python -m pytest tests/ -x -v` (or relevant tests) to verify
+4. Call `bash` to verify: `ls <path>` or `wc <path>` for content, `pytest` for code
 5. Call `git_diff` to review the final patch before finishing
 
 CRITICAL: You MUST use `write_file` or `edit_file` tools to make actual code changes.

@@ -177,6 +177,7 @@ def _build_run_config(
     allowed_tool: list[str] | None = None,
     verbose: bool = False,
     terse: bool = False,
+    debug_wire: bool = False,
 ):
     from forgegod.config import load_config
 
@@ -199,6 +200,7 @@ def _build_run_config(
         config.security.allowed_tools = list(allowed_tool)
     if terse:
         config.terse.enabled = True
+    config.debug_wire = debug_wire
     return config
 
 
@@ -307,6 +309,7 @@ def _run_task_entrypoint(
     allowed_tool: list[str] | None = None,
     verbose: bool = False,
     terse: bool = False,
+    debug_wire: bool = False,
     show_banner: bool = True,
 ) -> int:
     config = _build_run_config(
@@ -317,6 +320,7 @@ def _run_task_entrypoint(
         allowed_tool=allowed_tool,
         verbose=verbose,
         terse=terse,
+        debug_wire=debug_wire,
     )
     return asyncio.run(
         _execute_run_task(
@@ -992,6 +996,10 @@ def run(
     terse: bool = typer.Option(
         False, "--terse", help="Caveman mode - terse prompts"
     ),
+    debug_wire: bool = typer.Option(
+        False, "--debug-wire",
+        help="Log all LLM boundary crossings to wire.log",
+    ),
 ):
     """Execute a single coding task."""
     raise typer.Exit(
@@ -1005,6 +1013,7 @@ def run(
             allowed_tool=allowed_tool,
             verbose=verbose,
             terse=terse,
+            debug_wire=debug_wire,
         )
     )
 
@@ -1038,11 +1047,16 @@ def loop(
     terse: bool = typer.Option(
         False, "--terse", help="Caveman mode - terse prompts"
     ),
+    debug_wire: bool = typer.Option(
+        False, "--debug-wire",
+        help="Log all LLM boundary crossings to wire.log",
+    ),
 ):
     """Run 24/7 Ralph loop - autonomous coding from PRD."""
     from forgegod.config import load_config
 
     config = load_config()
+    config.debug_wire = debug_wire
     if terse:
         config.terse.enabled = True
     if workers > 1:
@@ -1992,6 +2006,10 @@ def research(
         help="Write research brief to file (JSON)",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    debug_wire: bool = typer.Option(
+        False, "--debug-wire",
+        help="Log all LLM boundary crossings to wire.log",
+    ),
 ):
     """Standalone SOTA 2026 web research — no code execution.
 
@@ -2009,6 +2027,7 @@ def research(
 
     _ensure_project_bootstrap(announce=False)
     config = load_config()
+    config.debug_wire = debug_wire
     configure_cli_logging(
         verbose=verbose,
         log_file=config.project_dir / "logs" / "research.log",
