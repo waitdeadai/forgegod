@@ -217,7 +217,7 @@ class RalphLoop:
             self._audit_cache: dict | None = None
 
         if self._audit_cache is None:
-            audit_path = self.config.project_dir / ".forgegod" / "AUDIT.md"
+            audit_path = self.config.project_dir / "AUDIT.md"
             if not audit_path.exists():
                 logger.debug("No AUDIT.md found — skipping audit check")
                 return True
