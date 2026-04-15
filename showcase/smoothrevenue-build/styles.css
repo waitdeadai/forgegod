@@ -149,6 +149,7 @@ a {
   color: var(--accent-blue);
   text-decoration: none;
   transition: color var(--transition-fast);
+  cursor: pointer;
 }
 
 a:hover {
@@ -363,6 +364,7 @@ input[type="range"]:focus-visible {
   text-decoration: none;
   padding: var(--space-xs) 0;
   transition: color var(--transition-fast);
+  cursor: pointer;
 }
 
 .nav__link:hover {
@@ -531,6 +533,7 @@ input[type="range"]:focus-visible {
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
+  cursor: pointer;
 }
 
 .nav__overlay-link:hover,
