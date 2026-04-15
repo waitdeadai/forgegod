@@ -76,8 +76,10 @@ def test_init_project():
         assert data["budget"]["mode"] == "normal"
 
 
-def test_load_config_defaults():
+def test_load_config_defaults(monkeypatch):
     with tempfile.TemporaryDirectory() as tmpdir:
+        # Isolate from user's global config
+        monkeypatch.setenv("FORGEGOD_GLOBAL_DIR", tmpdir)
         config = load_config(Path(tmpdir))
         assert config.models.planner == "openai:gpt-5.4"
         assert config.ollama.host == "http://localhost:11434"

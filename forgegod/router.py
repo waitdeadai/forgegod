@@ -654,13 +654,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]
@@ -901,13 +907,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]
@@ -985,13 +997,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]
@@ -1065,13 +1083,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]
@@ -1151,13 +1175,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]
@@ -1227,13 +1257,19 @@ class ModelRouter:
         )
         resp = await client.chat.completions.create(**kwargs)
         # Boundary 2 — what comes OUT of the LLM
+        msg = resp.choices[0].message
+        raw_dump = (
+            msg.model_dump()
+            if hasattr(msg, "model_dump")
+            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+        )
         self.wire_logger.debug(
             "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
             model,
             getattr(resp.choices[0], 'finish_reason', None),
-            bool(resp.choices[0].message.tool_calls),
-            len(resp.choices[0].message.content or ""),
-            resp.choices[0].message.model_dump(),
+            bool(msg.tool_calls),
+            len(msg.content or ""),
+            raw_dump,
         )
 
         choice = resp.choices[0]

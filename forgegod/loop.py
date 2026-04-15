@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -205,6 +206,65 @@ class RalphLoop:
         """Stop the loop gracefully."""
         self._running = False
 
+    def _check_audit(self) -> bool:
+        """Check AUDIT.md readiness before spawning any story agent.
+
+        Reads .forgegod/AUDIT.md and halts if ready_to_plan is False.
+        This is the gate that audit-agent produces before ForgeGod plans.
+        Cached after first read so we don't re-parse every tick.
+        """
+        if not hasattr(self, "_audit_cache"):
+            self._audit_cache: dict | None = None
+
+        if self._audit_cache is None:
+            audit_path = self.config.project_dir / ".forgegod" / "AUDIT.md"
+            if not audit_path.exists():
+                logger.debug("No AUDIT.md found — skipping audit check")
+                return True
+
+            try:
+                content = audit_path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                return True
+
+            # Extract ready_to_plan from JSON block
+            m = re.search(
+                r"```json\s*\n(.*?)\n```",
+                content,
+                re.DOTALL,
+            )
+            if m:
+                try:
+                    block = json.loads(m.group(1))
+                    agent = block.get("audit_agent", {})
+                    self._audit_cache = {
+                        "ready": agent.get("ready_to_plan", True),
+                        "blockers": agent.get("blockers", []),
+                        "high_risk": agent.get("high_risk_modules", []),
+                        "recommended_start": agent.get("recommended_start_points", []),
+                    }
+                except (json.JSONDecodeError, KeyError):
+                    self._audit_cache = None
+            else:
+                self._audit_cache = None
+
+        cache = self._audit_cache
+        if cache is None:
+            return True
+
+        if not cache["ready"]:
+            blockers = cache["blockers"]
+            logger.error(
+                "AUDIT.md blocked — ready_to_plan=False. "
+                "Fix blockers before running loop:\n  " +
+                "\n  ".join(f"- {b}" for b in blockers[:5])
+            )
+            self.state.status = LoopStatus.PAUSED
+            self._running = False
+            return False
+
+        return True
+
     def _pre_tick_checks(self) -> bool:
         """Run loop-level checks shared by single-worker and parallel paths."""
         self.state.last_tick_at = datetime.now(timezone.utc).isoformat()
@@ -213,6 +273,10 @@ class RalphLoop:
             logger.info("KILLSWITCH detected — stopping")
             self.state.status = LoopStatus.KILLED
             self._running = False
+            return False
+
+        # AUDIT.md gate — halts if audit found blockers or repo is not ready
+        if not self._check_audit():
             return False
 
         effective_mode = self.budget.check_budget()
@@ -744,6 +808,27 @@ class RalphLoop:
             prompt += "\n## Guardrails (NEVER violate these)\n"
             for g in self.prd.guardrails:
                 prompt += f"- {g}\n"
+
+        # Inject audit findings: risk map + high-risk modules
+        if hasattr(self, "_audit_cache") and self._audit_cache:
+            high_risk = self._audit_cache.get("high_risk", [])
+            if high_risk:
+                # Check if this story touches any high-risk modules
+                touched = set(story.files_touched or [])
+                risk_modules = [
+                    m for m in high_risk
+                    if any(m in str(p) or str(p) in m for p in touched)
+                ]
+                prompt += "\n## Audit Risk Map (from AUDIT.md)\n"
+                prompt += "HIGH-RISK modules (extra verification required):\n"
+                for m in high_risk:
+                    flag = " ← this story touches this" if m in risk_modules else ""
+                    prompt += f"  - {m}{flag}\n"
+                if risk_modules and not self.config.terse.enabled:
+                    prompt += (
+                        "\n  WARNING: This story touches HIGH-RISK modules. "
+                        "Run extra verification before declaring done.\n"
+                    )
 
         if self.prd.learnings:
             prompt += "\n## Learnings from previous stories\n"

@@ -289,7 +289,7 @@ class TestBenchmarkModelDetection:
         assert "gemini:gemini-3-flash" in models
         assert "deepseek:deepseek-chat" in models
         assert "kimi:kimi-k2.5" in models
-        assert "zai:glm-5.1" in models
+        assert "zai:glm-5" in models
 
     def test_detect_available_models_gemini_alias_dedupes(self, monkeypatch):
         def fake_get(*args, **kwargs):
