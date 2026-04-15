@@ -96,6 +96,23 @@ class ModelUsage(BaseModel):
 # ── Tool System ──
 
 
+class ToolCallParseError(Exception):
+    """Raised when LLM response contains tool calls with invalid JSON arguments.
+
+    This signals the LLM generated corrupted JSON in function arguments,
+    typically when the context is long. The agent should retry the turn.
+    """
+
+    def __init__(self, tool_name: str, raw_arguments: str, json_error: str):
+        self.tool_name = tool_name
+        self.raw_arguments = raw_arguments
+        self.json_error = json_error
+        super().__init__(
+            f"Invalid JSON in {tool_name} arguments: {json_error}. "
+            f"Raw: {raw_arguments[:100]!r}"
+        )
+
+
 class ToolCall(BaseModel):
     """A tool call parsed from LLM response."""
 
@@ -325,6 +342,19 @@ class ReviewResult(BaseModel):
     suggestions: list[str] = Field(default_factory=list)
     model_used: str = ""
     cost_usd: float = 0.0
+
+
+class EffortResult(BaseModel):
+    """Result of the max_effort gate check."""
+
+    passed: bool = False
+    shortcut_detected: bool = False
+    shortcut_type: str = ""
+    shortcut_detail: str = ""
+    draft_count: int = 0
+    verification_evidence: list[str] = Field(default_factory=list)
+    blocked_reason: str = ""
+    suggestions: list[str] = Field(default_factory=list)
 
 
 # ── Cost Tracking ──

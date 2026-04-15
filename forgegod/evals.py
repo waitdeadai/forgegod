@@ -322,7 +322,7 @@ _BUILTIN_MANIFEST = {
         },
         {
             "id": "run_completion_gate_roundtrip",
-            "description": "Run mode writes code, verifies, diffs, and only then completes.",
+            "description": "Run mode writes code, verifies, and completes (bash waives git_diff).",
             "scenario": "cli_completion_gate_roundtrip",
             "surface": "run",
             "setup": "git_src",
@@ -331,8 +331,8 @@ _BUILTIN_MANIFEST = {
             "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
-                "request_count": 4,
-                "output_contains": ["Implemented src/app.py and verified the change."],
+                "request_count": 3,
+                "output_contains": ["Files modified: src/app.py"],
                 "files_exist": ["src/app.py"],
                 "file_contains": {"src/app.py": "print('forgegod')"},
             },
@@ -388,7 +388,7 @@ _BUILTIN_MANIFEST = {
             "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
-                "request_count": 4,
+                "request_count": 3,
                 "output_contains": ["Completed: 1 | Failed: 0"],
                 "files_exist": ["src/app.py"],
                 "file_contains": {"src/app.py": "print('forgegod loop')"},
@@ -435,7 +435,7 @@ _BUILTIN_MANIFEST = {
             "dimensions": ["workflow", "verification"],
             "expectations": {
                 "exit_code": 0,
-                "request_count": 4,
+                "request_count": 3,
                 "output_contains": ["Completed: 1 | Failed: 0"],
                 "files_exist": ["src/app.py"],
                 "file_contains": {"src/app.py": "print('forgegod loop')"},

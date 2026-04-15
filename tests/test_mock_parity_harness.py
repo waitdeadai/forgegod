@@ -256,7 +256,9 @@ async def test_parity_completion_gate_roundtrip(tmp_path):
     assert result.files_modified == ["src/app.py"]
     assert result.reviewed_final_diff is True
     assert result.verification_commands == ["python -m pytest --version"]
-    assert router.calls == 5
+    # Completion gate now closes after bash verification without requiring git_diff,
+    # so only 4 calls (write, text, bash, text) instead of 5
+    assert router.calls == 4
 
 
 @pytest.mark.asyncio

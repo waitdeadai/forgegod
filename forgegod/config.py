@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import toml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from forgegod.models import BudgetMode, ResearchDepth
 
@@ -68,12 +68,13 @@ class ModelsConfig(BaseModel):
     sentinel: str = "openai:gpt-5.4"
     escalation: str = "openai:gpt-5.4"
     researcher: str = "openai:gpt-5.4-mini"
+    taste: str = "zai:glm-5.1"
 
 
 class HarnessConfig(BaseModel):
     """Harness profile selection for role routing."""
 
-    profile: str = "adversarial"  # adversarial | single-model
+    profile: str = "adversarial"  # adversarial | single-model | max_effort
     preferred_provider: str = "auto"  # auto | openai
     openai_surface: str = "auto"  # auto | api-only | codex-only | api+codex
 
@@ -108,6 +109,58 @@ class ReviewConfig(BaseModel):
     sample_rate: int = 3  # Review every Nth story in loop mode
     always_review_run: bool = True  # Always review in single-shot mode
     force_review_acceptance_criteria: bool = True
+
+
+class TasteConfig(BaseModel):
+    """Taste agent configuration — adversarial design director."""
+
+    enabled: bool = False  # Opt-in
+    model: str = "zai:glm-5.1"
+    taste_spec_path: str = "taste.md"
+    memory_path: str = ".forgegod/taste.memory"
+    memory_scope: str = "both"  # project | global | both
+    require_taste_md: bool = False
+    auto_approve_threshold: float = 0.9
+    max_revision_cycles: int = 3
+    # Weights for overall score
+    aesthetic_weight: float = 0.3
+    ux_weight: float = 0.3
+    copy_weight: float = 0.2
+    adherence_weight: float = 0.2
+
+
+# Level presets for EffortConfig (defined before class to avoid Pydantic metaclass issues)
+EFFORT_LEVEL_PRESETS = {
+    "minimal": {"min_drafts": 1, "always_verify": False, "no_shortcuts": False},
+    "thorough": {"min_drafts": 2, "always_verify": True, "no_shortcuts": True},
+}
+
+
+class EffortConfig(BaseModel):
+    """Max-effort mode — enforces thorough execution, blocks shortcuts.
+
+    Activated by setting harness.profile = "max_effort".
+    """
+    enabled: bool = False
+    level: str = "thorough"
+    min_drafts: int = 2
+    always_verify: bool = True
+    no_shortcuts: bool = True
+    shortcuts_blocked: list[str] = Field(default_factory=list)
+    research_before_code: bool = True
+    max_compaction_turns: int = 999
+    retry_on_failure: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_level_presets(cls, data):
+        if isinstance(data, dict):
+            level = data.get("level", "thorough")
+            preset = EFFORT_LEVEL_PRESETS.get(level, {})
+            for key, value in preset.items():
+                if key not in data:
+                    data[key] = value
+        return data
 
 
 class MemoryConfig(BaseModel):
@@ -192,7 +245,7 @@ class MiniMaxConfig(BaseModel):
     """MiniMax M2 provider settings (OpenAI-compatible API)."""
 
     timeout: float = 120.0
-    base_url: str = "https://api.minimaxi.com/v1"
+    base_url: str = "https://api.minimax.io/v1"
     use_reasoning: bool = False  # enables reasoning_split in extra_body
 
 
@@ -247,6 +300,8 @@ class HiveConfig(BaseModel):
 class ForgeGodConfig(BaseModel):
     """Root configuration — merges global + project + env."""
 
+    debug_wire: bool = False
+
     models: ModelsConfig = Field(default_factory=ModelsConfig)
     harness: HarnessConfig = Field(default_factory=HarnessConfig)
     budget: BudgetConfig = Field(default_factory=BudgetConfig)
@@ -267,6 +322,8 @@ class ForgeGodConfig(BaseModel):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     subagents: SubagentsConfig = Field(default_factory=SubagentsConfig)
     hive: HiveConfig = Field(default_factory=HiveConfig)
+    taste: TasteConfig = Field(default_factory=TasteConfig)
+    effort: EffortConfig = Field(default_factory=EffortConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR
@@ -482,6 +539,10 @@ def load_config(project_root: Path | None = None) -> ForgeGodConfig:
     config = ForgeGodConfig(**merged)
     config.global_dir = global_dir
     config.project_dir = project_dir
+
+    if config.harness.profile == "max_effort":
+        config.effort.enabled = True
+
     return config
 
 
@@ -532,6 +593,10 @@ def _env_overrides() -> dict[str, Any]:
     prefix = "FORGEGOD_"
     for key, value in os.environ.items():
         if not key.startswith(prefix):
+            continue
+        # Top-level fields (not nested under a section)
+        if key == prefix + "DEBUG_WIRE":
+            result["debug_wire"] = _coerce(value)
             continue
         parts = key[len(prefix) :].lower().split("_", 1)
         if len(parts) == 2:

@@ -173,10 +173,10 @@ def _write_prd(
             "cli_completion_gate_roundtrip",
             "git_src",
             0,
-            "Implemented src/app.py and verified the change.",
+            "Files modified: src/app.py",
             "src/app.py",
             "print('forgegod')\n",
-            4,
+            3,
         ),
     ],
 )
@@ -370,7 +370,7 @@ def test_cli_loop_completes_story_via_mock_provider(monkeypatch, tmp_path):
 
     assert result.exit_code == 0, result.stdout
     assert "Completed: 1 | Failed: 0" in result.stdout
-    assert len(started.server.requests) == 4
+    assert len(started.server.requests) == 3
     assert (workspace / "src" / "app.py").read_text(encoding="utf-8") == "print('forgegod loop')\n"
 
     prd_data = json.loads(prd_path.read_text(encoding="utf-8"))
@@ -457,7 +457,7 @@ def test_cli_loop_parallel_uses_worktree_path(monkeypatch, tmp_path):
 
     assert result.exit_code == 0, result.stdout
     assert "Completed: 1 | Failed: 0" in result.stdout
-    assert len(started.server.requests) == 4
+    assert len(started.server.requests) == 3
     assert (workspace / "src" / "app.py").read_text(encoding="utf-8") == "print('forgegod loop')\n"
 
     prd_data = json.loads(prd_path.read_text(encoding="utf-8"))

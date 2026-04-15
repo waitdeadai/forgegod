@@ -153,6 +153,7 @@ def _check_api_keys() -> HealthCheck:
         "GEMINI_API_KEY": "Gemini",
         "DEEPSEEK_API_KEY": "DeepSeek",
         "MOONSHOT_API_KEY": "Kimi",
+        "MINIMAX_API_KEY": "MiniMax (M2.7 Token Plan)",
         "ZAI_CODING_API_KEY": "Z.AI Coding Plan",
         "ZAI_API_KEY": "Z.AI",
     }

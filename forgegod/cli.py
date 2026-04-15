@@ -694,6 +694,19 @@ def auth_status():
         ),
     )
     table.add_row(
+        "minimax",
+        (
+            "[green]ready[/green]"
+            if os.environ.get("MINIMAX_API_KEY")
+            else "[yellow]not ready[/yellow]"
+        ),
+        (
+            "MINIMAX_API_KEY"
+            if os.environ.get("MINIMAX_API_KEY")
+            else "Set MINIMAX_API_KEY from platform.minimax.io"
+        ),
+    )
+    table.add_row(
         "openrouter",
         (
             "[green]ready[/green]"

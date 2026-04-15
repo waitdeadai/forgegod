@@ -388,10 +388,14 @@ class TestCompletionEvidence:
         assert any("git_diff" in blocker for blocker in blockers)
         assert any("verification command" in blocker for blocker in blockers)
 
-    def test_docs_only_change_does_not_require_runtime_verification(self, agent):
-        agent.files_modified = ["README.md"]
+    def test_docs_only_change_bypasses_git_diff_when_file_exists(self, agent, tmp_path):
+        # Content files (.md) that exist bypass git_diff requirement
+        readme = tmp_path / "README.md"
+        readme.write_text("# Test")
+        agent.files_modified = [str(readme)]
         blockers = agent._completion_blockers(requires_code_changes=True)
-        assert blockers == ["Review the final patch with git_diff after your last code change."]
+        # File exists, so completion is credible without git_diff
+        assert blockers == []
 
     @pytest.mark.asyncio
     async def test_agent_run_requires_post_edit_verification_and_diff(self, tmp_path):
@@ -399,6 +403,8 @@ class TestCompletionEvidence:
 
         project_dir = tmp_path / ".forgegod"
         project_dir.mkdir()
+        # With the smarter completion gate (bash verification waives git_diff requirement),
+        # the model closes after write + bash verification without needing git_diff.
         router = FakeRouter([
             json.dumps({
                 "tool_calls": [{
@@ -413,13 +419,6 @@ class TestCompletionEvidence:
                     "id": "call_2",
                     "name": "bash",
                     "arguments": {"command": "python -m pytest -q"},
-                }]
-            }),
-            json.dumps({
-                "tool_calls": [{
-                    "id": "call_3",
-                    "name": "git_diff",
-                    "arguments": {},
                 }]
             }),
             (
@@ -460,8 +459,9 @@ class TestCompletionEvidence:
         assert result.success is True
         assert result.files_modified == ["src/app.py"]
         assert result.verification_commands == ["python -m pytest -q"]
-        assert result.reviewed_final_diff is True
-        assert router.calls == 5
+        # git_diff was not called — bash verification waives the diff requirement
+        assert result.reviewed_final_diff is False
+        assert router.calls == 4
 
     @pytest.mark.asyncio
     async def test_agent_auto_closes_after_redundant_post_verification_turns(self, tmp_path):
@@ -469,6 +469,8 @@ class TestCompletionEvidence:
 
         project_dir = tmp_path / ".forgegod"
         project_dir.mkdir()
+        # With smarter completion gate: bash verification satisfies gates,
+        # finalize prompt is injected, model responds (no git_diff needed).
         router = FakeRouter([
             json.dumps({
                 "tool_calls": [{
@@ -487,13 +489,6 @@ class TestCompletionEvidence:
             json.dumps({
                 "tool_calls": [{
                     "id": "call_3",
-                    "name": "git_diff",
-                    "arguments": {},
-                }]
-            }),
-            json.dumps({
-                "tool_calls": [{
-                    "id": "call_4",
                     "name": "repo_map",
                     "arguments": {"path": "."},
                 }]
@@ -532,8 +527,9 @@ class TestCompletionEvidence:
         assert "[AUTO-CLOSE]" in result.output
         assert result.files_modified == ["src/app.py"]
         assert result.verification_commands == ["python -m pytest -q"]
-        assert result.reviewed_final_diff is True
-        assert router.calls == 4
+        # git_diff was not called — bash verification waives the diff requirement
+        assert result.reviewed_final_diff is False
+        assert router.calls == 3
 
     @pytest.mark.asyncio
     async def test_agent_emits_user_facing_events(self, tmp_path):
