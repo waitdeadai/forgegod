@@ -252,6 +252,11 @@
     event.preventDefault();
     clearAllErrors();
 
+    // Always hide any stale success message before validating
+    if (formSuccess) {
+      formSuccess.hidden = true;
+    }
+
     if (!validateForm(leadForm)) {
       return;
     }
@@ -319,6 +324,11 @@
 
   function initContactForm() {
     if (!leadForm) return;
+
+    // Always start with a clean slate — hide any stale success message
+    if (formSuccess) {
+      formSuccess.hidden = true;
+    }
 
     leadForm.addEventListener('submit', handleFormSubmit);
 

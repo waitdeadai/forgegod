@@ -2647,6 +2647,11 @@ section[id] {
   border-color: var(--error) !important;
 }
 
+/* [hidden] attribute must always win over class-based display rules */
+[hidden] {
+  display: none !important;
+}
+
 .form-success {
   display: flex;
   align-items: center;
