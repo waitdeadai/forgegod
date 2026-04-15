@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-BASE = Path("showcase/smoothrevenue-build")
+BASE = Path(".")
 
 
 def get_html_keys():

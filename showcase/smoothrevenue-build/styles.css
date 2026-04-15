@@ -12,8 +12,8 @@
   --border: #1e1e24;
   --border-glow: rgba(255, 107, 53, 0.3);
   --text-primary: #f0f0f5;
-  --text-secondary: #8b8b99;
-  --text-tertiary: #55555f;
+  --text-secondary: #c8c8d0;
+  --text-tertiary: #9898a8;
   --accent-orange: #ff6b35;
   --accent-orange-dim: rgba(255, 107, 53, 0.12);
   --accent-blue: #3b82f6;
@@ -133,7 +133,50 @@ a:hover {
   color: var(--accent-orange);
 }
 
-/* 4. Utility Classes */
+a:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* 4. Focus States (WCAG 2.1 AA — keyboard visibility) */
+:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default focus ring when mouse-clicked (keep for keyboard only) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Interactive elements focus styles */
+button:focus-visible,
+.btn:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 3px;
+  border-radius: var(--radius-md);
+}
+
+/* Form element focus states */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+  border-color: var(--accent-orange);
+}
+
+/* Range input custom focus ring */
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+/* 5. Utility Classes */
 .container {
   width: 100%;
   max-width: var(--container-max);
@@ -1070,6 +1113,13 @@ section[id] {
   color: var(--accent-orange);
 }
 
+.footer__nav-list a:focus-visible,
+.footer__legal a:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 .footer__social-link {
   display: inline-flex;
   align-items: center;
@@ -1079,6 +1129,12 @@ section[id] {
 
 .footer__social-link:hover {
   color: var(--accent-orange);
+}
+
+.footer__social-link:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .footer__bottom {
@@ -1165,7 +1221,8 @@ section[id] {
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  outline: none;
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
   border-color: var(--accent-orange);
 }
 
@@ -2155,6 +2212,14 @@ section[id] {
   transition: background-color var(--transition-fast);
 }
 
+/* FAQ summary focus-visible for keyboard navigation */
+.faq__item summary:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-elevated);
+}
+
 .faq__item summary::-webkit-details-marker {
   display: none;
 }
@@ -2435,6 +2500,12 @@ section[id] {
 
 .footer__legal a:hover {
   color: var(--text-secondary);
+}
+
+.footer__legal a:focus-visible,
+.footer__nav-list a:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
 }
 
 /* Responsive */

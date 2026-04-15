@@ -1,0 +1,24 @@
+{
+  "project": "Smoothrevenue.com — Accessibility Audit (ISOLATED)",
+  "tagline": "Single story test — no reviewer interference",
+  "stories": [
+    {
+      "id": "sr-audit-01",
+      "title": "Accessibility and Performance Audit — WCAG 2.1 AA + Core Web Vitals",
+      "description": "Perform a comprehensive accessibility and performance audit of smoothrevenue.com. Read index.html, styles.css, privacy.html, impressum.html, terms.html. Check and FIX:\n1. All images must have meaningful alt text (no empty alt=\"\")\n2. All interactive elements must have focus states\n3. Color contrast ratios must be 4.5:1 minimum for normal text, 3:1 for large text\n4. All form fields must have associated <label> elements\n5. The page must have proper heading hierarchy (h1 → h2 → h3, no skips)\n6. All external links must have rel=\"noopener noreferrer\"\n7. The page must be keyboard-navigable (no tabindex=-1 traps)\n8. Check that prefers-reduced-motion is respected\n\nDo NOT touch any files outside showcase/smoothrevenue-build/\n\nDo NOT just report — actually fix all found issues in the HTML/CSS files.\n\nTarget files: showcase/smoothrevenue-build/index.html, showcase/smoothrevenue-build/styles.css",
+      "effort_required": "thorough",
+      "taste_required": false,
+      "files_touched": ["showcase/smoothrevenue-build/index.html", "showcase/smoothrevenue-build/styles.css"],
+      "acceptance_criteria": [
+        "Read ALL HTML files in showcase/smoothrevenue-build/",
+        "Run accessibility checks manually",
+        "Fix ALL found accessibility issues in HTML/CSS files",
+        "Verify all images have alt text",
+        "Verify all form fields have labels",
+        "Verify heading hierarchy is correct",
+        "Verify color contrast is sufficient",
+        "Run: python -m ruff check showcase/smoothrevenue-build/ --output-format=concise → 0 errors"
+      ]
+    }
+  ]
+}

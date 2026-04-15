@@ -31,8 +31,8 @@ def main() -> None:
 
     colors = {
         "text-primary": "#f0f0f5",
-        "text-secondary": "#8b8b99",
-        "text-tertiary": "#55555f",
+        "text-secondary": "#c8c8d0",
+        "text-tertiary": "#8888a0",
         "accent-orange": "#ff6b35",
         "accent-blue": "#3b82f6",
     }
