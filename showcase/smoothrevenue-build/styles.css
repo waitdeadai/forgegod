@@ -2230,6 +2230,10 @@ section[id] {
   overflow: hidden;
 }
 
+.social-proof .logo-cloud {
+  margin-top: var(--space-2xl);
+}
+
 .logo-cloud__label {
   text-align: center;
   font-size: var(--text-sm);
