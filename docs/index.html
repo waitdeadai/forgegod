@@ -442,7 +442,7 @@ nav .container {
 }
 .comparison-table td:first-child { text-align: left; color: var(--text); font-family: var(--font-mono); font-size: 0.75rem; }
 .comparison-table .yes { color: var(--green); font-weight: 700; }
-.comparison-table .no { color: rgba(255,255,255,0.15); }
+.comparison-table .no { color: rgba(255,255,255,0.80); font-weight: 700; letter-spacing: 0.08em; }
 .comparison-table .partial { color: var(--gold); }
 .comparison-table .fg { background: rgba(0, 229, 255, 0.04); }
 
@@ -594,7 +594,7 @@ footer a { color: var(--cyan); }
   background: linear-gradient(90deg, rgba(10, 10, 15, 0), rgba(10, 10, 15, 0.96));
 }
 .comparison-table {
-  width: max-content;
+  width: 100%;
   min-width: 720px;
   margin-top: 0;
 }
@@ -1978,7 +1978,7 @@ function copyInstall() {
   navigator.clipboard.writeText('pip install forgegod').then(function() {
     var btn = document.querySelector('.hero-cta .command');
     var orig = btn.textContent;
-    btn.textContent = currentLang === 'es' ? ''Copiado!' : 'Copied!';
+    btn.textContent = currentLang === 'es' ? 'Copiado!' : 'Copied!';
     btn.style.color = '#00ff88';
     setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
   });
@@ -2024,14 +2024,17 @@ function showOutput(items, cb, gen) {
 }
 
 function runLine() {
+  try {
   var gen = animGen;
   var lines = getTerminalLines();
+  if (!lines || lines.length === 0) return;
 
   if (lineIdx >= lines.length) {
     lineIdx = 0;
     output.innerHTML = '';
   }
   var line = lines[lineIdx];
+  if (!line) { lineIdx = 0; return; }
   lineIdx++;
 
   if (lineIdx === 1 && output.children.length > 0) {
@@ -2055,11 +2058,12 @@ function runLine() {
           if (gen !== animGen) return;
           output.innerHTML = '';
           lineIdx = 0;
-          runLine();
+          try { runLine(); } catch(e) {}
         }, 4000);
       }
     }, gen);
   }, gen);
+  } catch(e) {}
 }
 
 function restartTerminal() {
@@ -2073,34 +2077,45 @@ function restartTerminal() {
 
 // -- Init: detect language + start --
 (function() {
-  var saved = localStorage.getItem('forgegod-lang');
-  var browser = (navigator.language || '').startsWith('es') ? 'es' : 'en';
-  var lang = saved || browser;
-  currentLang = lang;
+  try {
+    var saved = localStorage.getItem('forgegod-lang');
+    var browser = (navigator.language || '').startsWith('es') ? 'es' : 'en';
+    var lang = saved || browser;
+    currentLang = lang;
 
-  // Set toggle state before first render
-  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
-  document.getElementById('lang-es').classList.toggle('active', lang === 'es');
-  syncMenuState(false);
+    // Set toggle state before first render
+    var langEn = document.getElementById('lang-en');
+    var langEs = document.getElementById('lang-es');
+    var terminal = document.getElementById('terminal');
+    if (langEn) langEn.classList.toggle('active', lang === 'en');
+    if (langEs) langEs.classList.toggle('active', lang === 'es');
+    syncMenuState(false);
 
-  if (lang === 'es') {
-    // Apply Spanish translations
-    document.querySelectorAll('[data-i18n]').forEach(function(el) {
-      var key = el.getAttribute('data-i18n');
-      if (STRINGS.es[key]) el.textContent = STRINGS.es[key];
-    });
-    document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
-      var key = el.getAttribute('data-i18n-html');
-      if (STRINGS.es[key]) el.innerHTML = STRINGS.es[key];
-    });
-    document.title = STRINGS.es.page_title;
-    document.documentElement.lang = 'es';
-    var metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.content = STRINGS.es.meta_desc;
+    if (lang === 'es') {
+      // Apply Spanish translations
+      document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (STRINGS.es[key]) el.textContent = STRINGS.es[key];
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-html');
+        if (STRINGS.es[key]) el.innerHTML = STRINGS.es[key];
+      });
+      document.title = STRINGS.es.page_title;
+      document.documentElement.lang = 'es';
+      var metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = STRINGS.es.meta_desc;
+    }
+
+    // Start terminal animation only if terminal element exists and getTerminalLines works
+    if (terminal && typeof getTerminalLines === 'function' && getTerminalLines().length > 0) {
+      setTimeout(runLine, 1000);
+    }
+  } catch(e) {
+    // Fallback: show static prompt if animation fails
+    var tb = document.getElementById('terminal');
+    if (tb) tb.innerHTML = '<div><span class="prompt">$</span> <span class="command">forgegod init</span></div>';
   }
-
-  // Start terminal animation
-  setTimeout(runLine, 1000);
 })();
 
 // -- Hamburger menu --
