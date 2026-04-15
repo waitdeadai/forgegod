@@ -94,6 +94,22 @@ This file is the repo-local operating contract for coding agents working on Forg
 - Agent execution now sees the same checked-in repo docs that planning does. `docs/README.md`, `docs/PRD.md`, `docs/STORIES.md`, `docs/ARCHITECTURE.md`, and `docs/RUNBOOK.md` are injected in bounded form so execution loops are less likely to drift away from repo-defined intent.
 - Residual risk remains because ForgeGod does not yet provide microVM/syscall-level isolation, and strict mode depends on a usable local Docker backend plus a pre-pulled sandbox image.
 
+## audit-agent
+
+**Trigger:** Run before planning any story or loop. Run when entering a repo with no current `.forgegod/AUDIT.md`.
+
+**Skill:** `.forgegod/skills/audit-agent/SKILL.md`
+**Output:** `.forgegod/AUDIT.md`
+
+**Rules:**
+- Ralph Loop must check for `.forgegod/AUDIT.md` before spawning any story agent.
+- If AUDIT.md is older than 20 commits, re-run audit-agent before planning.
+- If audit sets `ready_to_plan: false`, halt and surface blockers to human.
+- AUDIT.md is read-only for all other agents — only audit-agent writes it.
+- audit-agent does NOT plan, implement, or review — it only audits and produces AUDIT.md.
+
+**Model:** `minimax:2.7-highspeed` (temperature 0.2, top_p 0.9, max_tokens 8000). Fallback: `openai:gpt-5.4-mini` or `zai:glm-5`.
+
 ## SOTA 2026 Patterns (Claude Code-aligned)
 
 ForgeGod inherits these patterns from current-year Claude Code best practices:
@@ -106,6 +122,17 @@ ForgeGod inherits these patterns from current-year Claude Code best practices:
 6. **Skills + hooks**: use `.claude/rules/` for path-specific rules (e.g., strict-mode-only enforcement) and `.claude/hooks.json` for deterministic pre/post actions.
 7. **Permission modes as first-class surface**: ForgeGod's `--permission-mode` and `--approval-mode` flags are part of the core UX, not hidden config. Inspect them with `forgegod permissions`.
 8. **Provider-agnostic by default**: prefer MiniMax 2.7 High Speed, but the architecture should route to whatever provider is available and verified.
+
+## 100% Context Preservation — Always Use Subagents
+
+**Every task MUST maintain 100% of context from start to finish.** Context fragmentation destroys efficiency. The main session is for orchestration, review, and committing — never for inline investigation that a subagent could handle better.
+
+1. **Always spawn a subagent for planning** (`Plan` subagent type) — never plan inline in the main session. A separate subagent with clean context builds the plan; main agent executes without cognitive overhead.
+2. **Always spawn a subagent for complex execution** — research, investigation, multi-step changes: delegate to a subagent and get a clean bullet-point summary back. Do not bloat the main context with debugging loops.
+3. **For long workstreams**: spawn one subagent to research + plan (`Plan` type), another to implement (`general-purpose` type). Each returns a full report. Main session stays authoritative.
+4. **Rule of thumb**: more than 3 tool calls or reading more than 2 files → spawn a subagent.
+5. **Subagent briefs must be self-contained**: what to investigate, what format to report in (bullets preferred, not raw dumps), and what constraints to respect. Vague brief = vague result.
+6. **Verification via subagent**: when auditing or testing across the full codebase, use a focused subagent — don't pollute main context with investigation noise.
 
 ## Working Rules
 - Your primary objective in the current year is to make ForgeGod the strongest harness possible for autonomous coding work. In 2026, that means aiming to be the strongest harness on the market, not merely a good demo.

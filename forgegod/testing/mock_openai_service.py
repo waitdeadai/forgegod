@@ -114,7 +114,7 @@ SCENARIOS: dict[str, MockScenario] = {
     ),
     "cli_completion_gate_roundtrip": MockScenario(
         name="cli_completion_gate_roundtrip",
-        description="CLI run edits code, verifies it, reviews the diff, and only then completes.",
+        description="CLI run edits, verifies, completes (bash waives git_diff).",
         task="Implement src/app.py so it prints forgegod",
         permission_mode="workspace-write",
         responses=(
@@ -139,16 +139,6 @@ SCENARIOS: dict[str, MockScenario] = {
                 ],
             ),
             ScriptedResponse(
-                kind="tool_calls",
-                tool_calls=[
-                    {
-                        "id": "call_diff_2",
-                        "name": "git_diff",
-                        "arguments": {},
-                    }
-                ],
-            ),
-            ScriptedResponse(
                 kind="text",
                 content="Implemented src/app.py and verified the change.",
             ),
@@ -157,8 +147,8 @@ SCENARIOS: dict[str, MockScenario] = {
     "cli_loop_story_success": MockScenario(
         name="cli_loop_story_success",
         description=(
-            "CLI loop completes one story through write, verify, diff, "
-            "and final completion."
+            "CLI loop completes one story through write and verify "
+            "(auto-closes after bash verification, no git_diff required)."
         ),
         task="Loop story: create src/app.py",
         permission_mode="workspace-write",
@@ -180,16 +170,6 @@ SCENARIOS: dict[str, MockScenario] = {
                         "id": "call_loop_verify_1",
                         "name": "bash",
                         "arguments": {"command": "python -m pytest --version"},
-                    }
-                ],
-            ),
-            ScriptedResponse(
-                kind="tool_calls",
-                tool_calls=[
-                    {
-                        "id": "call_loop_diff_1",
-                        "name": "git_diff",
-                        "arguments": {},
                     }
                 ],
             ),

@@ -92,6 +92,24 @@ Do NOT trust memory across machines — auto memory is machine-local.
 5. **Skills + hooks**: `.claude/rules/` for path-specific rules; `.claude/hooks.json` for deterministic enforcement
 6. **CLAUDE.md + AGENTS.md**: CLAUDE.md imports AGENTS.md so both tools read the same repo contract
 
+## 100% Context Preservation Rule
+
+**Every task MUST maintain 100% of context from start to finish.** This project runs on the principle that context fragmentation destroys efficiency. To preserve context:
+
+1. **Always spawn a subagent for planning** (`Plan` subagent type) — never plan inline within the main session. A separate subagent with a clean context window builds the plan, then the main agent executes it without cognitive load.
+
+2. **Always spawn a subagent for complex execution** — for uncertain, multi-step, or high-risk changes, delegate the research/investigation work to a subagent and let it report a clean summary back. Do not pollute the main context with debugging loops.
+
+3. **For long workstreams**: spawn one subagent to research + plan (`Plan` type), another subagent to implement (`general-purpose` type), and let each subagent exhaust its task and return a full report. The main session remains clean and authoritative.
+
+4. **Rule of thumb**: if the task is more than 3 tool calls or involves reading more than 2 files, consider spawning a subagent instead of doing it inline.
+
+5. **Subagent memory discipline**: give subagents a precise, self-contained brief. Include: what to investigate, what format to report back in (bullet points preferred, not raw file dumps), and what constraints to respect. Subagents that receive vague prompts produce vague results.
+
+6. **Verification via subagent**: when you need to verify behavior across the full codebase, spawn a focused subagent to audit, test, and report — do not do it inline where the main context will grow stale.
+
+The main session is for orchestration, review, and committing. Never let it get bloated with investigation noise that a subagent could handle better.
+
 ## Settings Reference
 
 See `.claude/settings.json` for the full Claude Code configuration.
@@ -109,3 +127,4 @@ Key overrides in this project:
 - Do NOT describe a change as SOTA without primary sources + local proof
 - Do NOT add features outside the harness — improve the harness until ForgeGod can do it itself
 - Do NOT commit without running: `python -m ruff check forgegod tests scripts`
+- Do NOT do multi-step investigation inline — always use a subagent to preserve main session clarity

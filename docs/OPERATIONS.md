@@ -90,6 +90,7 @@ This document is the current system of record for day-to-day work in this reposi
 - Strict mode also blocks suspicious generated-code writes and edits.
 - ForgeGod now ships `forgegod design`, which imports `DESIGN.md` presets from `awesome-design-md`, and the agent automatically injects local `DESIGN.md` into frontend tasks.
 - ForgeGod now ships `forgegod contribute`, which reads `CONTRIBUTING.md`/repo rules, can discover approachable GitHub issues, and can plan or execute contribution-sized work in a target repository.
+- ForgeGod now ships `audit-agent` as a first-class skill at `.forgegod/skills/audit-agent/SKILL.md`. It produces `.forgegod/AUDIT.md` via an 11-step protocol before any story planning or loop execution. Trigger conditions: first entry with no AUDIT.md, >20 commits since last audit, new dependency added, or human request. Ralph Loop checks for AUDIT.md before spawning any story agent. If `ready_to_plan: false`, it halts and surfaces blockers. Standalone package: `pip install audit-agent` at https://github.com/waitdeadai/audit-agent.
 - Stories with acceptance criteria now force reviewer coverage by default,
   instead of relying purely on sample-rate review.
 - ForgeGod now exposes `forgegod permissions`, which makes the current
@@ -173,6 +174,7 @@ This document is the current system of record for day-to-day work in this reposi
 8. Avoid trusting the website bundle in `docs/index.html` for operational truth. It is a static marketing artifact.
 9. For harness changes, run both deterministic layers when relevant:
    `python scripts/run_mock_parity_harness.py` and `python scripts/run_cli_mock_parity_harness.py`.
+10. **Always use subagents to preserve 100% context**: spawn a `Plan` subagent for planning, a `general-purpose` subagent for complex investigation/execution. Never inline multi-step research or investigation into the main session — it fragments context and reduces efficiency. The main session is for orchestration, review, and committing.
 
 ## Documentation Map
 
