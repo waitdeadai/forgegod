@@ -89,6 +89,12 @@ body {
   color: var(--text-secondary);
   background-color: var(--bg-base);
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal overflow on all containers */
+* {
+  max-width: 100%;
 }
 
 /* Reduced motion */
@@ -2534,11 +2540,190 @@ section[id] {
   }
 }
 
+/* 7. Contact Form */
+#contact {
+  padding: var(--space-4xl) 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+
+#contact h3 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-xl);
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Lead Form Layout */
+.lead-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 640px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.form-group label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-group .required {
+  color: var(--error);
+}
+
+.form-group .optional {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+/* Form Inputs */
+.form-group input,
+.form-group textarea,
+.form-group select {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 0 3px var(--accent-orange-dim);
+}
+
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239898a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-md) center;
+  padding-right: var(--space-2xl);
+  cursor: pointer;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+/* Form Actions */
+.form-actions {
+  margin-top: var(--space-sm);
+}
+
+/* Validation States */
+.form-error {
+  font-size: var(--text-xs);
+  color: var(--error);
+  min-height: 1rem;
+  display: none;
+}
+
+.form-error--visible {
+  display: block;
+}
+
+.input-error {
+  border-color: var(--error) !important;
+}
+
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+  color: var(--success);
+  font-size: var(--text-sm);
+}
+
+.form-success svg {
+  flex-shrink: 0;
+}
+
+.form-success p {
+  margin: 0;
+}
+
+/* Form Error State for Inputs */
+.form-group.error input,
+.form-group.error textarea,
+.form-group.error select {
+  border-color: var(--error);
+}
+
+.form-group.error input:focus,
+.form-group.error textarea:focus,
+.form-group.error select:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* Form Success State for Inputs */
+.form-group.success input,
+.form-group.success textarea,
+.form-group.success select {
+  border-color: var(--success);
+}
+
+/* Responsive: Stacked layout on mobile */
+@media (max-width: 640px) {
+  #contact {
+    padding: var(--space-3xl) 0;
+  }
+
+  #contact h3 {
+    font-size: var(--text-lg);
+  }
+
+  .lead-form {
+    gap: var(--space-md);
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: var(--text-sm);
+  }
+
+  .form-actions .btn--lg {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .footer__logo,
   .footer__nav-list a,
   .footer__legal a {
+    transition: none;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
     transition: none;
   }
 }

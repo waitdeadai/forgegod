@@ -1,6 +1,6 @@
 /**
  * Smoothrevenue — Navigation Controller
- * Handles: sticky scroll effect, mobile menu, language toggle, active section
+ * Handles: sticky scroll effect, mobile menu, language toggle, active section, contact form
  */
 (function () {
   'use strict';
@@ -10,6 +10,7 @@
   // ============================================================
   let currentLang = 'en';
   let isMenuOpen = false;
+  let isFormSubmitting = false;
 
   // ============================================================
   // Translations (loaded from i18n JSON files)
@@ -46,6 +47,8 @@
   const overlay = document.getElementById('navOverlay');
   const overlayClose = document.getElementById('overlayClose');
   const navLinks = document.querySelectorAll('.nav__link, .nav__overlay-link');
+  const leadForm = document.getElementById('leadForm');
+  const formSuccess = document.getElementById('formSuccess');
 
   // ============================================================
   // Sticky Nav on Scroll
@@ -100,7 +103,6 @@
         activeLink.classList.add('nav__overlay-link--active');
       });
     }
-  }
   }
 
   // ============================================================
@@ -158,6 +160,187 @@
 
     // Update html lang attribute
     document.documentElement.lang = currentLang;
+
+    // Update placeholder text
+    applyPlaceholderTranslations();
+  }
+
+  // ============================================================
+  // Contact Form Handler
+  // ============================================================
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  function showFieldError(field, messageKey) {
+    if (!field) return;
+    const errorSpan = field.parentElement.querySelector('.form-error');
+    if (errorSpan) {
+      errorSpan.textContent = getTranslation(messageKey, 'Required field');
+      errorSpan.classList.add('form-error--visible');
+    }
+    field.classList.add('input-error');
+  }
+
+  function clearFieldError(field) {
+    if (!field) return;
+    const errorSpan = field.parentElement.querySelector('.form-error');
+    if (errorSpan) {
+      errorSpan.textContent = '';
+      errorSpan.classList.remove('form-error--visible');
+    }
+    field.classList.remove('input-error');
+  }
+
+  function clearAllErrors() {
+    document.querySelectorAll('.form-error').forEach((el) => {
+      el.textContent = '';
+      el.classList.remove('form-error--visible');
+    });
+    document.querySelectorAll('.input-error').forEach((el) => {
+      el.classList.remove('input-error');
+    });
+  }
+
+  function validateForm(form) {
+    clearAllErrors();
+    let isValid = true;
+
+    // Name validation
+    const nameField = form.querySelector('#name');
+    if (!nameField || !nameField.value.trim()) {
+      showFieldError(nameField, 'contact.form.required');
+      isValid = false;
+    }
+
+    // Email validation
+    const emailField = form.querySelector('#email');
+    if (!emailField || !emailField.value.trim()) {
+      showFieldError(emailField, 'contact.form.required');
+      isValid = false;
+    } else if (!isValidEmail(emailField.value.trim())) {
+      showFieldError(emailField, 'contact.form.invalidEmail');
+      isValid = false;
+    }
+
+    // Message validation (minimum 20 characters)
+    const messageField = form.querySelector('#message');
+    const minMessageLength = 20;
+    if (!messageField || !messageField.value.trim()) {
+      showFieldError(messageField, 'contact.form.required');
+      isValid = false;
+    } else if (messageField.value.trim().length < minMessageLength) {
+      showFieldError(messageField, 'contact.form.messageTooShort');
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  function getTranslation(key, fallback) {
+    return (translations[currentLang] && translations[currentLang][key])
+      || (translations['en'] && translations['en'][key])
+      || fallback
+      || key;
+  }
+
+  function handleFormSubmit(event) {
+    // Guard: prevent double-submit
+    if (isFormSubmitting || !leadForm) return;
+
+    event.preventDefault();
+    clearAllErrors();
+
+    if (!validateForm(leadForm)) {
+      return;
+    }
+
+    isFormSubmitting = true;
+    const submitBtn = leadForm.querySelector('button[type="submit"]');
+    const btnText = submitBtn ? submitBtn.querySelector('.btn-text') : null;
+    const originalText = btnText ? btnText.textContent : '';
+
+    // Show loading state
+    if (btnText) {
+      btnText.textContent = getTranslation('contact.form.submitting', 'Submitting...');
+    }
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+
+    // Simulate form submission (replace with actual API call)
+    const formData = new FormData(leadForm);
+    const data = Object.fromEntries(formData.entries());
+
+    // Simulate network delay
+    setTimeout(() => {
+      // Show success message
+      if (formSuccess) {
+        formSuccess.hidden = false;
+        const successText = formSuccess.querySelector('p');
+        if (successText) {
+          successText.textContent = getTranslation('contact.form.success', "Thank you! We'll review your submission and respond within 24 hours.");
+        }
+      }
+
+      // Reset form
+      leadForm.reset();
+      isFormSubmitting = false;
+
+      // Reset button
+      if (btnText) {
+        btnText.textContent = originalText;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+
+      // Apply translations to placeholders again after reset
+      applyPlaceholderTranslations();
+
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        if (formSuccess) {
+          formSuccess.hidden = true;
+        }
+      }, 5000);
+    }, 1000);
+  }
+
+  function applyPlaceholderTranslations() {
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (translations[currentLang] && translations[currentLang][key]) {
+        el.placeholder = translations[currentLang][key];
+      }
+    });
+  }
+
+  function initContactForm() {
+    if (!leadForm) return;
+
+    leadForm.addEventListener('submit', handleFormSubmit);
+
+    // Real-time validation on blur
+    const fields = ['name', 'email', 'message'];
+    fields.forEach((fieldId) => {
+      const field = leadForm.querySelector(`#${fieldId}`);
+      if (field) {
+        field.addEventListener('blur', () => {
+          // Only validate if field has been touched
+          if (field.value.trim()) {
+            clearFieldError(field);
+
+            if (fieldId === 'email' && !isValidEmail(field.value.trim())) {
+              showFieldError(field, 'contact.form.invalidEmail');
+            } else if (fieldId === 'message' && field.value.trim().length < 20) {
+              showFieldError(field, 'contact.form.messageTooShort');
+            }
+          }
+        });
+      }
+    });
   }
 
   // ============================================================
@@ -248,6 +431,9 @@
 
     // Bind events
     initEventListeners();
+
+    // Initialize contact form
+    initContactForm();
 
     // Trap focus in mobile menu when open
     if (overlay) {

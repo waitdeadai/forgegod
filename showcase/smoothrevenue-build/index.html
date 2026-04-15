@@ -607,7 +607,23 @@
     <section class="contact" id="contact">
       <div class="container">
         <header class="section-header"><span class="section-tag" data-i18n="contact.tag">Get started</span><h2 data-i18n="contact.title">Schedule Your Architecture Review</h2></header>
-        <form class="lead-form" id="leadForm" novalidate>
+        <h3 data-i18n="contact.form.heading">Request Your Architecture Review</h3>
+        <form class="lead-form" id="leadForm" action="/api/contact" method="POST" novalidate>
+          <div class="form-group">
+            <label for="name" data-i18n="contact.form.nameLabel">Full Name</label>
+            <input type="text" id="name" name="name" required placeholder="John Smith" data-i18n-placeholder="contact.form.namePlaceholder" />
+            <span class="form-error" data-i18n="contact.form.required">Required field</span>
+          </div>
+          <div class="form-group">
+            <label for="email" data-i18n="contact.form.emailLabel">Work Email</label>
+            <input type="email" id="email" name="email" required placeholder="john@company.com" data-i18n-placeholder="contact.form.emailPlaceholder" />
+            <span class="form-error" data-i18n="contact.form.required">Required field</span>
+          </div>
+          <div class="form-group">
+            <label for="message" data-i18n="contact.form.messageLabel">What are you looking to build?</label>
+            <textarea id="message" name="message" rows="4" required placeholder="Briefly describe your project..." data-i18n-placeholder="contact.form.messagePlaceholder"></textarea>
+            <span class="form-error" data-i18n="contact.form.required">Required field</span>
+          </div>
           <div class="form-group">
             <label for="company" data-i18n="form.company">Company name <span class="required">*</span></label>
             <input type="text" id="company" name="company" required placeholder="Acme Corporation" />
@@ -665,14 +681,14 @@
           </div>
           <div class="form-group">
             <label for="usecase" data-i18n="form.useCase">Primary use case <span class="required">*</span></label>
-            <textarea id="usecase" name="usecase" rows="4" required placeholder="Describe your primary AI use case and business objectives..."></textarea>
+            <textarea id="usecase" name="usecase" rows="4" required placeholder="Describe your primary AI use case and business objectives..." data-i18n-placeholder="form.useCasePlaceholder"></textarea>
             <div class="char-count"><span id="usecaseCount">0</span>/200 min</div>
             <span class="form-error"></span>
           </div>
           <div class="form-group">
-            <label for="timeline">Decision timeline <span class="required">*</span></label>
+            <label for="timeline" data-i18n="form.timeline">Decision timeline <span class="required">*</span></label>
             <select id="timeline" name="timeline" required>
-              <option value="">Select timeline</option>
+              <option value="" data-i18n="form.selectTimeline">Select timeline</option>
               <option value="immediately">Immediately — actively evaluating</option>
               <option value="1-3-months">1-3 months</option>
               <option value="3-6-months">3-6 months</option>
@@ -681,13 +697,8 @@
             <span class="form-error"></span>
           </div>
           <div class="form-group">
-            <label for="email">Work email <span class="required">*</span></label>
-            <input type="email" id="email" name="email" required placeholder="you@company.com" />
-            <span class="form-error"></span>
-          </div>
-          <div class="form-group">
-            <label for="phone">Phone <span class="optional">(optional)</span></label>
-            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" />
+            <label for="phone" data-i18n="form.phone">Phone <span data-i18n="form.optional">(optional)</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" data-i18n-placeholder="form.phonePlaceholder" />
             <span class="form-error"></span>
           </div>
           <div class="form-actions">
@@ -698,7 +709,7 @@
           </div>
           <div class="form-success" id="formSuccess" hidden>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <p>We'll review your submission and respond within 24 hours.</p>
+            <p data-i18n="contact.form.success">We'll review your submission and respond within 24 hours.</p>
           </div>
         </form>
       </div>
