@@ -75,6 +75,13 @@
   padding: 0;
 }
 
+/* Images - responsive */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 html {
   scroll-behavior: smooth;
   font-size: 16px;
@@ -211,13 +218,21 @@ input[type="range"]:focus-visible {
   font-family: var(--font-body);
   font-weight: 500;
   font-size: var(--text-sm);
-  padding: var(--space-sm) var(--space-lg);
+  min-height: 44px;
+  padding: 0 var(--space-lg);
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+}
+
+/* Ensure minimum font size on mobile */
+@media (max-width: 768px) {
+  .btn {
+    font-size: 14px;
+  }
 }
 
 .btn:focus-visible {
@@ -258,12 +273,14 @@ input[type="range"]:focus-visible {
 
 .btn--sm {
   font-size: var(--text-xs);
-  padding: var(--space-xs) var(--space-md);
+  min-height: 44px;
+  padding: 0 var(--space-md);
 }
 
 .btn--lg {
   font-size: var(--text-base);
-  padding: var(--space-md) var(--space-xl);
+  min-height: 44px;
+  padding: 0 var(--space-xl);
 }
 
 /* 6. Navigation Bar */
@@ -1217,6 +1234,7 @@ section[id] {
   padding: var(--space-md);
   font-family: var(--font-body);
   font-size: var(--text-base);
+  min-height: 44px;
   color: var(--text-primary);
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -1278,6 +1296,30 @@ section[id] {
 
   .nav__overlay {
     padding: var(--space-xl) var(--space-md);
+  }
+}
+
+/* Mobile Font Size Fixes - ensure minimum 14px on mobile */
+@media (max-width: 768px) {
+  /* Ensure all text is minimum 14px on mobile */
+  :root {
+    --text-xs: 0.875rem;
+    --text-sm: 0.875rem;
+  }
+
+  /* Override all text-xs usages to minimum 14px */
+  .nav__badge,
+  .hero__badge,
+  .badge,
+  .footer__badge-title,
+  .footer__badge-subtitle,
+  .case-study-card__industry,
+  .testimonial-card__role,
+  .testimonial-card__metric,
+  .case-study-card__metric-label,
+  .form-error,
+  .bento-card__link {
+    font-size: 14px !important;
   }
 }
 
@@ -1357,6 +1399,8 @@ section[id] {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Glass card subtle inner glow */
@@ -1900,6 +1944,8 @@ section[id] {
   transition: transform var(--transition-base),
               border-color var(--transition-base),
               box-shadow var(--transition-base);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .case-study-card:hover {
@@ -2421,7 +2467,7 @@ section[id] {
 
 .footer__badge-subtitle {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--text-secondary);
   letter-spacing: 0.1em;
