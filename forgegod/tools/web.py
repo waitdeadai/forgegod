@@ -6,6 +6,7 @@ mode. Uses SearXNG (free, self-hosted) as primary, Brave/Exa as fallback.
 
 from __future__ import annotations
 
+import asyncio
 import html
 import json
 import logging
@@ -13,6 +14,7 @@ import re
 from urllib.parse import quote_plus
 
 import httpx
+from ddgs import DDGS
 
 from forgegod.tools import register_tool
 
@@ -142,6 +144,29 @@ async def _search_exa(
         return []
 
 
+async def _search_duckduckgo(
+    query: str, max_results: int = 5
+) -> list[dict]:
+    """Search via DuckDuckGo (no API key required)."""
+    try:
+        loop = asyncio.get_running_loop()
+
+        def _sync():
+            out: list[dict] = []
+            with DDGS() as ddgs:
+                for r in ddgs.text(query, max_results=max_results):
+                    out.append({
+                        "url": r.get("url", ""),
+                        "title": r.get("title", ""),
+                        "snippet": (r.get("body") or "")[:500],
+                    })
+            return out
+        return await loop.run_in_executor(None, _sync)
+    except Exception as e:
+        logger.warning("DuckDuckGo search failed: %s", e)
+        return []
+
+
 # ── Tool Implementations ──
 
 
@@ -157,7 +182,7 @@ async def web_search(
     results: list[dict] = []
 
     # Try requested provider first, then fallback chain
-    providers = [provider, "searxng", "brave", "exa"]
+    providers = [provider, "searxng", "duckduckgo", "brave", "exa"]
     seen = set()
 
     for p in providers:
@@ -167,6 +192,8 @@ async def web_search(
 
         if p == "searxng":
             results = await _search_searxng(query, searxng_url, max_results)
+        elif p == "duckduckgo":
+            results = await _search_duckduckgo(query, max_results)
         elif p == "brave":
             results = await _search_brave(query, brave_api_key, max_results)
         elif p == "exa":

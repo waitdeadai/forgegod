@@ -30,6 +30,7 @@ dependencies = [
     "toml>=0.10",
     "aiofiles>=24.1",
     "json-repair>=0.44",
+    "ddgs>=1.0",
 ]
 
 [project.optional-dependencies]
