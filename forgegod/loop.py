@@ -630,6 +630,93 @@ class RalphLoop:
             pass
         return review_text
 
+    async def _lint_check(self, files_modified: list[str] | None) -> bool:
+        """Run ruff check --fix on modified Python files. Auto-fixes basic style issues."""
+        if not files_modified:
+            return True
+
+        py_files = [f for f in files_modified if f.endswith(".py")]
+        if py_files:
+            for py_file in py_files:
+                file_path = self._workspace_root / py_file
+                if not file_path.exists():
+                    continue
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "ruff", "check", str(file_path), "--fix",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                        cwd=str(self._workspace_root),
+                    )
+                    stdout, _ = await proc.communicate()
+                    if proc.returncode != 0:
+                        output = stdout.decode(errors="replace")
+                        unfixable = [
+                            line for line in output.splitlines()
+                            if "cannot be auto-fixed" in line
+                        ]
+                        if unfixable:
+                            logger.warning("Unfixable lint in %s", py_file)
+                            self.prd.learnings.append(
+                                f"[{py_file}] unfixable lint:\n"
+                                + "\n".join(unfixable)[:300],
+                            )
+                            return False
+                        logger.info("Ruff auto-fixed %s", py_file)
+                except FileNotFoundError:
+                    logger.debug("ruff not installed, skipping Python lint")
+                except Exception as e:
+                    logger.debug("Python lint check failed: %s", e)
+
+        # TypeScript / JavaScript lint for Next.js / Node projects
+        ts_files = [f for f in files_modified if f.endswith((".ts", ".tsx", ".js", ".jsx"))]
+        if not ts_files:
+            return True
+
+        pkg_json = self._workspace_root / "package.json"
+        if not pkg_json.exists():
+            return True
+
+        # Detect package manager
+        lint_cmd: list[str] = []
+        if (self._workspace_root / "pnpm-lock.yaml").exists():
+            lint_cmd = ["pnpm", "run", "lint", "--fix"]
+        elif (self._workspace_root / "yarn.lock").exists():
+            lint_cmd = ["yarn", "lint"]
+        elif (self._workspace_root / "bun.lockb").exists():
+            lint_cmd = ["bun", "run", "lint"]
+        else:
+            lint_cmd = ["npm", "run", "lint", "--fix"]
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *lint_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=str(self._workspace_root),
+            )
+            stdout, _ = await proc.communicate()
+            if proc.returncode != 0:
+                output = stdout.decode(errors="replace")
+                # Extract just the error lines for learning log
+                error_lines = [
+                    line for line in output.splitlines()
+                    if "error" in line.lower() or "warning" in line.lower()
+                ][:10]
+                logger.warning("TypeScript lint failed:\n%s", "\n".join(error_lines))
+                self.prd.learnings.append(
+                    f"[TS LINT] {' '.join(lint_cmd)}:\n"
+                    + "\n".join(error_lines)[:400],
+                )
+                return False
+            logger.info("TypeScript lint passed: %s", " ".join(lint_cmd))
+        except FileNotFoundError:
+            logger.debug("package manager not found, skipping TS lint")
+        except Exception as e:
+            logger.debug("TypeScript lint check failed: %s", e)
+
+        return True
+
     async def _finalize_story_result(
         self,
         story: Story,
@@ -640,6 +727,23 @@ class RalphLoop:
     ) -> None:
         """Apply reviewer gates, patch transfer, and final story state updates."""
         if result.success:
+            # ── Lint Gate — non-negotiable quality bar ─────────────────────────
+            lint_passed = await self._lint_check(result.files_modified)
+            if not lint_passed:
+                story.status = StoryStatus.TODO
+                story.error_log.append(
+                    "Lint failed — run `ruff check --fix` or `npm run lint --fix` "
+                    "and re-submit"
+                )
+                self.prd.learnings.append(
+                    f"[{story.id}] Lint gate failed. "
+                    "Run `ruff check --fix` (Python) or `npm run lint --fix` (TS) "
+                    "before finishing."
+                )
+                self._save_prd()
+                return
+            # ── End Lint Gate ──────────────────────────────────────────────────
+
             if not result.files_modified:
                 # files_modified only tracks Write/Edit tool calls; the agent may
                 # have edited existing files via other means.  Check git diff for
