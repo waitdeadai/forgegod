@@ -305,6 +305,57 @@ class ResearchBrief(BaseModel):
     )
 
 
+class VerifiedSource(BaseModel):
+    """A URL that has been fetched and verified against the claim."""
+
+    url: str = ""
+    verified_at: str = ""  # YYYY-MM-DD
+    content_match: bool = False
+    snippet: str = ""
+
+
+class CompetitiveFinding(BaseModel):
+    """A competitive intelligence finding about a rival coding agent."""
+
+    competitor: str = ""  # e.g., "SWE-agent", "Claude Code", "Aider"
+    technique: str = ""
+    evidence_url: str = ""
+    verified_at: str = ""  # YYYY-MM-DD
+    content_match: bool = False
+    applicable: bool = True
+    forgegod_equivalents: list[str] = Field(default_factory=list)
+
+
+class SOTAPattern(BaseModel):
+    """A state-of-the-art coding pattern discovered through research."""
+
+    pattern_name: str = ""
+    description: str = ""
+    evidence_url: str = ""
+    verified_at: str = ""  # YYYY-MM-DD
+    content_match: bool = False
+    tech_stack_relevance: list[str] = Field(default_factory=list)
+    confidence: float = 0.0  # 0.0-1.0
+
+
+class DeepResearchBrief(BaseModel):
+    """Enhanced research brief from the deep research phase with information gain tracking."""
+
+    story_id: str = ""
+    task: str = ""
+    competitive_intelligence: list[CompetitiveFinding] = Field(default_factory=list)
+    sota_patterns: list[SOTAPattern] = Field(default_factory=list)
+    verified_constraints: list[str] = Field(default_factory=list)
+    information_gain_history: list[float] = Field(default_factory=list)
+    sources_verified: list[VerifiedSource] = Field(default_factory=list)
+    search_iterations: int = 0
+    stopped_early: bool = False
+    stop_reason: str = ""
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
+
 class PlanCritique(BaseModel):
     """Result of a single adversary critique round."""
 

@@ -2008,6 +2008,91 @@ def benchmark(
 
 
 @app.command()
+def sota(
+    benchmark: str = typer.Option(
+        "swe_bench_verified", "--benchmark",
+        help="Benchmark to compare against: swe_bench_verified, bfcl",
+    ),
+    run_id: str = typer.Option(
+        None, "--run-id",
+        help="Specific run ID to report on (default: latest)",
+    ),
+    output: Path = typer.Option(
+        None, "--output", "-o",
+        help="Write JSON report to file",
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+):
+    """Run SOTA benchmark comparison and report ForgeGod performance vs competitors.
+
+    Compares recorded story metrics against known SOTA benchmarks
+    (SWE-bench Verified, BFCL) and produces a verdict:
+    SOTA, ABOVE_BASELINE, AT_RISK, BELOW_BASELINE.
+    """
+    from forgegod.config import load_config
+    from forgegod.sota_monitor import SOTAMonitor
+
+    _print_banner(mini=True)
+
+    config = load_config()
+    monitor = SOTAMonitor(config)
+
+    if run_id:
+        # Report on a specific historical run
+        history = monitor.get_history(limit=50)
+        found = None
+        for r in history:
+            if r.run_id == run_id:
+                found = r
+                break
+        if found:
+            report = monitor.format_report(found)
+            console.print(report)
+            if output:
+                output.write_text(found.model_dump_json(indent=2))
+                console.print(f"\n[dim]JSON written to {output}[/dim]")
+        else:
+            console.print(f"[red]Run '{run_id}' not found in history[/red]")
+            console.print(f"[dim]History file: {config.project_dir / config.sota_monitor.history_path}[/dim]")
+    else:
+        # Show latest run summary
+        history = monitor.get_history(limit=5)
+        if not history:
+            console.print("[yellow]No SOTA history found.[/yellow]")
+            console.print("Run `forgegod loop` first to collect story metrics.")
+            return
+
+        latest = history[-1]
+        report = monitor.format_report(latest)
+        console.print(report)
+
+        # Competitive comparison table
+        from forgegod.sota_monitor import SOTA_BENCHMARKS
+
+        benchmarks = SOTA_BENCHMARKS.get(benchmark, {})
+        if benchmarks:
+            console.print("")
+            console.print(f"[bold]Benchmark: {benchmark}[/bold]")
+            table_data = []
+            for competitor, (low, high) in sorted(
+                benchmarks.items(), key=lambda x: x[1][1], reverse=True
+            ):
+                is_fg = competitor == "forgegod_planner"
+                marker = " ← FORGEGOD" if is_fg else ""
+                table_data.append((competitor, f"{low:.1f}–{high:.1f}", marker))
+
+            console.table("", "Score Range", "", title="Competitive Landscape")
+            for competitor, score_range, marker in table_data:
+                console.print(f"  {competitor}: {score_range} [dim]{marker}[/dim]")
+
+        if output:
+            output.write_text(latest.model_dump_json(indent=2))
+            console.print(f"\n[dim]JSON written to {output}[/dim]")
+
+    asyncio.run(asyncio.sleep(0))  # noop to satisfy type checker
+
+
+@app.command()
 def research(
     task: str = typer.Argument(..., help="Research query (e.g. 'async redis patterns 2026')"),
     depth: str = typer.Option(

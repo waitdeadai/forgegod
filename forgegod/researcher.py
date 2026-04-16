@@ -14,10 +14,14 @@ from datetime import datetime, timezone
 from forgegod.config import ForgeGodConfig
 from forgegod.json_utils import extract_json
 from forgegod.models import (
+    CompetitiveFinding,
+    DeepResearchBrief,
     LibraryRecommendation,
     ResearchBrief,
     SearchQuery,
     SearchResult,
+    SOTAPattern,
+    VerifiedSource,
 )
 from forgegod.router import ModelRouter
 from forgegod.terse import RECON_QUERY_PROMPT, RECON_SYNTHESIS_PROMPT
@@ -33,6 +37,7 @@ class Researcher:
         self.config = config
         self.router = router
         self.recon = config.recon
+        self.deep_research_cfg = config.deep_research
 
     async def research(self, task: str) -> ResearchBrief:
         """Full research pipeline: queries → search → fetch → synthesize."""
@@ -281,4 +286,270 @@ class Researcher:
             security_warnings=data.get("security_warnings", []),
             best_practices=data.get("best_practices", []),
             prior_art=data.get("prior_art", []),
+        )
+
+    # ── Deep Research (Phase 2) ───────────────────────────────────────────────
+
+    async def deep_research(self, task: str, story_id: str = "") -> DeepResearchBrief:
+        """Deep research with causal chain search and information gain threshold.
+
+        Runs iterative search cycles. Each cycle generates queries causally dependent
+        on the previous cycle's findings. Stops when information gain drops below
+        the configured threshold (default 1.5), preventing infinite loops.
+        """
+        cfg = self.config.deep_research
+        findings: list[dict] = []
+        sources_verified: list[VerifiedSource] = []
+        information_gain_history: list[float] = []
+        previous_state = ""
+
+        for iteration in range(cfg.max_search_iterations):
+            # Generate causally-chained queries based on previous findings
+            queries = await self._generate_causal_queries(
+                task, previous_state, iteration
+            )
+            if not queries:
+                # Fallback if chain breaks down
+                queries = [
+                    SearchQuery(
+                        query=f"best practices {task} 2026",
+                        category="sota",
+                        priority=1,
+                    )
+                ]
+
+            # Execute searches
+            results = await self._execute_searches(queries)
+
+            # Fetch and verify sources
+            results = await self._fetch_top_results(results)
+            verified, unverified = await self._verify_sources(results)
+            sources_verified.extend(verified)
+
+            # Serialize current state for information gain
+            current_state = self._serialize_findings(results, findings)
+            gain = self._calculate_information_gain(previous_state, current_state)
+            information_gain_history.append(gain)
+
+            if gain < cfg.information_gain_threshold:
+                logger.info(
+                    "DeepResearch: stopped early at iteration %d — gain=%.2f < %.2f threshold",
+                    iteration + 1, gain, cfg.information_gain_threshold,
+                )
+                break
+
+            previous_state = current_state
+            iteration_findings: list[dict] = []
+            for q in queries:
+                iteration_findings.append({
+                    "query": q.query,
+                    "results": [r.model_dump() for r in results],
+                })
+            findings.extend(iteration_findings)
+
+        # Synthesize into DeepResearchBrief
+        brief = await self._synthesize_deep(task, findings, sources_verified)
+        brief.story_id = story_id
+        brief.information_gain_history = information_gain_history
+        brief.search_iterations = len(information_gain_history)
+        brief.sources_verified = sources_verified
+        brief.stopped_early = (
+            len(information_gain_history) < cfg.max_search_iterations
+        )
+        if brief.stopped_early and not brief.stop_reason:
+            last_gain = information_gain_history[-1] if information_gain_history else 0.0
+            brief.stop_reason = (
+                f"information_gain={last_gain:.2f} < "
+                f"{cfg.information_gain_threshold} threshold"
+            )
+
+        return brief
+
+    async def _generate_causal_queries(
+        self, task: str, previous_state: str, iteration: int
+    ) -> list[SearchQuery]:
+        """Generate queries where step N depends on step N-1 findings."""
+        if iteration == 0:
+            # First iteration: broad competitive + SOTA queries
+            prompt = (
+                f"Generate 4 targeted search queries for: {task}\n\n"
+                "Generate queries in these categories (1 per line):\n"
+                "1. [COMPETITIVE] What do Claude Code, SWE-agent, Aider do for: {topic}\n"
+                "2. [SOTA] What is the SOTA pattern for: {topic} in 2026\n"
+                "3. [ARCH] How does SWE-agent decompose tasks — open source architecture\n"
+                "4. [BENCHMARK] {topic} SWE-bench results 2026\n"
+                "Return as JSON array with fields: query, category, priority (1=high)"
+            ).format(topic=task)
+        else:
+            # Subsequent iterations: narrow based on previous state
+            prompt = (
+                f"Based on this research state for: {task}\n"
+                f"Previous findings summary: {previous_state[:500]}\n\n"
+                "Generate 3 NEW query strings that narrow or confirm these findings.\n"
+                "Focus on: verified competitor techniques, benchmark scores, SOTA patterns.\n"
+                "Return as JSON array: "
+                "[{{\"query\": \"...\", \"category\": \"...\", \"priority\": 1}}]"
+            )
+
+        response, _ = await self.router.call(
+            prompt=prompt,
+            role="researcher",
+            json_mode=True,
+            max_tokens=1024,
+            temperature=0.3,
+        )
+
+        return self._parse_queries(response)
+
+    def _serialize_findings(
+        self, results: list[SearchResult], prior_findings: list[dict]
+    ) -> str:
+        """Serialize findings into a normalized string for information gain comparison."""
+        parts = []
+        for r in results[:15]:
+            parts.append(f"{r.title}|{r.snippet[:100]}")
+        for finding in prior_findings:
+            parts.append(f"Q:{finding.get('query', '')}")
+            for r in finding.get("results", []):
+                if isinstance(r, dict):
+                    parts.append(f"R:{r.get('title', '')[:80]}")
+        return "\n".join(parts)
+
+    def _calculate_information_gain(self, previous: str, current: str) -> float:
+        """Calculate ratio of new unique information in current vs previous state.
+
+        A simple proxy: ratio of new character n-grams not present in previous.
+        """
+        if not previous:
+            return 2.0  # First iteration always has high apparent gain
+
+        prev_chars = set(previous)
+        curr_chars = set(current)
+        new_chars = curr_chars - prev_chars
+        overlap = len(curr_chars & prev_chars)
+
+        return len(new_chars) / max(overlap, 1)
+
+    async def _verify_sources(
+        self, results: list[SearchResult]
+    ) -> tuple[list[VerifiedSource], list[SearchResult]]:
+        """Fetch each URL and verify content matches the claim. Returns (verified, unverified)."""
+
+        async def _verify_one(r: SearchResult) -> tuple[VerifiedSource | None, SearchResult | None]:
+            if not r.url:
+                return None, r
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            try:
+                content = await web_fetch(r.url, max_chars=2000)
+                match = not content.startswith("Error") and len(content) > 100
+                verified_src = VerifiedSource(
+                    url=r.url,
+                    verified_at=today,
+                    content_match=bool(match),
+                    snippet=r.snippet[:200],
+                )
+                return verified_src, None
+            except Exception:
+                return None, r
+
+        # Process in small batches to avoid hammering servers
+        batch_size = 4
+        verified_list: list[VerifiedSource] = []
+        unverified_list: list[SearchResult] = []
+
+        for i in range(0, len(results), batch_size):
+            batch = results[i : i + batch_size]
+            tasks = [_verify_one(r) for r in batch]
+            pairs = await asyncio.gather(*tasks, return_exceptions=True)
+            for pair in pairs:
+                if isinstance(pair, tuple) and pair[0] is not None:
+                    verified_list.append(pair[0])
+                    if pair[1] is not None:
+                        unverified_list.append(pair[1])
+                elif isinstance(pair, SearchResult):
+                    unverified_list.append(pair)
+
+        return verified_list, unverified_list
+
+    async def _synthesize_deep(
+        self,
+        task: str,
+        findings: list[dict],
+        sources: list[VerifiedSource],
+    ) -> DeepResearchBrief:
+        """Synthesize deep research findings into a DeepResearchBrief."""
+        # Format findings for LLM synthesis
+        findings_text = []
+        for f in findings:
+            findings_text.append(f"Query: {f.get('query', '')}")
+            for r in f.get("results", [])[:3]:
+                if isinstance(r, dict):
+                    findings_text.append(f"  - {r.get('title', '')}: {r.get('snippet', '')[:150]}")
+
+        sources_text = "\n".join(
+            f"- [{s.url}]({s.verified_at}) — {'✓' if s.content_match else '✗'}: {s.snippet[:100]}"
+            for s in sources
+        )
+
+        synthesis_prompt = (
+            "You are the ForgeGod Deep Research Synthesizer.\n"
+            "Given the following research findings, produce a structured JSON brief.\n\n"
+            f"Task: {task}\n\n"
+            f"Findings:\n{chr(10).join(findings_text[:50])}\n\n"
+            f"Verified sources ({len(sources)}):\n{sources_text[:2000]}\n\n"
+            "Return JSON with this exact structure:\n"
+            "{\n"
+            '  "competitive_intelligence": [{"competitor": "...", "technique": "...", '
+            '"evidence_url": "...", "applicable": true/false, "forgegod_equivalents": ["..."]}],\n'
+            '  "sota_patterns": [{"pattern_name": "...", "description": "...", '
+            '"evidence_url": "...", "tech_stack_relevance": ["..."], "confidence": 0.0-1.0}],\n'
+            '  "verified_constraints": ["constraint 1", "constraint 2"]\n'
+            "}"
+        )
+
+        response, _ = await self.router.call(
+            prompt=synthesis_prompt,
+            role="researcher",
+            json_mode=True,
+            max_tokens=4096,
+            temperature=0.2,
+        )
+
+        return self._parse_deep_brief(response, task)
+
+    def _parse_deep_brief(self, response: str, task: str) -> DeepResearchBrief:
+        """Parse synthesis response into DeepResearchBrief."""
+        try:
+            data = extract_json(response)
+        except ValueError:
+            logger.warning("DeepResearch: failed to parse synthesis, returning empty brief")
+            return DeepResearchBrief(task=task)
+
+        competitive: list[CompetitiveFinding] = []
+        for item in data.get("competitive_intelligence", []):
+            if isinstance(item, dict):
+                competitive.append(CompetitiveFinding(
+                    competitor=item.get("competitor", ""),
+                    technique=item.get("technique", ""),
+                    evidence_url=item.get("evidence_url", ""),
+                    applicable=item.get("applicable", True),
+                    forgegod_equivalents=item.get("forgegod_equivalents", []),
+                ))
+
+        sota_patterns: list[SOTAPattern] = []
+        for item in data.get("sota_patterns", []):
+            if isinstance(item, dict):
+                sota_patterns.append(SOTAPattern(
+                    pattern_name=item.get("pattern_name", ""),
+                    description=item.get("description", ""),
+                    evidence_url=item.get("evidence_url", ""),
+                    tech_stack_relevance=item.get("tech_stack_relevance", []),
+                    confidence=item.get("confidence", 0.0),
+                ))
+
+        return DeepResearchBrief(
+            task=task,
+            competitive_intelligence=competitive,
+            sota_patterns=sota_patterns,
+            verified_constraints=data.get("verified_constraints", []),
         )

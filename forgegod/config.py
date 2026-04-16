@@ -278,6 +278,29 @@ class AgentConfig(BaseModel):
     min_confidence_to_proceed: str = "medium"
 
 
+class DeepResearchConfig(BaseModel):
+    """Deep research phase configuration — causal chain + information gain threshold."""
+
+    enabled: bool = False
+    information_gain_threshold: float = 1.5
+    max_search_iterations: int = 8
+    causal_chain_mode: bool = True
+    source_verification: bool = True
+    competitive_intel: bool = True
+    sota_patterns: bool = True
+    complexity_tags: list[str] = Field(
+        default_factory=lambda: ["architecture", "refactor", "security", "api", "auth", "database"]
+    )
+
+
+class SOTAMonitorConfig(BaseModel):
+    """SOTA monitoring configuration — tracks performance against external benchmarks."""
+
+    enabled: bool = False
+    history_path: str = ".forgegod/sota_history.jsonl"
+    cache_ttl_hours: int = 24
+
+
 class SubagentsConfig(BaseModel):
     """Parallel subagent orchestration settings."""
 
@@ -324,6 +347,8 @@ class ForgeGodConfig(BaseModel):
     hive: HiveConfig = Field(default_factory=HiveConfig)
     taste: TasteConfig = Field(default_factory=TasteConfig)
     effort: EffortConfig = Field(default_factory=EffortConfig)
+    deep_research: DeepResearchConfig = Field(default_factory=DeepResearchConfig)
+    sota_monitor: SOTAMonitorConfig = Field(default_factory=SOTAMonitorConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR

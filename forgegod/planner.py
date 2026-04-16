@@ -7,7 +7,7 @@ import re
 
 from forgegod.config import ForgeGodConfig
 from forgegod.json_utils import extract_json
-from forgegod.models import PRD, DebateResult, ResearchBrief, Story, StoryStatus
+from forgegod.models import PRD, DebateResult, DeepResearchBrief, ResearchBrief, Story, StoryStatus
 from forgegod.router import ModelRouter
 from forgegod.terse import RECON_PLANNER_PROMPT, TERSE_PLANNER_PROMPT
 
@@ -250,6 +250,65 @@ Output ONLY valid JSON, no markdown fences, no explanations."""
             )
 
         return "\n\n".join(sections) if sections else "No research findings available."
+
+    @staticmethod
+    def _format_deep_research(brief: "DeepResearchBrief") -> str:
+        """Format DeepResearchBrief for prompt injection into coder/reviewer.
+
+        Returns a markdown section with competitive intelligence, SOTA patterns,
+        and verified architecture constraints from the deep research phase.
+        """
+        sections: list[str] = []
+
+        if brief.competitive_intelligence:
+            lines = ["### Competitive Intelligence (Verified)"]
+            for finding in brief.competitive_intelligence:
+                lines.append(
+                    f"- **{finding.competitor}**: {finding.technique}"
+                )
+                if finding.forgegod_equivalents:
+                    lines.append(
+                        f"  ForgeGod equivalents: {', '.join(finding.forgegod_equivalents)}"
+                    )
+            sections.append("\n".join(lines))
+
+        if brief.sota_patterns:
+            lines = ["### SOTA Patterns (Verified)"]
+            for pattern in brief.sota_patterns:
+                confidence = f"{pattern.confidence:.0%}" if pattern.confidence else "unknown"
+                lines.append(
+                    f"- **{pattern.pattern_name}** (confidence: {confidence}): "
+                    f"{pattern.description}"
+                )
+                if pattern.tech_stack_relevance:
+                    lines.append(
+                        f"  Relevant to: {', '.join(pattern.tech_stack_relevance)}"
+                    )
+            sections.append("\n".join(lines))
+
+        if brief.verified_constraints:
+            sections.append(
+                "### Verified Architecture Constraints\n"
+                + "\n".join(f"- {c}" for c in brief.verified_constraints)
+            )
+
+        if not sections:
+            return ""
+
+        meta = (
+            f"**Research:** {brief.search_iterations} iterations | "
+            f"Sources verified: {len(brief.sources_verified)} | "
+            f"Stopped early: {'yes' if brief.stopped_early else 'no'}"
+        )
+        if brief.stop_reason:
+            meta += f" | Reason: {brief.stop_reason}"
+
+        return (
+            "## Deep Research Findings (SOTA-verified)\n"
+            + meta
+            + "\n\n"
+            + "\n\n".join(sections)
+        )
 
     async def refine_story(self, story: Story, context: str = "") -> Story:
         """Add more detail to a story if needed."""

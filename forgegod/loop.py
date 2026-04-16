@@ -25,6 +25,7 @@ from forgegod.memory import Memory
 from forgegod.models import (
     PRD,
     BudgetMode,
+    DeepResearchBrief,
     LoopState,
     LoopStatus,
     ReviewVerdict,
@@ -116,6 +117,16 @@ class RalphLoop:
             except Exception:
                 logger.debug("MemoryAgent unavailable")
 
+        # SOTA Monitor — tracks performance against external benchmarks
+        self._sota_monitor = None
+        if self.config.sota_monitor.enabled:
+            try:
+                from forgegod.sota_monitor import SOTAMonitor
+                self._sota_monitor = SOTAMonitor(config)
+                self._sota_monitor.start_run()
+            except Exception as e:
+                logger.debug("SOTAMonitor unavailable: %s", e)
+
         # State
         self.state = LoopState()
         self._running = False
@@ -200,6 +211,30 @@ class RalphLoop:
 
         self._save_state()
         self._save_prd()
+
+        # SOTA monitoring — compute and log verdict at end of run
+        if self._sota_monitor:
+            try:
+                sota_run = self._sota_monitor.compute_run()
+                report = self._sota_monitor.format_report(sota_run)
+                logger.info(
+                    "SOTA verdict for run %s: %s (score=%.1f, delta_vs_previous=%.1fpp)",
+                    sota_run.run_id,
+                    sota_run.verdict,
+                    sota_run.estimated_sota_score,
+                    sota_run.delta_vs_previous,
+                )
+                # Emit as a loop event so the CLI can display it
+                await self._emit_event(
+                    "sota_computed",
+                    run_id=sota_run.run_id,
+                    verdict=sota_run.verdict,
+                    score=sota_run.estimated_sota_score,
+                    report=report,
+                )
+            except Exception as e:
+                logger.debug("SOTA computation skipped: %s", e)
+
         return self.state
 
     async def stop(self):
@@ -264,6 +299,78 @@ class RalphLoop:
             return False
 
         return True
+
+    def _should_deep_research(self, story: Story) -> bool:
+        """Return True if this story needs deep research before planning.
+
+        Triggers when:
+        - First story in the loop run (no research done yet)
+        - Story has a complexity tag (architecture, refactor, security, api, auth, database)
+        - Deep research is globally enabled and story has description
+        """
+        cfg = self.config.deep_research
+        if not cfg.enabled:
+            return False
+
+        # First story in this loop run always gets researched
+        if not hasattr(self, "_deep_research_done"):
+            return True
+
+        # Check if story has a complexity tag
+        title_lower = story.title.lower()
+        desc_lower = story.description.lower()
+        text = f"{title_lower} {desc_lower}"
+        for tag in cfg.complexity_tags:
+            if tag in text:
+                return True
+
+        return False
+
+    async def _run_deep_research(self, story: Story) -> DeepResearchBrief | None:
+        """Run deep research for a story and save to .forgegod/RESEARCH_<id>.json.
+
+        Returns the DeepResearchBrief if research ran, None if skipped.
+        """
+        cfg = self.config.deep_research
+        if not cfg.enabled:
+            return None
+
+        research_path = self.config.project_dir / f"RESEARCH_{story.id}.json"
+
+        # Skip if already researched (cache hit)
+        if research_path.exists():
+            try:
+                data = json.loads(research_path.read_text())
+                return DeepResearchBrief(**data)
+            except (json.JSONDecodeError, Exception):
+                pass  # Re-run if corrupted
+
+        logger.info(
+            "DeepResearch: running for [%s] — %s",
+            story.id,
+            story.title,
+        )
+
+        from forgegod.researcher import Researcher
+
+        researcher = Researcher(self.config, self.router)
+        brief = await researcher.deep_research(
+            task=story.description or story.title,
+            story_id=story.id,
+        )
+
+        # Save to cache
+        research_path.write_text(brief.model_dump_json(indent=2))
+        logger.info(
+            "DeepResearch: saved to %s — %d findings, %d iterations, stopped_early=%s",
+            research_path,
+            len(brief.competitive_intelligence) + len(brief.sota_patterns),
+            brief.search_iterations,
+            brief.stopped_early,
+        )
+
+        self._deep_research_done = True
+        return brief
 
     def _pre_tick_checks(self) -> bool:
         """Run loop-level checks shared by single-worker and parallel paths."""
@@ -391,6 +498,15 @@ class RalphLoop:
 
         # 4. Build task prompt for agent
         task_prompt = await self._build_story_prompt(story)
+
+        # 4b. Deep research — run before coder fires if story needs it
+        if self._should_deep_research(story):
+            brief = await self._run_deep_research(story)
+            if brief:
+                from forgegod.planner import Planner
+                deep_ctx = Planner._format_deep_research(brief)
+                if deep_ctx:
+                    task_prompt = task_prompt + "\n\n" + deep_ctx
 
         # 5. Remove stale stub files so the agent cannot falsely conclude
         # the story is already done (MiniMax sees existing files + content
@@ -740,6 +856,25 @@ class RalphLoop:
                 await self.memory.maybe_consolidate()
             except Exception as e:
                 logger.debug(f"Memory consolidation skipped: {e}")
+
+        # SOTA monitoring — record story metrics after finalization
+        if self._sota_monitor:
+            self._sota_monitor.record_story(
+                story_id=story.id,
+                story_title=story.title,
+                passed=(story.status == StoryStatus.DONE),
+                elapsed_s=result.total_usage.elapsed_s if hasattr(result, "total_usage") else 0.0,
+                cost_usd=result.total_usage.cost_usd if hasattr(result, "total_usage") else 0.0,
+                iterations=story.iterations,
+                tokens_used=(
+                    result.total_usage.input_tokens + result.total_usage.output_tokens
+                    if hasattr(result, "total_usage")
+                    else 0
+                ),
+                tool_calls=result.tool_calls_count if hasattr(result, "tool_calls_count") else 0,
+                effort_gate_passed=(story.status == StoryStatus.DONE),
+                reviewer_approved=True,
+            )
 
         self.state.context_rotations += 1
         self.state.current_story_id = ""
