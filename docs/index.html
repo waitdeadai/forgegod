@@ -424,6 +424,92 @@ nav .container {
 }
 .memory-tier p { font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; }
 
+/* -- Showcase -- */
+.showcase-section { padding: 5rem 0; background: var(--bg); }
+.showcase-frame-wrapper {
+  position: relative;
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0d0d15;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 229, 255, 0.06);
+  margin-bottom: 1.5rem;
+}
+.showcase-badge {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  z-index: 10;
+  background: var(--cyan);
+  color: var(--bg);
+  font-family: var(--font-pixel);
+  font-size: 0.45rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+.showcase-iframe {
+  width: 100%;
+  height: 640px;
+  border: none;
+  display: block;
+}
+.showcase-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid var(--surface-border);
+}
+.showcase-open-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--cyan);
+  text-decoration: none;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--cyan);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.showcase-open-btn:hover {
+  background: var(--cyan);
+  color: var(--bg);
+  text-decoration: none;
+}
+.showcase-credit {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.showcase-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.showcase-stat {
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+}
+.showcase-stat-num {
+  font-family: var(--font-pixel);
+  font-size: 1.4rem;
+  color: var(--cyan);
+  margin-bottom: 0.25rem;
+}
+.showcase-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+@media (max-width: 640px) {
+  .showcase-iframe { height: 520px; }
+  .showcase-stats { grid-template-columns: repeat(2, 1fr); }
+  .showcase-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
+
 /* -- Comparison -- */
 .comparison-section { padding: 5rem 0; overflow-x: clip; }
 .comparison-table {
@@ -745,6 +831,7 @@ body::after {
       <a href="#results" data-i18n="nav_results" onclick="closeMenu()">Results</a>
       <a href="#benchmarks" data-i18n="nav_benchmarks" onclick="closeMenu()">Benchmarks</a>
       <a href="#compare" data-i18n="nav_compare" onclick="closeMenu()">Compare</a>
+      <a href="#showcase" data-i18n="nav_showcase" onclick="closeMenu()">Showcase</a>
       <a href="https://github.com/waitdeadai/forgegod" onclick="closeMenu()">GitHub</a>
       <div class="lang-toggle">
         <button id="lang-en" class="active" onclick="setLang('en'); closeMenu()">EN</button>
@@ -1233,6 +1320,51 @@ body::after {
   </div>
 </section>
 
+<!-- Showcase -->
+<section class="showcase-section" id="showcase">
+  <div class="container">
+    <h2 class="section-title" data-i18n="title_showcase">SHOWCASE — BUILT BY FORGEGOD</h2>
+    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-bottom:2rem;max-width:640px;margin-left:auto;margin-right:auto;" data-i18n="showcase_subtitle">ForgeGod built this entire tarot app from scratch — research, design, code, tests, and deployment — in a single autonomous loop. No human wrote the code. Try it live.</p>
+
+    <div class="showcase-frame-wrapper">
+      <div class="showcase-badge">ForgeGod Built This</div>
+      <iframe
+        src="https://tarot-ecru-five.vercel.app/"
+        class="showcase-iframe"
+        loading="lazy"
+        title="TAROT 3:33 — Built by ForgeGod"
+        allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi"
+        sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
+      ></iframe>
+      <div class="showcase-footer">
+        <a href="https://tarot-ecru-five.vercel.app/" target="_blank" rel="noopener" class="showcase-open-btn">
+          Open Full Screen ↗
+        </a>
+        <span class="showcase-credit">Built autonomously by ForgeGod · Next.js + TypeScript · Deployed to Vercel</span>
+      </div>
+    </div>
+
+    <div class="showcase-stats">
+      <div class="showcase-stat">
+        <div class="showcase-stat-num">12</div>
+        <div class="showcase-stat-label">Stories completed</div>
+      </div>
+      <div class="showcase-stat">
+        <div class="showcase-stat-num">23</div>
+        <div class="showcase-stat-label">Files generated</div>
+      </div>
+      <div class="showcase-stat">
+        <div class="showcase-stat-num">3</div>
+        <div class="showcase-stat-label">Hours total time</div>
+      </div>
+      <div class="showcase-stat">
+        <div class="showcase-stat-num">$0</div>
+        <div class="showcase-stat-label">Human coding cost</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Comparison -->
 <section class="comparison-section" id="compare">
   <div class="container">
@@ -1479,6 +1611,9 @@ var STRINGS = {
     title_features: "WHAT MAKES IT DIFFERENT",
     title_memory: "5-TIER COGNITIVE MEMORY",
     title_how: "HOW IT WORKS",
+    title_showcase: "SHOWCASE — BUILT BY FORGEGOD",
+    showcase_subtitle: "ForgeGod built this entire tarot app from scratch — research, design, code, tests, and deployment — in a single autonomous loop. No human wrote the code. Try it live.",
+    nav_showcase: "Showcase",
     title_compare: "HOW WE COMPARE",
     cmp_hint: "Swipe horizontally to compare.",
     title_providers: "SUPPORTED PROVIDERS",
@@ -1665,6 +1800,9 @@ var STRINGS = {
     title_features: "QUÉ LO HACE DIFERENTE",
     title_memory: "MEMORIA COGNITIVA DE 5 NIVELES",
     title_how: "CÓMO FUNCIONA",
+    title_showcase: "SHOWCASE — CONSTRUIDO POR FORGEGOD",
+    showcase_subtitle: "ForgeGod construyó esta app de tarot desde cero — investigación, diseño, código, tests y deploy — en un solo loop autónomo. Ningún humano escribió el código. Probala en vivo.",
+    nav_showcase: "Showcase",
     title_compare: "CÓMO NOS COMPARAMOS",
     cmp_hint: "Deslizá horizontalmente para comparar.",
     title_providers: "PROVEEDORES SOPORTADOS",
