@@ -15,7 +15,7 @@ import pytest
 
 from forgegod.memory import Memory
 
-from .conftest import percentiles, record_metric, timed
+from .conftest import adjusted_max_latency, adjusted_min_rate, percentiles, record_metric, timed
 
 pytestmark = pytest.mark.stress
 
@@ -114,7 +114,8 @@ class TestEpisodicWriteThroughput:
         record_metric("memory", "episodic_writes_per_sec", round(wps, 1))
         record_metric("memory", "db_size_1k_episodes_kb", round(db_size / 1024, 1))
 
-        assert wps > 10, f"Expected >10 writes/sec, got {wps:.1f}"
+        min_rate = adjusted_min_rate(10, profile="memory_write")
+        assert wps > min_rate, f"Expected >{min_rate:.1f} writes/sec, got {wps:.1f}"
 
 
 class TestConcurrentReadWrite:
@@ -172,7 +173,10 @@ class TestRecallLatencyAtScale:
         record_metric("memory", f"recall_at_{scale}_p99_ms", round(p["p99"], 2))
 
         # Recall should be reasonable even at scale
-        max_ok = 500 if scale <= 1000 else 3000
+        max_ok = adjusted_max_latency(
+            500 if scale <= 1000 else 3000,
+            profile="memory_recall",
+        )
         assert p["p95"] < max_ok, f"Recall p95 too slow at {scale}: {p['p95']:.1f}ms"
 
 

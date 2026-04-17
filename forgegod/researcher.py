@@ -18,6 +18,7 @@ from forgegod.models import (
     DeepResearchBrief,
     LibraryRecommendation,
     ResearchBrief,
+    ResearchDepth,
     SearchQuery,
     SearchResult,
     SOTAPattern,
@@ -39,20 +40,36 @@ class Researcher:
         self.recon = config.recon
         self.deep_research_cfg = config.deep_research
 
-    async def research(self, task: str) -> ResearchBrief:
+    async def research(
+        self,
+        task: str,
+        depth: ResearchDepth | None = None,
+    ) -> ResearchBrief:
         """Full research pipeline: queries → search → fetch → synthesize."""
-        logger.info("Recon: starting research for task")
+        depth = depth or self.config.agent.research_depth_default
+        limits = self._research_limits(depth)
+        logger.info("Recon: starting research for task (depth=%s)", depth.value)
 
         # Step 1: Generate targeted search queries
-        queries = await self._generate_queries(task)
+        queries = await self._generate_queries(
+            task,
+            depth=depth,
+            max_queries=limits["max_searches"],
+        )
         logger.info("Recon: generated %d search queries", len(queries))
 
         # Step 2: Execute searches in parallel
-        results = await self._execute_searches(queries)
+        results = await self._execute_searches(
+            queries,
+            batch_size=limits["batch_size"],
+        )
         logger.info("Recon: got %d search results", len(results))
 
         # Step 3: Fetch top result content for depth
-        results = await self._fetch_top_results(results)
+        results = await self._fetch_top_results(
+            results,
+            max_fetch=limits["max_fetch"],
+        )
 
         # Step 4: Check PyPI for any Python packages mentioned
         results = await self._check_pypi(task, results)
@@ -70,10 +87,55 @@ class Researcher:
         )
         return brief
 
-    async def _generate_queries(self, task: str) -> list[SearchQuery]:
+    def _research_limits(self, depth: ResearchDepth) -> dict[str, int]:
+        """Map research depth to concrete search/fetch budgets."""
+        if depth == ResearchDepth.QUICK:
+            return {
+                "max_searches": min(self.recon.max_searches, 4),
+                "batch_size": 4,
+                "max_fetch": 3,
+            }
+        if depth == ResearchDepth.DEEP:
+            return {
+                "max_searches": min(max(self.recon.max_searches, 8), 10),
+                "batch_size": 5,
+                "max_fetch": 6,
+            }
+        return {
+            "max_searches": max(self.recon.max_searches, 12),
+            "batch_size": 5,
+            "max_fetch": 10,
+        }
+
+    async def _generate_queries(
+        self,
+        task: str,
+        *,
+        depth: ResearchDepth,
+        max_queries: int,
+    ) -> list[SearchQuery]:
         """Ask the researcher model to generate targeted search queries."""
         year = datetime.now(timezone.utc).year
-        prompt = RECON_QUERY_PROMPT.format(task=task, year=year)
+        depth_guidance = {
+            ResearchDepth.QUICK: (
+                "Depth: QUICK. Return 3-4 high-signal queries focused on official docs, "
+                "release notes, and one practical implementation pattern."
+            ),
+            ResearchDepth.DEEP: (
+                "Depth: DEEP. Return 5-8 queries covering official docs, migration guidance, "
+                "security notes, and one competitive implementation comparison."
+            ),
+            ResearchDepth.SOTA: (
+                f"Depth: SOTA. Return 8-12 current-year ({year}) queries covering official docs, "
+                "release notes, changelogs, security/CVE checks, benchmarks, compatibility, "
+                "and strong prior art."
+            ),
+        }[depth]
+        prompt = (
+            RECON_QUERY_PROMPT.format(task=task, year=year)
+            + "\n\n"
+            + depth_guidance
+        )
 
         response, _ = await self.router.call(
             prompt=prompt,
@@ -87,7 +149,7 @@ class Researcher:
 
         # Cap at max_searches
         queries = sorted(queries, key=lambda q: q.priority)
-        return queries[: self.recon.max_searches]
+        return queries[:max_queries]
 
     def _parse_queries(self, response: str) -> list[SearchQuery]:
         """Parse LLM response into SearchQuery list."""
@@ -112,7 +174,12 @@ class Researcher:
                 ))
         return [q for q in queries if q.query.strip()]
 
-    async def _execute_searches(self, queries: list[SearchQuery]) -> list[SearchResult]:
+    async def _execute_searches(
+        self,
+        queries: list[SearchQuery],
+        *,
+        batch_size: int = 5,
+    ) -> list[SearchResult]:
         """Run all search queries in parallel across providers."""
         provider = self.recon.search_provider
         searxng_url = self.recon.searxng_url
@@ -148,10 +215,11 @@ class Researcher:
                 for item in items
             ]
 
-        # Run searches concurrently (batch of 5 to avoid rate limits)
+        # Run searches concurrently in bounded batches to avoid rate limits.
         all_results: list[SearchResult] = []
-        for batch_start in range(0, len(queries), 5):
-            batch = queries[batch_start : batch_start + 5]
+        effective_batch_size = max(1, batch_size)
+        for batch_start in range(0, len(queries), effective_batch_size):
+            batch = queries[batch_start : batch_start + effective_batch_size]
             tasks = [_search_one(q) for q in batch]
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
             for result in batch_results:
@@ -168,9 +236,14 @@ class Researcher:
 
         return unique
 
-    async def _fetch_top_results(self, results: list[SearchResult]) -> list[SearchResult]:
+    async def _fetch_top_results(
+        self,
+        results: list[SearchResult],
+        *,
+        max_fetch: int = 10,
+    ) -> list[SearchResult]:
         """Fetch full content for top results to get deeper context."""
-        max_fetch = min(10, len(results))
+        max_fetch = min(max_fetch, len(results))
         max_chars = self.recon.max_fetch_chars
 
         async def _fetch_one(r: SearchResult) -> SearchResult:

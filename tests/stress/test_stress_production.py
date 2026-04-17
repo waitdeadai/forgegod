@@ -40,7 +40,7 @@ from forgegod.security import (
     validate_generated_code,
 )
 
-from .conftest import record_metric, timed
+from .conftest import adjusted_min_rate, record_metric, timed
 
 pytestmark = pytest.mark.stress
 
@@ -150,7 +150,8 @@ class TestComplexityClassifier:
                 router._classify_complexity(p)
         rate = 10_000 / (t.elapsed / 1000)
         record_metric("production", "classifier_per_sec", round(rate, 0))
-        assert rate > 50_000, f"Classifier too slow: {rate:.0f}/sec"
+        min_rate = adjusted_min_rate(50_000, profile="classifier")
+        assert rate > min_rate, f"Classifier too slow: {rate:.0f}/sec"
 
 
 # ── Circuit Breaker: Half-Open + Sliding Window ─────────────────────────

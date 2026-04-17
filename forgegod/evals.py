@@ -1526,6 +1526,7 @@ class HarnessEvalRunner:
         config.review.always_review_run = False
         config.memory.enabled = False
         config.memory.extraction_enabled = False
+        config.agent.research_before_code = False
         config.security.permission_mode = permission_mode
         config.security.approval_mode = approval_mode
         config.security.sandbox_mode = sandbox_mode
@@ -1662,6 +1663,7 @@ class HarnessEvalRunner:
 
         if case.surface == "run":
             args.insert(0, "run")
+            args.append("--no-research")
             args.append(SCENARIOS[case.scenario].task)
         elif case.surface == "loop":
             args[0:0] = [

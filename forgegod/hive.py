@@ -69,6 +69,11 @@ class HiveCoordinator:
 
         workers = max_workers or self.config.hive.max_workers
         iterations = max_iterations or self.config.hive.max_iterations
+        if self.config.security.approval_mode == "prompt":
+            raise RuntimeError(
+                "Hive mode does not support prompt approvals. "
+                "Use approval_mode=approve or approval_mode=deny."
+            )
         self.state.status = "running"
         self._save_state()
 
@@ -360,6 +365,12 @@ Ready stories:
             "remove",
             "--force",
             str(worker.worktree_path),
+            cwd=self.config.project_dir.parent,
+        )
+        await _run_git(
+            "branch",
+            "-D",
+            worker.branch,
             cwd=self.config.project_dir.parent,
         )
         try:

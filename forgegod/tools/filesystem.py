@@ -7,6 +7,7 @@ API keys from leaking into LLM context. Write operations validate paths.
 from __future__ import annotations
 
 import ast
+import asyncio
 import os
 import re
 from pathlib import Path
@@ -106,8 +107,11 @@ async def read_file(path: str, offset: int = 0, limit: int = 500) -> str:
         return f"Error: Not a file: {path}"
     try:
         warning = _check_sensitive_path(str(p))
-        async with aiofiles.open(p, "r", encoding="utf-8", errors="replace") as f:
-            raw = await f.read()
+        raw = await asyncio.to_thread(
+            p.read_text,
+            encoding="utf-8",
+            errors="replace",
+        )
         lines = raw.splitlines()
         total = len(lines)
         selected = lines[offset : offset + limit]

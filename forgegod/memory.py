@@ -33,6 +33,7 @@ import logging
 import math
 import re
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -114,6 +115,7 @@ class Memory:
         self._db_path = config.project_dir / "memory.db"
         self._global_db_path = Path.home() / ".forgegod" / "memory.db"
         self._semantic_text_cache: dict[str, str] = {}
+        self._recent_recall_marks: dict[str, float] = {}
         self._ensure_db(self._db_path)
         self._ensure_db(self._global_db_path)
 
@@ -696,10 +698,16 @@ class Memory:
 
     async def get_success_factors(self) -> list[str]:
         """Get factors most correlated with success."""
-        edges = await self.get_causal_edges()
-        success_edges = [e for e in edges if e.outcome == "success" and e.observations >= 3]
-        success_edges.sort(key=lambda e: e.weight, reverse=True)
-        return [e.factor for e in success_edges[:5]]
+        conn = self._open_conn()
+        rows = conn.execute(
+            """SELECT factor
+               FROM causal_edges
+               WHERE outcome = 'success' AND observations >= 3
+               ORDER BY weight DESC
+               LIMIT 5""",
+        ).fetchall()
+        conn.close()
+        return [row[0] for row in rows]
 
     async def get_related_entities(self, entity_name: str, limit: int = 10) -> list[dict]:
         """Get entities related to a given entity."""
@@ -930,55 +938,64 @@ class Memory:
         Falls back to full scan when FTS5 is unavailable or query is empty.
         """
         conn = self._open_conn()
+        query_words = {word for word in query.lower().split() if word}
+        candidate_limit = max(limit * 12, 50)
+        where_clauses = [
+            "s.confidence >= ?",
+            "s.superseded_by IS NULL",
+        ]
+        params: list[object] = [min_confidence]
+        if category:
+            where_clauses.append("s.category = ?")
+            params.append(category)
+        where_sql = " AND ".join(where_clauses)
 
-        # Build FTS5 query: convert words to OR-joined terms
-        fts5_candidates = set()
-        if query:
-            # Try FTS5 first for fast candidate retrieval
-            fts_terms = " OR ".join(
-                w for w in query.lower().split() if len(w) > 2
-            )
+        rows: list[tuple] = []
+        fts5_candidates: set[str] = set()
+        if query_words:
+            fts_terms = " OR ".join(sorted(word for word in query_words if len(word) > 2))
             if fts_terms:
                 try:
-                    fts_rows = conn.execute(
-                        """SELECT s.memory_id FROM semantic_fts
-                           JOIN semantic s ON s.rowid = semantic_fts.rowid
-                           WHERE semantic_fts MATCH ?
-                           LIMIT 50""",
-                        (fts_terms,),
+                    rows = conn.execute(
+                        f"""SELECT s.memory_id, s.text, s.category, s.confidence, s.importance,
+                                   s.evidence_count, s.last_reinforced, s.created_at, s.tags
+                            FROM semantic_fts
+                            JOIN semantic s ON s.rowid = semantic_fts.rowid
+                            WHERE semantic_fts MATCH ? AND {where_sql}
+                            ORDER BY bm25(semantic_fts)
+                            LIMIT ?""",
+                        [fts_terms, *params, candidate_limit],
                     ).fetchall()
-                    fts5_candidates = {r[0] for r in fts_rows}
+                    fts5_candidates = {row[0] for row in rows}
                 except sqlite3.OperationalError:
-                    pass  # FTS5 table may not exist yet
+                    rows = []  # FTS5 table may not exist yet
 
-        # Fetch candidate rows (FTS5 narrowed or full scan)
-        params: list = [min_confidence]
-        where = "WHERE confidence >= ? AND superseded_by IS NULL"
-        if category:
-            where += " AND category = ?"
-            params.append(category)
-
-        rows = conn.execute(
-            f"""SELECT memory_id, text, category, confidence, importance,
-                       evidence_count, last_reinforced, created_at, tags
-                FROM semantic {where}""",
-            params,
-        ).fetchall()
+        if not rows:
+            rows = conn.execute(
+                f"""SELECT s.memory_id, s.text, s.category, s.confidence, s.importance,
+                           s.evidence_count, s.last_reinforced, s.created_at, s.tags
+                    FROM semantic s
+                    WHERE {where_sql}
+                    ORDER BY s.importance DESC, s.confidence DESC
+                    LIMIT ?""",
+                [*params, candidate_limit],
+            ).fetchall()
         conn.close()
 
         if not rows:
             return []
 
         # Score each memory
-        query_words = set(query.lower().split()) if query else set()
         scored: list[tuple[float, dict]] = []
 
         for r in rows:
+            raw_tags = r[8]
             mem = {
                 "memory_id": r[0], "text": r[1], "category": r[2],
                 "confidence": r[3], "importance": r[4],
                 "evidence_count": r[5], "last_reinforced": r[6],
-                "created_at": r[7], "tags": json.loads(r[8] or "[]"),
+                "created_at": r[7],
+                "tags": json.loads(raw_tags) if raw_tags and raw_tags != "[]" else [],
             }
 
             # Signal 1: Keyword relevance (0-1)
@@ -990,7 +1007,7 @@ class Memory:
                     relevance = len(query_words & all_words) / max(len(query_words), 1)
                 else:
                     relevance = 0.0
-                # FTS5 boost: memories found by FTS5 get a relevance floor
+                # FTS5 candidates already passed the text index; keep a modest floor.
                 if fts5_candidates and mem["memory_id"] in fts5_candidates:
                     relevance = max(relevance, 0.3)
             else:
@@ -1046,13 +1063,31 @@ class Memory:
         """Update last_recalled timestamp for retrieved memories."""
         if not memories:
             return
-        now = datetime.now(timezone.utc).isoformat()
-        conn = self._open_conn()
+        now_dt = datetime.now(timezone.utc)
+        now = now_dt.isoformat()
+        now_monotonic = time.monotonic()
+        memory_ids: list[str] = []
         for mem in memories:
-            conn.execute(
-                "UPDATE semantic SET last_recalled = ? WHERE memory_id = ?",
-                (now, mem["memory_id"]),
-            )
+            memory_id = mem["memory_id"]
+            last_marked = self._recent_recall_marks.get(memory_id)
+            if last_marked is not None and (now_monotonic - last_marked) < 30:
+                continue
+            self._recent_recall_marks[memory_id] = now_monotonic
+            memory_ids.append(memory_id)
+        if not memory_ids:
+            return
+        if len(self._recent_recall_marks) > 4096:
+            cutoff = now_monotonic - 300
+            self._recent_recall_marks = {
+                memory_id: marked_at
+                for memory_id, marked_at in self._recent_recall_marks.items()
+                if marked_at >= cutoff
+            }
+        conn = self._open_conn()
+        conn.executemany(
+            "UPDATE semantic SET last_recalled = ? WHERE memory_id = ?",
+            [(now, memory_id) for memory_id in memory_ids],
+        )
         conn.commit()
         conn.close()
 

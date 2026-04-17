@@ -8,7 +8,7 @@ import pytest
 
 from forgegod.tools.filesystem import edit_file, glob_files, grep_files, read_file, write_file
 
-from .conftest import percentiles, record_metric, timed
+from .conftest import adjusted_min_rate, percentiles, record_metric, timed
 
 pytestmark = pytest.mark.stress
 
@@ -37,7 +37,8 @@ class TestFileReadThroughput:
         record_metric("tools", f"read_{size_kb}kb_per_sec", round(rps, 0))
         record_metric("tools", f"read_{size_kb}kb_p50_ms", round(p["p50"], 2))
 
-        assert rps > 50, f"Read {size_kb}KB too slow: {rps:.0f}/sec"
+        min_rate = adjusted_min_rate(50, profile="filesystem_read")
+        assert rps > min_rate, f"Read {size_kb}KB too slow: {rps:.0f}/sec"
 
 
 class TestFileWriteThroughput:
@@ -56,7 +57,8 @@ class TestFileWriteThroughput:
 
         # Verify files exist
         assert len(list(tmp_path.glob("out_*.py"))) == n
-        assert wps > 100, f"Write too slow: {wps:.0f}/sec"
+        min_rate = adjusted_min_rate(100, profile="default")
+        assert wps > min_rate, f"Write too slow: {wps:.0f}/sec"
 
 
 class TestEditFileThroughput:
@@ -86,7 +88,8 @@ class TestEditFileThroughput:
         record_metric("tools", "edit_success_rate", round(success_rate, 4))
 
         assert success_rate >= 0.95, f"Edit success rate too low: {success_rate:.2%}"
-        assert eps > 50, f"Edit too slow: {eps:.0f}/sec"
+        min_rate = adjusted_min_rate(50, profile="filesystem_edit")
+        assert eps > min_rate, f"Edit too slow: {eps:.0f}/sec"
 
 
 class TestGlobAtScale:

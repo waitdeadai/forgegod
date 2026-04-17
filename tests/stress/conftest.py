@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import random
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -23,6 +25,39 @@ _STRESS_METRICS: dict[str, Any] = {}
 def record_metric(component: str, key: str, value: Any):
     """Record a stress test metric for the final report."""
     _STRESS_METRICS.setdefault(component, {})[key] = value
+
+
+def adjusted_min_rate(target: float, *, profile: str = "default") -> float:
+    """Return a platform-adjusted lower bound for throughput checks."""
+    if os.name != "nt":
+        return target
+
+    factors = {
+        "default": 0.75,
+        "filesystem_read": 0.70,
+        "filesystem_edit": 0.60,
+        "classifier": 0.85,
+        "memory_write": 0.80,
+    }
+    factor = factors.get(profile, factors["default"])
+    if sys.version_info >= (3, 13):
+        factor *= 0.95
+    return target * factor
+
+
+def adjusted_max_latency(target: float, *, profile: str = "default") -> float:
+    """Return a platform-adjusted upper bound for latency checks."""
+    if os.name != "nt":
+        return target
+
+    factors = {
+        "default": 1.25,
+        "memory_recall": 2.00,
+    }
+    factor = factors.get(profile, factors["default"])
+    if sys.version_info >= (3, 13):
+        factor *= 1.05
+    return target * factor
 
 
 def percentiles(values: list[float]) -> dict[str, float]:

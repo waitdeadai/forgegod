@@ -41,10 +41,36 @@ app.add_typer(auth_app, name="auth")
 # -- Mascot - The One-Eyed Triangle --
 _VER = __version__
 
+_IMPLEMENTATION_MARKERS = (
+    "implement", "fix", "build", "create", "add", "update", "modify",
+    "edit", "write", "refactor", "change", "patch", "integrate",
+    "support", "scaffold", "ship",
+)
+
+_READ_ONLY_MARKERS = (
+    "explain", "analyze", "audit", "review", "inspect", "summarize",
+    "research", "plan", "brainstorm", "compare", "what", "why",
+    "list", "show", "status", "report", "check", "verify", "confirm",
+    "probe", "run",
+)
+
 
 def _safe_console_text(text: str) -> str:
     """Best-effort console-safe text for legacy Windows encodings."""
     return _ux_safe_console_text(text, active_console=console)
+
+
+def _task_requires_code_changes(task: str) -> bool:
+    lowered = task.lower()
+    if "## acceptance criteria" in lowered or "## current story:" in lowered:
+        return True
+    if any(marker in lowered for marker in _IMPLEMENTATION_MARKERS):
+        return True
+    if any(marker in lowered for marker in _READ_ONLY_MARKERS):
+        return False
+    if "?" in task and not any(marker in lowered for marker in _IMPLEMENTATION_MARKERS):
+        return False
+    return True
 
 
 def _build_banner():
@@ -204,15 +230,200 @@ def _build_run_config(
     return config
 
 
+def _merge_unique(items_a: list[str] | None, items_b: list[str] | None) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for item in [*(items_a or []), *(items_b or [])]:
+        value = str(item).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        merged.append(value)
+    return merged
+
+
+def _merge_usage(*usages):
+    from forgegod.models import ModelUsage
+
+    merged = ModelUsage()
+    for usage in usages:
+        if usage is None:
+            continue
+        merged.input_tokens += usage.input_tokens
+        merged.output_tokens += usage.output_tokens
+        merged.reasoning_tokens += usage.reasoning_tokens
+        merged.cost_usd += usage.cost_usd
+        merged.elapsed_s += usage.elapsed_s
+        if usage.model:
+            merged.model = usage.model
+        if usage.provider:
+            merged.provider = usage.provider
+    return merged
+
+
+def _merge_agent_results(primary, followup):
+    merged = followup.model_copy(deep=True)
+    merged.files_modified = _merge_unique(primary.files_modified, followup.files_modified)
+    merged.verification_commands = _merge_unique(
+        primary.verification_commands,
+        followup.verification_commands,
+    )
+    merged.completion_blockers = _merge_unique(
+        primary.completion_blockers,
+        followup.completion_blockers,
+    )
+    merged.tool_calls_count = primary.tool_calls_count + followup.tool_calls_count
+    merged.total_usage = _merge_usage(primary.total_usage, followup.total_usage)
+    merged.reviewed_final_diff = primary.reviewed_final_diff or followup.reviewed_final_diff
+    if not merged.output:
+        merged.output = primary.output
+    return merged
+
+
+async def _load_review_code(config, result) -> str:
+    review_code = result.output[:6000]
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "git",
+            "diff",
+            "HEAD",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=str(config.project_dir.parent),
+        )
+        stdout, _ = await proc.communicate()
+        if stdout:
+            review_code = stdout.decode("utf-8", errors="replace")[:6000]
+    except Exception:
+        pass
+    return review_code
+
+
+async def _run_review(task: str, *, reviewer, config, result):
+    review_code = await _load_review_code(config, result)
+    return await reviewer.review(
+        task=task,
+        code=review_code,
+        files_changed=result.files_modified,
+    )
+
+
+def _format_research_brief_for_retry(brief) -> str:
+    sections: list[str] = []
+    if brief.libraries:
+        sections.append(
+            "Recommended libraries:\n"
+            + "\n".join(
+                f"- {library.name} {library.version}: {library.why}"
+                for library in brief.libraries[:5]
+            )
+        )
+    if brief.architecture_patterns:
+        sections.append(
+            "Architecture patterns:\n"
+            + "\n".join(f"- {pattern}" for pattern in brief.architecture_patterns[:5])
+        )
+    if brief.security_warnings:
+        sections.append(
+            "Security warnings:\n"
+            + "\n".join(f"- {warning}" for warning in brief.security_warnings[:5])
+        )
+    if brief.best_practices:
+        sections.append(
+            "Best practices:\n"
+            + "\n".join(f"- {item}" for item in brief.best_practices[:5])
+        )
+    return "\n\n".join(sections)
+
+
+def _build_review_retry_task(task: str, review_result, brief=None) -> str:
+    lines = [
+        task,
+        "",
+        "The previous implementation was blocked by review.",
+        "Work from the current workspace state, keep the valid changes, and fix only what is missing.",
+        "Re-run the relevant verification before finishing.",
+        "",
+        f"Reviewer verdict: {review_result.verdict.value}",
+        f"Reviewer reasoning: {review_result.reasoning}",
+    ]
+    if review_result.issues:
+        lines.append("Reviewer issues:")
+        lines.extend(f"- {issue}" for issue in review_result.issues)
+    if review_result.suggestions:
+        lines.append("Reviewer suggestions:")
+        lines.extend(f"- {item}" for item in review_result.suggestions[:5])
+    if brief is not None:
+        research_section = _format_research_brief_for_retry(brief)
+        if research_section:
+            lines.extend(
+                [
+                    "",
+                    "Research-backed troubleshooting:",
+                    research_section,
+                ]
+            )
+    return "\n".join(lines)
+
+
+def _print_review_block(review_result) -> None:
+    color = "yellow" if review_result.verdict.value == "revise" else "red"
+    console.print(
+        Panel(
+            _safe_console_text(
+                f"[{color}]Reviewer blocked completion: "
+                f"{review_result.verdict.value}[/{color}]\n"
+                f"{review_result.reasoning}"
+            ),
+            border_style=color,
+        )
+    )
+    if review_result.issues:
+        for issue in review_result.issues:
+            console.print(f"  - {_safe_console_text(issue)}")
+
+
+def _write_json_result(
+    path: Path,
+    *,
+    exit_code: int,
+    task: str,
+    result=None,
+    review_result=None,
+    story_id: str = "",
+    error: str = "",
+) -> None:
+    from forgegod.models import HiveWorkerResult, ModelUsage
+
+    payload = HiveWorkerResult(
+        story_id=story_id,
+        success=bool(result and result.success and exit_code == 0),
+        exit_code=exit_code,
+        output=(result.output if result else ""),
+        files_modified=(result.files_modified if result else []),
+        verification_commands=(result.verification_commands if result else []),
+        reviewed_final_diff=bool(result and result.reviewed_final_diff),
+        completion_blockers=(result.completion_blockers if result else []),
+        review_verdict=(review_result.verdict.value if review_result else ""),
+        review_reasoning=(review_result.reasoning if review_result else ""),
+        error=error or (result.error if result else ""),
+        total_usage=(result.total_usage if result else ModelUsage()),
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+
+
 async def _execute_run_task(
     task: str,
     *,
     config,
     review: bool,
     show_banner: bool,
+    json_out: Path | None = None,
+    story_id: str = "",
 ) -> int:
     from forgegod.agent import Agent
-    from forgegod.models import ReviewVerdict
+    from forgegod.researcher import Researcher
     from forgegod.reviewer import Reviewer
     from forgegod.router import ModelRouter
 
@@ -240,45 +451,80 @@ async def _execute_run_task(
                 console.print("[yellow]Completion blockers:[/yellow]")
                 for blocker in result.completion_blockers:
                     console.print(f"  - {_safe_console_text(blocker)}")
+            if json_out is not None:
+                _write_json_result(
+                    json_out,
+                    exit_code=1,
+                    task=task,
+                    result=result,
+                    story_id=story_id,
+                    error=failure,
+                )
             return 1
 
+        review_result = None
         if review and result.files_modified:
             reviewer = Reviewer(config=config, router=router)
-            review_code = result.output[:6000]
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    "git", "diff", "HEAD",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=str(config.project_dir.parent),
-                )
-                stdout, _ = await proc.communicate()
-                if stdout:
-                    review_code = stdout.decode("utf-8", errors="replace")[:6000]
-            except Exception:
-                pass
-
-            review_result = await reviewer.review(
-                task=task,
-                code=review_code,
-                files_changed=result.files_modified,
+            review_result = await _run_review(
+                task,
+                reviewer=reviewer,
+                config=config,
+                result=result,
             )
-            if review_result.verdict != ReviewVerdict.APPROVE:
-                color = "yellow" if review_result.verdict == ReviewVerdict.REVISE else "red"
-                console.print(
-                    Panel(
-                        _safe_console_text(
-                            f"[{color}]Reviewer blocked completion: "
-                            f"{review_result.verdict.value}[/{color}]\n"
-                            f"{review_result.reasoning}"
-                        ),
-                        border_style=color,
+            if review_result.verdict.value != "approve":
+                retried_result = None
+                if config.agent.auto_research_on_bad_review and _task_requires_code_changes(task):
+                    console.print(
+                        "[forge.warn]Reviewer requested revisions. "
+                        "Running research-backed troubleshooting before one retry.[/forge.warn]"
                     )
-                )
-                if review_result.issues:
-                    for issue in review_result.issues:
-                        console.print(f"  - {_safe_console_text(issue)}")
-                return 1
+                    brief = None
+                    try:
+                        researcher = Researcher(config, router)
+                        brief = await researcher.research(
+                            task,
+                            depth=config.agent.research_depth_on_bad_review,
+                        )
+                    except Exception as exc:
+                        console.print(
+                            "[forge.warn]Research retry degraded gracefully:[/forge.warn] "
+                            f"{_safe_console_text(str(exc))[:200]}"
+                        )
+
+                    retry_task = _build_review_retry_task(task, review_result, brief)
+                    retry_config = config.model_copy(deep=True)
+                    retry_config.agent.research_before_code = False
+                    retry_agent = Agent(
+                        router=router,
+                        config=retry_config,
+                        tool_approver=approver,
+                        event_callback=narrator,
+                    )
+                    retried_result = await retry_agent.run(retry_task)
+                    if retried_result.success:
+                        result = _merge_agent_results(result, retried_result)
+                        review_result = await _run_review(
+                            task,
+                            reviewer=reviewer,
+                            config=config,
+                            result=result,
+                        )
+                    else:
+                        result = _merge_agent_results(result, retried_result)
+
+                if review_result.verdict.value != "approve":
+                    _print_review_block(review_result)
+                    if json_out is not None:
+                        _write_json_result(
+                            json_out,
+                            exit_code=1,
+                            task=task,
+                            result=result,
+                            review_result=review_result,
+                            story_id=story_id,
+                            error=result.error or review_result.reasoning,
+                        )
+                    return 1
 
         console.print(
             Panel(
@@ -293,6 +539,15 @@ async def _execute_run_task(
             f"Cost: ${result.total_usage.cost_usd:.4f} | "
             f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
         )
+        if json_out is not None:
+            _write_json_result(
+                json_out,
+                exit_code=0,
+                task=task,
+                result=result,
+                review_result=review_result,
+                story_id=story_id,
+            )
         return 0
     finally:
         await router.close()
@@ -311,10 +566,14 @@ def _run_task_entrypoint(
     terse: bool = False,
     debug_wire: bool = False,
     show_banner: bool = True,
+    json_out: Path | None = None,
+    story_id: str = "",
+    subagents_enabled: bool | None = None,
 ) -> int:
     config = _build_run_config(
         model=model,
         review=review,
+        research=research,
         permission_mode=permission_mode,
         approval_mode=approval_mode,
         allowed_tool=allowed_tool,
@@ -322,12 +581,16 @@ def _run_task_entrypoint(
         terse=terse,
         debug_wire=debug_wire,
     )
+    if subagents_enabled is not None:
+        config.subagents.enabled = subagents_enabled
     return asyncio.run(
         _execute_run_task(
             task,
             config=config,
             review=review,
             show_banner=show_banner,
+            json_out=json_out,
+            story_id=story_id,
         )
     )
 
@@ -1013,6 +1276,11 @@ def run(
         False, "--debug-wire",
         help="Log all LLM boundary crossings to wire.log",
     ),
+    json_out: Optional[Path] = typer.Option(
+        None,
+        "--json-out",
+        help="Write machine-readable run results to a JSON file",
+    ),
 ):
     """Execute a single coding task."""
     raise typer.Exit(
@@ -1027,8 +1295,127 @@ def run(
             verbose=verbose,
             terse=terse,
             debug_wire=debug_wire,
+            json_out=json_out,
         )
     )
+
+
+@app.command()
+def worker(
+    payload: Path = typer.Option(..., "--payload", help="Worker payload JSON"),
+    json_out: Path = typer.Option(..., "--json-out", help="Worker result JSON path"),
+):
+    """Internal worker surface used by hive mode."""
+    from forgegod.models import HiveWorkerPayload
+
+    try:
+        worker_payload = HiveWorkerPayload(**json.loads(payload.read_text(encoding="utf-8")))
+    except Exception as exc:
+        console.print(f"[red]Invalid worker payload:[/red] {_safe_console_text(str(exc))}")
+        raise typer.Exit(1)
+
+    raise typer.Exit(
+        _run_task_entrypoint(
+            worker_payload.task,
+            model=worker_payload.model,
+            review=worker_payload.review,
+            permission_mode=worker_payload.permission_mode,
+            approval_mode=worker_payload.approval_mode,
+            allowed_tool=worker_payload.allowed_tools,
+            terse=worker_payload.terse,
+            show_banner=False,
+            json_out=json_out,
+            story_id=worker_payload.story_id,
+            subagents_enabled=worker_payload.subagents_enabled,
+        )
+    )
+
+
+@app.command()
+def hive(
+    prd: Path = typer.Option(
+        Path(".forgegod/prd.json"), "--prd", "-p", help="PRD file path"
+    ),
+    workers: int = typer.Option(2, "--workers", "-w", help="Parallel worker processes"),
+    max_iterations: Optional[int] = typer.Option(None, "--max", help="Max hive iterations"),
+    permission_mode: Optional[str] = typer.Option(
+        None,
+        "--permission-mode",
+        help="Permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: Optional[str] = typer.Option(
+        None,
+        "--approval-mode",
+        help="Approval mode: deny or approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allowed-tool",
+        help="Repeat to allow only specific tools during hive runs",
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable debug logging"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Plan a batch without running workers"),
+    terse: bool = typer.Option(False, "--terse", help="Caveman mode - terse prompts"),
+    debug_wire: bool = typer.Option(
+        False, "--debug-wire",
+        help="Log all LLM boundary crossings to wire.log",
+    ),
+):
+    """Run the local multi-process hive coordinator."""
+    from forgegod.config import load_config
+
+    config = load_config()
+    config.debug_wire = debug_wire
+    config.hive.max_workers = workers
+    if terse:
+        config.terse.enabled = True
+    if max_iterations is not None:
+        config.hive.max_iterations = max_iterations
+    if permission_mode:
+        config.security.permission_mode = permission_mode
+    if approval_mode:
+        config.security.approval_mode = approval_mode
+    if allowed_tool is not None:
+        config.security.allowed_tools = list(allowed_tool)
+    if config.security.approval_mode == "prompt":
+        console.print("[red]Hive mode does not support prompt approvals.[/red]")
+        raise typer.Exit(1)
+    if not prd.exists():
+        console.print(f"[red]PRD not found at {prd}[/red]")
+        console.print("Create one with: forgegod plan <task>")
+        raise typer.Exit(1)
+
+    configure_cli_logging(
+        verbose=verbose,
+        log_file=config.project_dir / "logs" / "hive.log",
+        stream=verbose,
+    )
+    _print_banner(mini=True)
+
+    async def _run_hive():
+        from forgegod.hive import HiveCoordinator
+        from forgegod.router import ModelRouter
+
+        router = ModelRouter(config)
+        try:
+            coordinator = HiveCoordinator(config=config, router=router)
+            return await coordinator.run(
+                prd,
+                max_iterations=max_iterations,
+                max_workers=workers,
+                dry_run=dry_run,
+            )
+        finally:
+            await router.close()
+
+    state = asyncio.run(_run_hive())
+    console.print(
+        f"Completed: {state.stories_completed} | "
+        f"Failed: {state.stories_failed} | "
+        f"Iterations: {state.total_iterations}"
+    )
+    if state.stories_failed and not dry_run:
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -2146,7 +2533,7 @@ def research(
     async def _do_research():
         router = ModelRouter(config)
         researcher = Researcher(config, router)
-        brief = await researcher.research(task)
+        brief = await researcher.research(task, depth=depth_enum)
         await router.close()
         return brief
 

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Enums ──
 
@@ -205,6 +205,8 @@ class HiveState(BaseModel):
 class ReflexionAttempt(BaseModel):
     """One attempt in the Reflexion loop."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     attempt_number: int
     model_used: str
     code_generated: str = ""
@@ -359,6 +361,8 @@ class DeepResearchBrief(BaseModel):
 class PlanCritique(BaseModel):
     """Result of a single adversary critique round."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     round_num: int = 1
     verdict: str = "revise"  # approve, revise
     overall_score: float = 0.0  # 0-10
@@ -385,6 +389,8 @@ class DebateResult(BaseModel):
 
 class ReviewResult(BaseModel):
     """Result of a frontier model review."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     verdict: ReviewVerdict = ReviewVerdict.APPROVE
     confidence: float = 0.5

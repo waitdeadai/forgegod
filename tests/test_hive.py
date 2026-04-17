@@ -73,3 +73,41 @@ async def test_hive_applies_worktree_patch(tmp_path):
 
     worktree_base = config.project_dir / "worktrees"
     assert not any(worktree_base.glob("*"))
+
+    branches = subprocess.run(
+        ["git", "branch", "--list", "forgegod/hive/*"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert branches.stdout.strip() == ""
+
+
+@pytest.mark.asyncio
+async def test_hive_rejects_prompt_approval_mode(tmp_path):
+    if not _git_available():
+        pytest.skip("git is required for hive worktree tests")
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    (repo / "README.md").write_text("hello\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
+
+    config = ForgeGodConfig()
+    config.project_dir = repo / ".forgegod"
+    config.project_dir.mkdir(parents=True, exist_ok=True)
+    config.security.approval_mode = "prompt"
+
+    prd_path = config.project_dir / "prd.json"
+    prd = PRD(
+        project="Hive Prompt Test",
+        stories=[Story(id="T001", title="Blocked by prompt mode")],
+    )
+    prd_path.write_text(prd.model_dump_json(indent=2), encoding="utf-8")
+
+    coordinator = HiveCoordinator(config=config, worker_runner=None)
+    with pytest.raises(RuntimeError, match="does not support prompt approvals"):
+        await coordinator.run(prd_path, max_iterations=1, max_workers=1, dry_run=True)

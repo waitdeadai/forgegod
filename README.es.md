@@ -38,7 +38,7 @@ ForgeGod orquesta múltiples LLMs (OpenAI, Anthropic, Google Gemini, Ollama, Ope
 pip install forgegod
 ```
 
-> Nota de auditoria (re-verificada 2026-04-11): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `567` tests recolectados, `483` tests no-stress pasando por defecto, `84/84` stress tests pasando, lint en verde y build en verde. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y ahora respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod evals` ahora cubre regresiones deterministicas de chat, run, loop, worktree e interfaz strict, separa scores por dimension del harness, trae una matriz de superficies OpenAI, emite resumenes de trace graders locales, y ahora tambien ofrece una matriz live opt-in de probes reales mas una matriz de ranking que recomienda el mejor harness OpenAI runnable cuando existe. El soporte nativo de Codex en Windows ahora es un camino production-ready dentro de ForgeGod cuando el Codex CLI oficial esta instalado y con login hecho. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
+> Nota de auditoria (re-verificada 2026-04-17): la baseline verificada ahora incluye `23` herramientas registradas, `8` familias de proveedores, `9` superficies de ruteo, `641` tests recolectados, `556` tests no-stress pasando mas `1` skipped por defecto, `84/84` stress tests pasando, lint en verde, compilacion bytecode en verde, build del paquete en verde, y smoke checks vivos para `forgegod`, `forgegod run` y `forgegod hive`. El camino de integracion strict con Docker sigue siendo opt-in y solo corre cuando el daemon local realmente esta listo. La investigacion antes de programar ahora esta conectada al runtime para tareas con cambios de codigo, y un mal review dispara troubleshooting research-backed en lugar de cortar en seco. La entrada principal para personas ahora es el modo conversacional `forgegod`; auto-crea config local en el primer uso y respeta los mismos overrides de runtime que las superficies para scripts, incluyendo `--terse`, overrides de modelo, flags de permisos/aprobacion, preferencia de proveedor y seleccion explicita de superficie OpenAI. `forgegod run` queda como superficie explicita para scripts, `forgegod hive` ya esta vivo como coordinador local multi-proceso con worktrees aislados, y `forgegod evals` cubre regresiones deterministicas de chat, run, loop, worktree, interfaz strict y superficies OpenAI. El soporte nativo de Codex en Windows ahora es un camino production-ready dentro de ForgeGod cuando el Codex CLI oficial esta instalado y con login hecho. `forgegod loop` ya no auto-commitea ni hace auto-push por defecto. Lee [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) y [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) antes de tocar comportamiento de runtime.
 
 ### Harness Experimental Recomendado: GLM-5.1 + Codex
 
@@ -143,7 +143,7 @@ Todos los demás CLIs de código usan **un modelo a la vez** y **se reinician a 
 | Estrategia auto-mejorable | - | - | - | - | **sí (SICA)** |
 | Modos de presupuesto | - | - | - | - | **sí** |
 | Generación Reflexión | - | - | - | - | **3 intentos** |
-| Worktrees git paralelos | subagentes | - | - | - | **experimental** |
+| Worktrees git paralelos | subagentes | - | - | - | **si (loop + hive)** |
 | Probado bajo estrés + benchmarks | - | - | - | - | **[linea base auditada](docs/AUDIT_2026-04-07.md)** |
 
 ### La Ventaja: Harness > Modelo
@@ -202,6 +202,9 @@ forgegod plan "Construí una API REST para una app de tareas con auth, CRUD y te
 # Valores por defecto del loop: sin auto-commit ni auto-push salvo que lo actives explícitamente
 # Los workers paralelos requieren un repo git con al menos un commit porque ForgeGod usa worktrees aislados
 forgegod loop --prd .forgegod/prd.json
+
+# Coordinador hive local multi-proceso con worktrees aislados
+forgegod hive --prd .forgegod/prd.json --workers 2
 
 # Modo cavernícola — 50-75% ahorro de tokens con prompts ultra-concisos
 forgegod --terse

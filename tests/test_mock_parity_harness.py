@@ -31,6 +31,7 @@ def _scoped_config(workspace: Path) -> ForgeGodConfig:
     config = ForgeGodConfig()
     config.project_dir = workspace / ".forgegod"
     config.project_dir.mkdir()
+    config.agent.research_before_code = False
     return config
 
 

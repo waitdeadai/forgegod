@@ -13,7 +13,9 @@ from forgegod.models import ModelUsage, ToolCall, ToolResult
 @pytest.fixture
 def config():
     """Minimal config for agent tests."""
-    return ForgeGodConfig()
+    cfg = ForgeGodConfig()
+    cfg.agent.research_before_code = False
+    return cfg
 
 
 @pytest.fixture
@@ -398,6 +400,75 @@ class TestCompletionEvidence:
         assert blockers == []
 
     @pytest.mark.asyncio
+    async def test_agent_run_triggers_manual_research_for_code_tasks(self, tmp_path, monkeypatch):
+        from forgegod.agent import Agent
+        from forgegod.models import AutoResearchReason
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter(["Implemented cleanly."])
+
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        config.agent.research_before_code = True
+
+        triggered: list[AutoResearchReason] = []
+
+        async def fake_auto_research(self, reason, context):
+            triggered.append(reason)
+            return None
+
+        monkeypatch.setattr(Agent, "_maybe_auto_research", fake_auto_research)
+
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=2,
+        )
+        agent.memory = None
+
+        result = await agent.run("Implement the API handler")
+        agent.budget.close()
+
+        assert result.success is True
+        assert triggered == [AutoResearchReason.MANUAL]
+
+    @pytest.mark.asyncio
+    async def test_agent_run_skips_manual_research_for_read_only_tasks(self, tmp_path, monkeypatch):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter(["Architecture looks stable."])
+
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        config.agent.research_before_code = True
+
+        triggered: list[object] = []
+
+        async def fake_auto_research(self, reason, context):
+            triggered.append(reason)
+            return None
+
+        monkeypatch.setattr(Agent, "_maybe_auto_research", fake_auto_research)
+
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=2,
+        )
+        agent.memory = None
+
+        result = await agent.run("Explain the current architecture")
+        agent.budget.close()
+
+        assert result.success is True
+        assert triggered == []
+
+    @pytest.mark.asyncio
     async def test_agent_run_requires_post_edit_verification_and_diff(self, tmp_path):
         from forgegod.agent import Agent
 
@@ -430,6 +501,7 @@ class TestCompletionEvidence:
 
         config = ForgeGodConfig()
         config.project_dir = project_dir
+        config.agent.research_before_code = False
         agent = Agent(
             config=config,
             router=router,
@@ -497,6 +569,7 @@ class TestCompletionEvidence:
 
         config = ForgeGodConfig()
         config.project_dir = project_dir
+        config.agent.research_before_code = False
         agent = Agent(
             config=config,
             router=router,

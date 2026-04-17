@@ -899,7 +899,7 @@ body::after {
       <div class="feature feature-hero" style="border-color:rgba(0,255,136,0.25);background:linear-gradient(135deg,var(--surface),rgba(0,255,136,0.03));">
         <div class="feature-icon">&#128270;</div>
         <h3 data-i18n="feat_recon_title">Researches Before It Codes</h3>
-        <p data-i18n="feat_recon_desc">ForgeGod includes recon workflows for researching current libraries, docs, and security context before implementation instead of relying only on model memory. In the audited baseline this is a supported planning path, not a guaranteed step on every task. Use it when architecture, dependency, or freshness decisions matter.</p>
+        <p data-i18n="feat_recon_desc">ForgeGod now researches current libraries, docs, and security context before code-changing tasks by default, then runs targeted research-backed troubleshooting if a bad review blocks the patch. That keeps implementation grounded in current evidence instead of stale model memory.</p>
         <span class="feature-tag" style="background:rgba(0,255,136,0.12);color:var(--green);" data-i18n="feat_recon_tag">Research workflows built in</span>
       </div>
 
@@ -936,8 +936,8 @@ body::after {
       <div class="feature">
         <div class="feature-icon">&#8734;</div>
         <h3 data-i18n="feat_loop_title">Works While You Sleep</h3>
-        <p data-i18n="feat_loop_desc">Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back to a finished project.</p>
-        <span class="feature-tag" data-i18n="feat_loop_tag">Runs 24/7</span>
+        <p data-i18n="feat_loop_desc">Give it a project plan and walk away. ForgeGod can run stories one by one in the Ralph loop or spread ready work across the local hive with isolated worktrees, machine-readable workers, and a central coordinator. Come back to a finished project.</p>
+        <span class="feature-tag" data-i18n="feat_loop_tag">Loop + local hive</span>
       </div>
 
       <div class="feature">
@@ -1006,7 +1006,7 @@ body::after {
         <div class="moat-number">MOAT 01</div>
         <h3 data-i18n="moat_1_title">Research-Gated Changes</h3>
         <div class="moat-stat" data-i18n="moat_1_stat">2026 policy: research before meaningful changes</div>
-        <p data-i18n="moat_1_desc">ForgeGod now treats deep 2026 research as part of the repo contract for architecture, dependency, security, benchmark, workflow, and public-claim changes. That is stronger than trusting model memory alone, and it keeps the project aligned with current evidence instead of stale assumptions.</p>
+        <p data-i18n="moat_1_desc">ForgeGod now treats deep 2026 research as part of the repo contract for architecture, dependency, security, benchmark, workflow, and public-claim changes. That policy is also wired into runtime for code-changing work and bad-review recovery, so the harness does not just document the rule - it executes it.</p>
       </div>
 
       <div class="moat">
@@ -1020,7 +1020,7 @@ body::after {
         <div class="moat-number">MOAT 03</div>
         <h3 data-i18n="moat_3_title">24/7 Autonomous Loop</h3>
         <div class="moat-stat" data-i18n="moat_3_stat">Fresh context per task - zero context rot</div>
-        <p data-i18n="moat_3_desc">Give it a PRD with 10 stories. Walk away. Each story gets a clean agent - no context window degradation. If one fails, it retries with a smarter model. No other OSS agent has a production-quality autonomous loop.</p>
+        <p data-i18n="moat_3_desc">Give it a PRD with 10 stories. Walk away. ForgeGod can execute them through the sequential Ralph loop or the local hive coordinator. Each story gets a clean agent and isolated worktree, so there is no context rot and parallel work does not collide in one shared workspace.</p>
       </div>
 
       <div class="moat">
@@ -1300,10 +1300,10 @@ body::after {
           <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
         </div>
         <div class="bench-bar-group">
-          <div class="bench-bar-label"><span data-i18n="bench_rel_parallel">Parallel workers + story timeout</span><span>100%</span></div>
+          <div class="bench-bar-label"><span data-i18n="bench_rel_parallel">Parallel loop + local hive</span><span>100%</span></div>
           <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
         </div>
-        <div class="bench-source" data-i18n-html="bench_src_reliability">Current verified baseline: 566 tests passing locally by default, 483 passing in the non-stress core suite, plus 1 opt-in Docker strict integration path when the daemon is ready, 84/84 stress tests passing, lint green, build green, <code style="color:var(--cyan)">forgegod evals</code> passing, dimension-scored harness evals, local trace graders, an explicit OpenAI surfaces matrix for API-only, Codex-only, or hybrid API+Codex routing, a cheap live OpenAI probe matrix that skips unavailable or quota-limited auth surfaces honestly, and a live comparison matrix that ranks runnable rows or reports when none are available. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a></div>
+        <div class="bench-source" data-i18n-html="bench_src_reliability">Current verified baseline: 641 collected tests, 556 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, and <code style="color:var(--cyan)">forgegod hive</code>. <code style="color:var(--cyan)">forgegod evals</code> is also green, the harness keeps dimension-scored evals and local trace graders, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a></div>
       </div>
 
     </div>
@@ -1622,8 +1622,8 @@ var STRINGS = {
     feat_routing_desc: "ForgeGod connects to 10 different AI providers and supports native OpenAI Codex subscription auth plus Z.AI. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
     feat_routing_tag: "10 providers + adversarial, single-model, or explicit OpenAI surfaces",
     feat_loop_title: "Works While You Sleep",
-    feat_loop_desc: "Give it a project plan and walk away. ForgeGod breaks it into tasks, works through them one by one, saves progress after each one, and keeps going 24/7. Come back in the morning to a finished project with a clean history of every change.",
-    feat_loop_tag: "Runs 24/7",
+    feat_loop_desc: "Give it a project plan and walk away. ForgeGod can run stories one by one in the Ralph loop or spread ready work across the local hive with isolated worktrees, machine-readable workers, and a central coordinator. Come back in the morning to a finished project with a clean history of every change.",
+    feat_loop_tag: "Loop + local hive",
     feat_reflexion_title: "Checks Its Own Work",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. First it tries with the free local AI. If that fails, it escalates to a smarter (but cheap) cloud AI. If that fails too, it brings in the most powerful AI available. It validates the code is correct at every step before moving on.",
     feat_reflexion_tag: "3 attempts, escalating quality",
@@ -1643,7 +1643,7 @@ var STRINGS = {
     feat_security_desc: "Workspace-scoped file access, prompt-injection scanning, secret redaction, and two execution tiers. Standard mode stays local with guardrails. Strict mode runs commands in a real Docker sandbox with no network and blocks if Docker or the required image is missing. `forgegod doctor` now checks those prerequisites directly.",
     feat_security_tag: "Real strict sandbox",
     feat_recon_title: "Researches Before It Codes",
-    feat_recon_desc: "ForgeGod includes recon workflows for researching current libraries, docs, and security context before implementation instead of relying only on model memory. In the audited baseline this is a supported planning path, not a guaranteed step on every task. Use it when architecture, dependency, or freshness decisions matter.",
+    feat_recon_desc: "ForgeGod now researches current libraries, docs, and security context before code-changing tasks by default, then runs targeted research-backed troubleshooting if a bad review blocks the patch. That keeps implementation grounded in current evidence instead of stale model memory.",
     feat_recon_tag: "Research workflows built in",
     feat_debate_title: "Adversarial Plan Review",
     feat_debate_desc: "A second AI attacks your plan like a hostile code reviewer. Security gaps? Deprecated deps? Missing edge cases? It finds them in 3 rounds of debate before you burn a single API call on coding. Research shows actor-critic eliminates 90%+ of catchable issues.",
@@ -1669,13 +1669,13 @@ var STRINGS = {
     moats_subtitle: "Six technical advantages no other coding agent has \u2014 free or paid.",
     moat_1_title: "Research-Gated Changes",
     moat_1_stat: "2026 policy: research before meaningful changes",
-    moat_1_desc: "ForgeGod now treats deep 2026 research as part of the repo contract for architecture, dependency, security, benchmark, workflow, and public-claim changes. That is stronger than trusting model memory alone, and it keeps the project aligned with current evidence instead of stale assumptions.",
+    moat_1_desc: "ForgeGod now treats deep 2026 research as part of the repo contract for architecture, dependency, security, benchmark, workflow, and public-claim changes. That policy is also wired into runtime for code-changing work and bad-review recovery, so the harness does not just document the rule - it executes it.",
     moat_2_title: "Two AIs Argue First",
     moat_2_stat: "Catches common mistakes before they compound",
     moat_2_desc: "A hostile reviewer AI attacks your plan before coding starts. It scores 6 dimensions: SOTA-ness, security, architecture, completeness, dependencies, and novelty. Only Devin has a critic \u2014 one round, not configurable.",
     moat_3_title: "24/7 Autonomous Loop",
     moat_3_stat: "Fresh context per task \u2014 zero context rot",
-    moat_3_desc: "Give it a PRD with 10 stories. Walk away. Each story gets a clean agent \u2014 no context window degradation. If one fails, it retries with a smarter model. No other OSS agent has a production-quality autonomous loop.",
+    moat_3_desc: "Give it a PRD with 10 stories. Walk away. ForgeGod can execute them through the sequential Ralph loop or the local hive coordinator. Each story gets a clean agent and isolated worktree, so there is no context rot and parallel work does not collide in one shared workspace.",
     moat_4_title: "$0 Mode That Works",
     moat_4_stat: "Most competitors require paid API keys or subscriptions",
     moat_4_desc: "Every competitor needs API keys or subscriptions. ForgeGod runs 100% free with Ollama. Qwen 3.5 9B fits in 8GB VRAM. When you need cloud power, it auto-escalates \u2014 then drops back to free.",
@@ -1769,8 +1769,8 @@ var STRINGS = {
     bench_rel_budget: "Budget enforcement + forecasting",
     bench_rel_fallback: "Fallback chain + cascade routing",
     bench_rel_circuit: "Circuit breaker (half-open + sliding)",
-    bench_rel_parallel: "Parallel workers + story timeout",
-    bench_src_reliability: 'Current verified baseline: 566 tests passing locally by default, 483 passing in the non-stress core suite, plus 1 opt-in Docker strict integration path when the daemon is ready, 84/84 stress tests passing, lint green, build green, <code style="color:var(--cyan)">forgegod evals</code> passing, dimension-scored harness evals, local trace graders, an explicit OpenAI surfaces matrix for API-only, Codex-only, or hybrid API+Codex routing, a cheap live OpenAI probe matrix that skips unavailable or quota-limited auth surfaces honestly, and a live comparison matrix that ranks runnable rows or reports when none are available. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
+    bench_rel_parallel: "Parallel loop + local hive",
+    bench_src_reliability: 'Current verified baseline: 641 collected tests, 556 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, and <code style="color:var(--cyan)">forgegod hive</code>. <code style="color:var(--cyan)">forgegod evals</code> is also green, the harness keeps dimension-scored evals and local trace graders, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
     cmp_stress: "Stress tested + benchmarked",
     bench_callout: '<strong>The bottom line:</strong> The tools and framework around an AI matter just as much as which AI you use. The same AI can solve 11 more problems when it has proper tools. ForgeGod\u2019s smart routing, self-checking code, and 5-layer memory <em>are</em> those tools.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
@@ -1811,8 +1811,8 @@ var STRINGS = {
     feat_routing_desc: "ForgeGod se conecta a 9 proveedores de IA distintos y soporta auth nativa de OpenAI Codex más Z.AI. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explácitas: auto, api-only, codex-only o api+codex.",
     feat_routing_tag: "9 proveedores + harness adversarial, single-model o superficies OpenAI explácitas",
     feat_loop_title: "Trabaja Mientras Dorm\u00eds",
-    feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod lo divide en tareas, las resuelve una por una, guarda el progreso despu\u00e9s de cada una, y sigue 24/7. Volv\u00e9 a la ma\u00f1ana y encontr\u00e1 el proyecto terminado con un historial limpio de cada cambio.",
-    feat_loop_tag: "Funciona 24/7",
+    feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod puede ejecutar historias una por una en el Ralph loop o repartir trabajo listo en el hive local con worktrees aislados, workers legibles por m\u00e1quina y un coordinador central. Volv\u00e9 a la ma\u00f1ana y encontr\u00e1 el proyecto terminado con un historial limpio de cada cambio.",
+    feat_loop_tag: "Loop + hive local",
     feat_reflexion_title: "Revisa Su Propio Trabajo",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Primero prueba con la IA local gratuita. Si falla, escala a una IA de nube m\u00e1s inteligente (pero barata). Si eso tambi\u00e9n falla, trae la IA m\u00e1s poderosa disponible. Valida que el c\u00f3digo sea correcto en cada paso antes de avanzar.",
     feat_reflexion_tag: "3 intentos, calidad creciente",
@@ -1832,7 +1832,7 @@ var STRINGS = {
     feat_security_desc: "Acceso a archivos acotado al workspace, escaneo de inyecci\u00f3n de prompts, redacci\u00f3n de secretos y dos niveles de ejecuci\u00f3n. El modo standard sigue local con guardrails. El modo strict corre comandos en un sandbox real con Docker, sin red, y se bloquea si faltan Docker o la imagen requerida. `forgegod doctor` ahora chequea esos prerequisitos directamente.",
     feat_security_tag: "Sandbox real en strict",
     feat_recon_title: "Investiga Antes de Programar",
-    feat_recon_desc: "ForgeGod incluye workflows de investigaci\u00f3n para revisar librer\u00edas actuales, documentaci\u00f3n y contexto de seguridad antes de implementar, en vez de depender solo de la memoria del modelo. En la baseline auditada esto es planificaci\u00f3n asistida, no una garant\u00eda para cada tarea. Usalo cuando arquitectura, dependencias o vigencia importen.",
+    feat_recon_desc: "ForgeGod ahora investiga librer\u00edas actuales, documentaci\u00f3n y contexto de seguridad antes de tareas que cambian c\u00f3digo, y luego dispara troubleshooting research-backed si un mal review bloquea el patch. Eso mantiene la implementaci\u00f3n anclada en evidencia actual y no en memoria vieja del modelo.",
     feat_recon_tag: "Workflows de investigaci\u00f3n integrados",
     feat_debate_title: "Revisi\u00f3n Adversarial del Plan",
     feat_debate_desc: "Una segunda IA ataca tu plan como un revisor de c\u00f3digo hostil. \u00bfBrechas de seguridad? \u00bfDependencias obsoletas? \u00bfCasos borde faltantes? Los encuentra en 3 rondas de debate antes de gastar una sola llamada API en programar. La investigaci\u00f3n muestra que actor-cr\u00edtico elimina el 90%+ de problemas detectables.",
@@ -1858,13 +1858,13 @@ var STRINGS = {
     moats_subtitle: "Seis ventajas t\u00e9cnicas que ning\u00fan otro agente de c\u00f3digo tiene \u2014 gratis o pago.",
     moat_1_title: "Cambios Guiados por Investigaci\u00f3n",
     moat_1_stat: "Pol\u00edtica 2026: investigar antes de cambios importantes",
-    moat_1_desc: "ForgeGod ahora trata la investigaci\u00f3n profunda 2026 como parte del contrato del repositorio para cambios de arquitectura, dependencias, seguridad, benchmarks, workflows y claims p\u00fablicos. Eso es m\u00e1s fuerte que confiar solo en la memoria del modelo y mantiene el proyecto alineado con evidencia actual en vez de supuestos viejos.",
+    moat_1_desc: "ForgeGod ahora trata la investigaci\u00f3n profunda 2026 como parte del contrato del repositorio para cambios de arquitectura, dependencias, seguridad, benchmarks, workflows y claims p\u00fablicos. Esa pol\u00edtica tambi\u00e9n est\u00e1 conectada al runtime para trabajo con cambios de c\u00f3digo y recuperaci\u00f3n tras un mal review, as\u00ed que el harness no solo documenta la regla: la ejecuta.",
     moat_2_title: "Dos IAs Debaten Primero",
     moat_2_stat: "Detecta errores comunes antes de que se compliquen",
     moat_2_desc: "Una IA revisora hostil ataca tu plan antes de programar. Puntúa 6 dimensiones: SOTA, seguridad, arquitectura, completitud, dependencias y novedad. Solo Devin tiene cr\u00edtico \u2014 una ronda, no configurable.",
     moat_3_title: "Loop Aut\u00f3nomo 24/7",
     moat_3_stat: "Contexto fresco por tarea \u2014 cero degradaci\u00f3n",
-    moat_3_desc: "Dale un PRD con 10 stories. Andate. Cada story recibe un agente limpio \u2014 sin degradaci\u00f3n de contexto. Si una falla, reintenta con un modelo m\u00e1s inteligente. Ning\u00fan otro agente OSS tiene un loop aut\u00f3nomo de producci\u00f3n.",
+    moat_3_desc: "Dale un PRD con 10 stories. Andate. ForgeGod puede ejecutarlas con el Ralph loop secuencial o con el coordinador hive local. Cada story recibe un agente limpio y un worktree aislado, as\u00ed no hay context rot ni choques de trabajo paralelo sobre un workspace compartido.",
     moat_4_title: "Modo $0 Que Funciona",
     moat_4_stat: "La mayoria requiere claves API o suscripciones",
     moat_4_desc: "Todos los competidores necesitan claves API o suscripciones. ForgeGod corre 100% gratis con Ollama. Qwen 3.5 9B entra en 8GB VRAM. Cuando necesit\u00e1s nube, escala autom\u00e1ticamente \u2014 y vuelve a gratis.",
@@ -1958,8 +1958,8 @@ var STRINGS = {
     bench_rel_budget: "Presupuesto + pron\u00f3sticos",
     bench_rel_fallback: "Cadena de respaldo + enrutamiento en cascada",
     bench_rel_circuit: "Circuit breaker (half-open + ventana)",
-    bench_rel_parallel: "Workers paralelos + timeout por historia",
-    bench_src_reliability: 'Baseline verificada actual: 566 tests pasando localmente por defecto, 483 pasando en el core suite sin stress, m\u00e1s 1 camino opt-in de integraci\u00f3n Docker strict cuando el daemon est\u00e1 listo, 84/84 stress tests en verde, lint en verde y build en verde, <code style="color:var(--cyan)">forgegod evals</code> en verde, evals del harness con scores por dimensi\u00f3n, trace graders locales, una matriz expl\u00edcita de superficies OpenAI para API-only, Codex-only o ruteo h\u00edbrido API+Codex, una matriz live barata de probes OpenAI que saltea honestamente las superficies de auth no disponibles o sin cuota, y una matriz live de comparaci\u00f3n que ordena filas runnable o reporta cuando no hay ninguna disponible. Las barras de benchmark de arriba siguen siendo hist\u00f3ricas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditor\u00eda</a>',
+    bench_rel_parallel: "Loop paralelo + hive local",
+    bench_src_reliability: 'Baseline verificada actual: 641 tests recolectados, 556 tests no-stress pasando mas 1 skipped por defecto, 84/84 stress tests en verde, lint en verde, compilacion bytecode en verde, build del paquete en verde, y smoke checks vivos para <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code> y <code style="color:var(--cyan)">forgegod hive</code>. <code style="color:var(--cyan)">forgegod evals</code> tambien esta en verde, el harness mantiene evals con score por dimension y trace graders locales, y las matrices de superficie OpenAI siguen soportando API-only, Codex-only o ruteo hibrido API+Codex. Las barras de benchmark de arriba siguen siendo historicas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditoria</a>',
     cmp_stress: "Probado bajo estr\u00e9s + benchmarks",
     bench_callout: '<strong>La conclusi\u00f3n:</strong> Las herramientas y el framework alrededor de una IA importan tanto como qu\u00e9 IA us\u00e1s. La misma IA puede resolver 11 problemas m\u00e1s cuando tiene herramientas adecuadas. El ruteo inteligente, el c\u00f3digo auto-verificado y la memoria de 5 capas de ForgeGod <em>son</em> esas herramientas.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">An\u00e1lisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',

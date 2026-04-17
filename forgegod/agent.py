@@ -334,6 +334,15 @@ class Agent:
                 task=task[:400],
                 requires_code_changes=requires_code_changes,
             )
+            if (
+                requires_code_changes
+                and self.config.agent.research_before_code
+                and self.config.security.permission_mode != "read-only"
+            ):
+                await self._maybe_auto_research(
+                    AutoResearchReason.MANUAL,
+                    {"task": task},
+                )
             while self._turn < self.max_turns:
                 self._turn += 1
                 await self._emit_event("turn_started", turn=self._turn, role=self.role)
@@ -1775,7 +1784,7 @@ class Agent:
             # Perform research
             researcher = Researcher(self.config, self.router)
             task = context.get("task", "")
-            brief = await researcher.research(task)
+            brief = await researcher.research(task, depth=depth)
 
             # Inject research findings into messages
             if brief:

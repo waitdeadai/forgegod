@@ -33,6 +33,7 @@ def _write_config(
     config.review.enabled = False
     config.memory.enabled = False
     config.memory.extraction_enabled = False
+    config.agent.research_before_code = False
     config.security.sandbox_mode = sandbox_mode
     config.loop.cooldown_seconds = 0.0
     config.loop.story_max_retries = story_max_retries
@@ -215,6 +216,7 @@ def test_cli_mock_parity_roundtrips(
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 scenario.permission_mode,
                 scenario.task,
@@ -253,6 +255,7 @@ def test_cli_mock_parity_captures_tool_result_turns(monkeypatch, tmp_path):
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 "read-only",
                 "Explain the contents of hello.txt",
@@ -285,6 +288,7 @@ def test_cli_prompt_approval_allows_write(monkeypatch, tmp_path):
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 "read-only",
                 "--approval-mode",
@@ -318,6 +322,7 @@ def test_cli_prompt_approval_denies_write(monkeypatch, tmp_path):
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 "read-only",
                 "--approval-mode",
@@ -495,6 +500,7 @@ def test_cli_strict_bash_roundtrip_uses_real_sandbox_interface(monkeypatch, tmp_
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 "read-only",
                 "Run python --version and report it.",
@@ -529,6 +535,7 @@ def test_cli_strict_backend_unavailable_surfaces_block(monkeypatch, tmp_path):
             [
                 "run",
                 "--no-review",
+                "--no-research",
                 "--permission-mode",
                 "read-only",
                 "Check whether strict sandbox execution is available.",
