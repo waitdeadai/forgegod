@@ -38,7 +38,7 @@ ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, O
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-17): the verified baseline now includes `23` registered tools, `9` provider families, `10` route surfaces, `654` collected tests, `569` non-stress tests passing plus `1` skipped by default, `84/84` stress tests passing, green lint, green bytecode compilation, a green package build, and live CLI smoke checks for `forgegod`, `forgegod run`, and `forgegod hive`. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. Research-before-code is now wired into runtime for code-changing tasks, bad-review retries now trigger targeted research-backed troubleshooting instead of exiting cold, and bounded subagent analysis is now a live opt-in surface on `forgegod`, `forgegod run`, and `forgegod hive` via `--subagents`. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod hive` is now a live local multi-process coordinator with isolated worktrees, and `forgegod evals` covers deterministic chat, run, loop, worktree, strict-interface, and OpenAI surface regressions. Native Windows Codex support is now a production-ready ForgeGod path when the official Codex CLI is installed and logged in. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md), and [docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md](docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md) before making runtime changes.
+> Audit note (re-verified 2026-04-17): the verified baseline now includes `23` registered tools, `9` provider families, `10` route surfaces, `654` collected tests, `569` non-stress tests passing plus `1` skipped by default, `84/84` stress tests passing, green lint, green bytecode compilation, a green package build, and live CLI smoke checks for `forgegod`, `forgegod run`, `forgegod hive`, and `forgegod obsidian`. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. Research-before-code is now wired into runtime for code-changing tasks, bad-review retries now trigger targeted research-backed troubleshooting instead of exiting cold, and bounded subagent analysis is now a live opt-in surface on `forgegod`, `forgegod run`, and `forgegod hive` via `--subagents`. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod hive` is now a live local multi-process coordinator with isolated worktrees, and `forgegod evals` covers deterministic chat, run, loop, worktree, strict-interface, and OpenAI surface regressions. Native Windows Codex support is now a production-ready ForgeGod path when the official Codex CLI is installed and logged in. Obsidian is now supported as an optional vault projection layer over runtime memory, research, loop, and hive summaries; runtime retrieval still stays in SQLite. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md), [docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md](docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md), and [docs/OBSIDIAN_INTEGRATION_PLAN_2026-04-17.md](docs/OBSIDIAN_INTEGRATION_PLAN_2026-04-17.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -66,6 +66,7 @@ Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) - h
 - **DESIGN.md Native** - Import a design preset, drop `DESIGN.md` in repo root, and frontend tasks inherit that design language automatically.
 - **Natural-Language CLI** - ForgeGod now explains what it is doing in plain language while it works, and the CLI surfaces share the same branded cyan/white/yellow UX instead of raw transport noise.
 - **Subagents + Hive** - Use bounded read-only `--subagents` analysis inside one task, or spread independent stories across the local `forgegod hive` coordinator with isolated git worktrees.
+- **Obsidian Projection** - Keep runtime memory in SQLite, then project stable memories, research briefs, and loop or hive summaries into an optional Obsidian vault when you want a human-readable knowledge surface.
 - **Contribution Mode** - Read `CONTRIBUTING.md`, inspect the repo, surface approachable issues, and plan or execute contribution-sized changes with repo-specific guardrails.
 - **SICA** - Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
 - **Budget Modes** - `normal` -> `throttle` -> `local-only` -> `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
@@ -319,6 +320,16 @@ forgegod memory
 
 # Memory is stored in .forgegod/memory.db (SQLite)
 # Global learnings in ~/.forgegod/memory.db (cross-project)
+```
+
+If you want a readable knowledge workspace for humans, ForgeGod can also project
+research briefs, stable memories, and run summaries into an optional Obsidian
+vault without replacing SQLite retrieval:
+
+```bash
+forgegod obsidian init --vault "C:\\path\\to\\Vault"
+forgegod obsidian status
+forgegod obsidian export-memory
 ```
 
 ## Budget Modes

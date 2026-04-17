@@ -320,6 +320,32 @@ class HiveConfig(BaseModel):
     scheduler_mode: str = "hybrid"  # hybrid | greedy | priority
 
 
+class ObsidianConfig(BaseModel):
+    """Optional Obsidian vault projection/ingest settings."""
+
+    enabled: bool = False
+    vault_path: str = ""
+    mode: str = "projection"  # disabled | projection | projection+ingest | bridge
+    cli_command: str = "obsidian"
+    headless_command: str = "ob"
+    use_cli_when_available: bool = True
+    write_strategy: str = "file-io"  # file-io | cli
+    link_style: str = "wikilink"
+    export_root: str = "ForgeGod"
+    ingest_enabled: bool = False
+    ingest_folders: list[str] = Field(
+        default_factory=lambda: [
+            "ForgeGod/Research",
+            "ForgeGod/Patterns",
+            "ForgeGod/Decisions",
+        ]
+    )
+    ingest_max_notes: int = 25
+    project_stable_memories_only: bool = True
+    min_confidence: float = 0.65
+    generate_dashboard: bool = True
+
+
 class ForgeGodConfig(BaseModel):
     """Root configuration — merges global + project + env."""
 
@@ -345,6 +371,7 @@ class ForgeGodConfig(BaseModel):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     subagents: SubagentsConfig = Field(default_factory=SubagentsConfig)
     hive: HiveConfig = Field(default_factory=HiveConfig)
+    obsidian: ObsidianConfig = Field(default_factory=ObsidianConfig)
     taste: TasteConfig = Field(default_factory=TasteConfig)
     effort: EffortConfig = Field(default_factory=EffortConfig)
     deep_research: DeepResearchConfig = Field(default_factory=DeepResearchConfig)

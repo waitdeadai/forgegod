@@ -34,9 +34,11 @@ app = typer.Typer(
 )
 design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
+obsidian_app = typer.Typer(help="Manage optional Obsidian vault projection surfaces.")
 
 app.add_typer(design_app, name="design")
 app.add_typer(auth_app, name="auth")
+app.add_typer(obsidian_app, name="obsidian")
 
 # -- Mascot - The One-Eyed Triangle --
 _VER = __version__
@@ -1959,6 +1961,105 @@ def memory():
             console.print(Panel(learnings, title="Top Learnings"))
 
     asyncio.run(_memory())
+
+
+@obsidian_app.command("status")
+def obsidian_status():
+    """Show current Obsidian integration status."""
+    from forgegod.config import load_config
+    from forgegod.obsidian import ObsidianAdapter
+
+    _ensure_project_bootstrap(announce=False)
+    config = load_config()
+    adapter = ObsidianAdapter(config)
+    status = adapter.status()
+
+    table = Table(title="ForgeGod Obsidian")
+    table.add_column("Setting", style="cyan")
+    table.add_column("Value", style="dim")
+    table.add_row("enabled", str(status["enabled"]))
+    table.add_row("configured", str(status["configured"]))
+    table.add_row("mode", str(status["mode"]))
+    table.add_row("vault_path", status["vault_path"] or "(not set)")
+    table.add_row("vault_exists", str(status["vault_exists"]))
+    table.add_row("export_root", status["export_root"] or "(not set)")
+    table.add_row("cli_available", str(status["cli_available"]))
+    table.add_row("write_strategy", str(status["write_strategy"]))
+    console.print(table)
+
+    if not status["configured"]:
+        console.print(
+            "[yellow]Vault not configured.[/yellow] "
+            "Run `forgegod obsidian init --vault <path>`."
+        )
+
+
+@obsidian_app.command("init")
+def obsidian_init(
+    vault: Path = typer.Option(..., "--vault", help="Path to the Obsidian vault."),
+    mode: str = typer.Option(
+        "projection",
+        "--mode",
+        help="Integration mode: projection, projection+ingest, or bridge.",
+    ),
+    export_root: str = typer.Option(
+        "ForgeGod",
+        "--export-root",
+        help="Root folder inside the vault for ForgeGod notes.",
+    ),
+):
+    """Configure and initialize Obsidian export folders."""
+    import toml
+
+    from forgegod.config import init_project, load_config
+    from forgegod.obsidian import ObsidianAdapter
+
+    project_dir = init_project()
+    config_path = project_dir / "config.toml"
+    data = toml.loads(config_path.read_text(encoding="utf-8"))
+    section = data.setdefault("obsidian", {})
+    section["enabled"] = True
+    section["vault_path"] = str(vault.expanduser().resolve())
+    section["mode"] = mode
+    section["export_root"] = export_root
+    config_path.write_text(toml.dumps(data), encoding="utf-8")
+
+    config = load_config()
+    adapter = ObsidianAdapter(config)
+    root = adapter.initialize_layout()
+    console.print(f"[green]Obsidian configured:[/green] {adapter.vault_path()}")
+    console.print(f"[dim]ForgeGod export root:[/dim] {root}")
+    if not adapter.cli_available():
+        console.print(
+            "[dim]Official Obsidian CLI not detected in PATH. "
+            "Projection will use direct file I/O.[/dim]"
+        )
+
+
+@obsidian_app.command("export-memory")
+def obsidian_export_memory(
+    limit: int = typer.Option(20, "--limit", min=1, help="Max patterns to export."),
+):
+    """Project stable memory patterns into the configured Obsidian vault."""
+    from forgegod.config import load_config
+    from forgegod.memory import Memory
+    from forgegod.obsidian import ObsidianAdapter
+
+    _ensure_project_bootstrap(announce=False)
+    config = load_config()
+    adapter = ObsidianAdapter(config)
+    if not adapter.is_enabled():
+        console.print(
+            "[red]Obsidian is not enabled or vault_path is missing.[/red] "
+            "Run `forgegod obsidian init --vault <path>` first."
+        )
+        raise typer.Exit(code=1)
+
+    memory = Memory(config)
+    paths = asyncio.run(adapter.export_memory_projection(memory, limit=limit))
+    console.print(f"[green]Exported {len(paths)} Obsidian note(s).[/green]")
+    for path in paths[:10]:
+        console.print(f"  - {path}")
 
 
 @app.command()

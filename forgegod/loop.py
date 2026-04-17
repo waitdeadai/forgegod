@@ -127,6 +127,17 @@ class RalphLoop:
             except Exception as e:
                 logger.debug("SOTAMonitor unavailable: %s", e)
 
+        self._obsidian = None
+        if self.config.obsidian.enabled:
+            try:
+                from forgegod.obsidian import ObsidianAdapter
+
+                adapter = ObsidianAdapter(config)
+                if adapter.is_configured():
+                    self._obsidian = adapter
+            except Exception as e:
+                logger.debug("Obsidian adapter unavailable: %s", e)
+
         # State
         self.state = LoopState()
         self._running = False
@@ -211,6 +222,7 @@ class RalphLoop:
 
         self._save_state()
         self._save_prd()
+        self._export_loop_summary()
 
         # SOTA monitoring — compute and log verdict at end of run
         if self._sota_monitor:
@@ -943,6 +955,7 @@ class RalphLoop:
                     logger.debug("Auto-push skipped")
         else:
             self._handle_story_failure(story, result.error or result.output)
+            self._export_story_summary(story, result=result)
             return
 
         if self._memory_agent:
@@ -960,6 +973,8 @@ class RalphLoop:
                 await self.memory.maybe_consolidate()
             except Exception as e:
                 logger.debug(f"Memory consolidation skipped: {e}")
+
+        self._export_story_summary(story, result=result)
 
         # SOTA monitoring — record story metrics after finalization
         if self._sota_monitor:
@@ -1138,6 +1153,22 @@ Do NOT commit or push unless the user explicitly asked for it.
         self._prd_path.write_text(
             self.prd.model_dump_json(indent=2), encoding="utf-8"
         )
+
+    def _export_story_summary(self, story: Story, *, result=None) -> None:
+        if not self._obsidian:
+            return
+        try:
+            self._obsidian.export_story_summary(story, result=result, state=self.state)
+        except Exception as exc:  # pragma: no cover - optional integration
+            logger.debug("Obsidian story export skipped: %s", exc)
+
+    def _export_loop_summary(self) -> None:
+        if not self._obsidian:
+            return
+        try:
+            self._obsidian.export_loop_summary(prd=self.prd, state=self.state)
+        except Exception as exc:  # pragma: no cover - optional integration
+            logger.debug("Obsidian loop export skipped: %s", exc)
 
     @classmethod
     def from_prd_file(

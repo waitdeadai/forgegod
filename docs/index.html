@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeGod - Research-Backed Autonomous Coding Agent</title>
-<meta name="description" content="Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, and $0 local mode. Audited against a verified 2026 baseline.">
+<meta name="description" content="Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited against a verified 2026 baseline.">
 <meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, MiniMax, OpenAI, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://forgegod.com">
 <meta property="og:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta property="og:description" content="Research-backed autonomous coding agent with multi-model routing, bounded subagents, local hive orchestration, 5-tier memory, and $0 local mode. Audited, tested, and open source.">
+<meta property="og:description" content="Research-backed autonomous coding agent with multi-model routing, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited, tested, and open source.">
 <meta property="og:image" content="https://forgegod.com/og-image.webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,7 +21,7 @@
 <meta property="og:locale:alternate" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta name="twitter:description" content="Multi-model autonomous coding agent with research-first workflows, bounded subagents, local hive orchestration, 5-tier memory, and $0 local mode. Audited and tested against a verified 2026 baseline.">
+<meta name="twitter:description" content="Multi-model autonomous coding agent with research-first workflows, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited and tested against a verified 2026 baseline.">
 <meta name="twitter:image" content="https://forgegod.com/og-image.webp">
 <meta name="twitter:image:alt" content="ForgeGod official mascot">
 <link rel="icon" type="image/webp" href="mascot-192.webp">
@@ -36,7 +36,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier cognitive memory, and a verified 2026 baseline.",
+  "description": "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier cognitive memory, optional Obsidian vault projection, and a verified 2026 baseline.",
   "url": "https://forgegod.com",
   "downloadUrl": "https://pypi.org/project/forgegod/",
   "softwareVersion": "0.1.0",
@@ -892,7 +892,7 @@ body::after {
 <section class="features-section" id="features">
   <div class="container">
     <h2 class="section-title" data-i18n="title_features">WHAT MAKES IT DIFFERENT</h2>
-    <p class="section-subtitle" data-i18n="features_subtitle">Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, and bounded automation.</p>
+    <p class="section-subtitle" data-i18n="features_subtitle">Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, and an optional human-readable vault surface.</p>
     <div class="features">
 
       <!-- Row 1: Recon hero (3) + Adversarial (3) -->
@@ -914,15 +914,15 @@ body::after {
       <div class="feature feature-hero">
         <div class="feature-icon">&#129504;</div>
         <h3 data-i18n="feat_memory_title">Remembers and Learns From Every Task</h3>
-        <p data-i18n="feat_memory_desc">Most AI tools forget everything the moment you close them. ForgeGod remembers. It stores what happened on each task, what principles work best, which code patterns succeed, how things connect to each other, and which errors it has solved before. Old memories fade, new ones get stronger. It literally gets better the more you use it.</p>
-        <span class="feature-tag" data-i18n="feat_memory_tag">Gets smarter over time</span>
+        <p data-i18n="feat_memory_desc">Most AI tools forget everything the moment you close them. ForgeGod remembers. It stores what happened on each task, what principles work best, which code patterns succeed, how things connect to each other, and which errors it has solved before. Old memories fade, new ones get stronger. Runtime recall stays in SQLite, and stable memories can also be projected into an optional Obsidian vault.</p>
+        <span class="feature-tag" data-i18n="feat_memory_tag">5 tiers + optional vault projection</span>
       </div>
 
       <div class="feature feature-hero">
         <div class="feature-icon">&#129302;</div>
         <h3 data-i18n="feat_memoryagent_title">Dedicated Memory Agent</h3>
-        <p data-i18n="feat_memoryagent_desc">After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching - an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent's intelligence compounds automatically.</p>
-        <span class="feature-tag" data-i18n="feat_memoryagent_tag">LLM-powered extraction</span>
+        <p data-i18n="feat_memoryagent_desc">After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching - an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. It can also export clean human-readable summaries into an optional Obsidian vault.</p>
+        <span class="feature-tag" data-i18n="feat_memoryagent_tag">LLM-powered extraction + vault summaries</span>
       </div>
 
       <!-- Row 3: Routing (2) + Loop (2) + Reflexion (2) -->
@@ -1098,7 +1098,7 @@ body::after {
 <section class="memory-section" id="memory">
   <div class="container">
     <h2 class="section-title" data-i18n="title_memory">5-TIER COGNITIVE MEMORY</h2>
-    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-bottom:1.5rem;max-width:700px;margin-left:auto;margin-right:auto;" data-i18n="mem_subtitle">One of the deepest memory stacks in an open coding agent. ForgeGod keeps 5 structured layers that clean up, merge, and strengthen over time instead of relying on flat notes alone.</p>
+    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-bottom:1.5rem;max-width:700px;margin-left:auto;margin-right:auto;" data-i18n="mem_subtitle">One of the deepest memory stacks in an open coding agent. ForgeGod keeps 5 structured layers in SQLite for runtime recall, then projects stable summaries into an optional Obsidian vault when you want a readable knowledge workspace.</p>
     <div class="memory-tiers">
       <div class="memory-tier">
         <div class="memory-tier-icon">&#128218;</div>
@@ -1603,7 +1603,7 @@ body::after {
 var STRINGS = {
   en: {
     page_title: "ForgeGod - Research-Backed Autonomous Coding Agent",
-    meta_desc: "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, and $0 local mode.",
+    meta_desc: "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode.",
     nav_features: "Features",
     nav_results: "Results",
     nav_moats: "Why Us",
@@ -1635,8 +1635,8 @@ var STRINGS = {
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. First it tries with the free local AI. If that fails, it escalates to a smarter (but cheap) cloud AI. If that fails too, it brings in the most powerful AI available. It validates the code is correct at every step before moving on.",
     feat_reflexion_tag: "3 attempts, escalating quality",
     feat_memory_title: "Remembers and Learns From Every Task",
-    feat_memory_desc: "Most AI tools forget everything the moment you close them. ForgeGod remembers. It stores what happened on each task, what principles work best, which code patterns succeed, how things connect to each other, and which errors it has solved before. Old memories fade, new ones get stronger. It literally gets better the more you use it.",
-    feat_memory_tag: "Gets smarter over time",
+    feat_memory_desc: "Most AI tools forget everything the moment you close them. ForgeGod remembers. It stores what happened on each task, what principles work best, which code patterns succeed, how things connect to each other, and which errors it has solved before. Old memories fade, new ones get stronger. Runtime recall stays in SQLite, and stable memories can also be projected into an optional Obsidian vault.",
+    feat_memory_tag: "5 tiers + optional vault projection",
     feat_budget_title: "You Control the Spending",
     feat_budget_desc: "Set a daily budget and ForgeGod respects it. As you approach your limit, it automatically shifts to cheaper AI models. Hit the limit? It switches to the free local AI or pauses entirely. You can also run 100% free forever using only your own computer.",
     feat_budget_tag: "Never an unexpected bill",
@@ -1656,8 +1656,8 @@ var STRINGS = {
     feat_debate_desc: "A second model attacks the plan like a hostile reviewer. Security gaps, deprecated deps, missing edge cases, and weak abstractions surface before coding starts. Actor-critic review is a durable agent pattern because it catches issues single-pass generation misses.",
     feat_debate_tag: "3 rounds, 6 dimensions",
     feat_memoryagent_title: "Dedicated Memory Agent",
-    feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. Your agent\u2019s intelligence compounds automatically.",
-    feat_memoryagent_tag: "LLM-powered extraction",
+    feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. It can also export clean human-readable summaries into an optional Obsidian vault.",
+    feat_memoryagent_tag: "LLM-powered extraction + vault summaries",
     feat_routing_desc: "Connects to 9 provider families and 10 route surfaces, including native OpenAI Codex subscription auth, OpenAI API, Z.AI, and MiniMax. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
     feat_loop_desc: "Give it a project plan and walk away. ForgeGod can run stories one by one in the Ralph loop, dispatch ready work through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding.",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.",
@@ -1671,7 +1671,7 @@ var STRINGS = {
     feat_skills_title: "Loadable Skills",
     feat_skills_desc: "Pre-built instruction sets for common tasks \u2014 Django, FastAPI, React, testing, deployment. Load a skill and the agent follows battle-tested patterns instead of improvising.",
     feat_skills_tag: "Reusable expertise",
-    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, and bounded automation.",
+    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, and an optional human-readable vault surface.",
     title_moats: "WHY FORGEGOD",
     moats_subtitle: "Six technical advantages that shape ForgeGod's harness design today.",
     moat_1_title: "Research-Gated Changes",
@@ -1705,7 +1705,7 @@ var STRINGS = {
     mem_graph_desc: "Maps how files, functions, and concepts relate to each other. Understands cause and effect \u2014 like \u201Cchanging file A usually requires updating file B.\u201D",
     mem_errors_title: "Error Fixes",
     mem_errors_desc: "When it solves an error, it remembers the fix. Next time the same error appears, it already knows what to do \u2014 no wasted time re-discovering the solution.",
-    mem_subtitle: "One of the deepest memory stacks in an open coding agent. ForgeGod keeps 5 structured layers that clean up, merge, and strengthen over time instead of relying on flat notes alone.",
+    mem_subtitle: "One of the deepest memory stacks in an open coding agent. ForgeGod keeps 5 structured layers in SQLite for runtime recall, then projects stable summaries into an optional Obsidian vault when you want a readable knowledge workspace.",
     mem_flow_label: "The learning cycle \u2014 every task makes ForgeGod smarter:",
     provider_openai: "API + Codex subscription",
     provider_deepseek: "22x cheaper",
@@ -1795,7 +1795,7 @@ var STRINGS = {
   },
   es: {
     page_title: "ForgeGod - Agente de Codigo Autonomo Respaldado por Investigacion",
-    meta_desc: "Agente de código autónomo open source con workflows research-first, review adversarial, subagentes acotados, hive local, memoria de 5 niveles y modo local $0.",
+    meta_desc: "Agente de código autónomo open source con workflows research-first, review adversarial, subagentes acotados, hive local, memoria de 5 niveles, proyección opcional a Obsidian y modo local $0.",
     nav_features: "Características",
     nav_results: "Resultados",
     nav_moats: "Por Qu\u00e9",
@@ -1827,8 +1827,8 @@ var STRINGS = {
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Primero prueba con la IA local gratuita. Si falla, escala a una IA de nube m\u00e1s inteligente (pero barata). Si eso tambi\u00e9n falla, trae la IA m\u00e1s poderosa disponible. Valida que el c\u00f3digo sea correcto en cada paso antes de avanzar.",
     feat_reflexion_tag: "3 intentos, calidad creciente",
     feat_memory_title: "Recuerda y Aprende de Cada Tarea",
-    feat_memory_desc: "La mayor\u00eda de las herramientas de IA olvidan todo cuando las cerr\u00e1s. ForgeGod recuerda. Almacena qu\u00e9 pas\u00f3 en cada tarea, qu\u00e9 principios funcionan mejor, qu\u00e9 patrones de c\u00f3digo tienen \u00e9xito, c\u00f3mo se conectan las cosas entre s\u00ed, y qu\u00e9 errores ya resolvi\u00f3 antes. Los recuerdos viejos se desvanecen, los nuevos se fortalecen. Literalmente mejora cuanto m\u00e1s lo us\u00e1s.",
-    feat_memory_tag: "M\u00e1s inteligente con el tiempo",
+    feat_memory_desc: "La mayor\u00eda de las herramientas de IA olvidan todo cuando las cerr\u00e1s. ForgeGod recuerda. Almacena qu\u00e9 pas\u00f3 en cada tarea, qu\u00e9 principios funcionan mejor, qu\u00e9 patrones de c\u00f3digo tienen \u00e9xito, c\u00f3mo se conectan las cosas entre s\u00ed, y qu\u00e9 errores ya resolvi\u00f3 antes. Los recuerdos viejos se desvanecen, los nuevos se fortalecen. El recall de runtime queda en SQLite, y las memorias estables tambi\u00e9n se pueden proyectar a un vault opcional de Obsidian.",
+    feat_memory_tag: "5 niveles + vault opcional",
     feat_budget_title: "Vos Control\u00e1s el Gasto",
     feat_budget_desc: "Configur\u00e1 un presupuesto diario y ForgeGod lo respeta. A medida que te acerc\u00e1s al l\u00edmite, cambia autom\u00e1ticamente a IAs m\u00e1s baratas. \u00bfLlegaste al l\u00edmite? Cambia a la IA local gratuita o se pausa. Tambi\u00e9n pod\u00e9s correrlo 100% gratis para siempre usando solo tu computadora.",
     feat_budget_tag: "Sin sorpresas en la factura",
@@ -1848,8 +1848,8 @@ var STRINGS = {
     feat_debate_desc: "Un segundo modelo ataca el plan como un revisor hostil. Brechas de seguridad, dependencias obsoletas, casos borde faltantes y abstracciones flojas aparecen antes de programar. El review actor-crítico es un patrón duradero porque detecta problemas que una sola pasada suele dejar escapar.",
     feat_debate_tag: "3 rondas, 6 dimensiones",
     feat_memoryagent_title: "Agente de Memoria Dedicado",
-    feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. La inteligencia de tu agente se acumula autom\u00e1ticamente.",
-    feat_memoryagent_tag: "Extracci\u00f3n con LLM",
+    feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. Tambi\u00e9n puede exportar res\u00famenes limpios y legibles a un vault opcional de Obsidian.",
+    feat_memoryagent_tag: "Extracci\u00f3n con LLM + res\u00famenes al vault",
     feat_routing_desc: "Se conecta a 9 familias de proveedores y 10 superficies de ruteo, incluyendo auth nativa de OpenAI Codex, OpenAI API, Z.AI y MiniMax. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explícitas: auto, api-only, codex-only o api+codex.",
     feat_loop_desc: "Dale un plan de proyecto y andate. ForgeGod puede ejecutar historias una por una en el Ralph loop, despachar trabajo listo en el hive local con worktrees aislados, o anteponer análisis acotado con subagentes antes de programar.",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Empieza con IA local gratis, escala a IA de nube m\u00e1s inteligente si es necesario. Valida la correcci\u00f3n en cada paso antes de avanzar.",
@@ -1863,7 +1863,7 @@ var STRINGS = {
     feat_skills_title: "Skills Cargables",
     feat_skills_desc: "Instrucciones pre-armadas para tareas comunes \u2014 Django, FastAPI, React, testing, deploy. Carg\u00e1 un skill y el agente sigue patrones probados en vez de improvisar.",
     feat_skills_tag: "Experiencia reutilizable",
-    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial y automatización acotada.",
+    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial, automatización acotada y una superficie opcional de vault legible por humanos.",
     title_moats: "POR QU\u00c9 FORGEGOD",
     moats_subtitle: "Seis ventajas técnicas que hoy moldean el diseño del harness de ForgeGod.",
     moat_1_title: "Cambios Guiados por Investigaci\u00f3n",
@@ -1897,7 +1897,7 @@ var STRINGS = {
     mem_graph_desc: "Mapea c\u00f3mo se relacionan archivos, funciones y conceptos entre s\u00ed. Entiende causa y efecto \u2014 como \u201Ccambiar archivo A generalmente requiere actualizar archivo B.\u201D",
     mem_errors_title: "Soluciones a Errores",
     mem_errors_desc: "Cuando resuelve un error, recuerda la soluci\u00f3n. La pr\u00f3xima vez que aparece el mismo error, ya sabe qu\u00e9 hacer \u2014 sin perder tiempo redescubriendo la soluci\u00f3n.",
-    mem_subtitle: "Una de las memorias más profundas dentro de un coding agent abierto. ForgeGod mantiene 5 capas estructuradas que se limpian, fusionan y fortalecen con el tiempo en lugar de depender solo de notas planas.",
+    mem_subtitle: "Uno de los stacks de memoria más profundos en un coding agent abierto. ForgeGod mantiene 5 capas estructuradas en SQLite para el recall de runtime y luego proyecta resúmenes estables a un vault opcional de Obsidian cuando querés un workspace legible.",
     mem_flow_label: "El ciclo de aprendizaje \u2014 cada tarea hace a ForgeGod m\u00e1s inteligente:",
     provider_openai: "API + suscripción Codex",
     provider_deepseek: "22x más barato",

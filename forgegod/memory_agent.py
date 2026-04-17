@@ -134,6 +134,16 @@ class MemoryAgent:
         self.config = config
         self.router = router
         self.memory = memory
+        self._obsidian = None
+        if self.config.obsidian.enabled:
+            try:
+                from forgegod.obsidian import ObsidianAdapter
+
+                adapter = ObsidianAdapter(config)
+                if adapter.is_configured():
+                    self._obsidian = adapter
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian adapter unavailable: %s", exc)
 
     async def process_coding_task(
         self,
@@ -165,6 +175,16 @@ class MemoryAgent:
 
         extractions = self._parse_extractions(response)
         await self._store_extractions(extractions, task_id)
+        if self._obsidian:
+            try:
+                self._obsidian.export_memory_extraction_summary(
+                    task_id=task_id or "coding-task",
+                    task_description=task_description,
+                    task_type="coding",
+                    extractions=extractions,
+                )
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian coding memory export skipped: %s", exc)
 
         logger.info(
             "MemoryAgent: stored %d semantic, %d procedural, "
@@ -209,6 +229,16 @@ class MemoryAgent:
 
         extractions = self._parse_extractions(response)
         await self._store_extractions(extractions, f"plan_{task_description[:30]}")
+        if self._obsidian:
+            try:
+                self._obsidian.export_memory_extraction_summary(
+                    task_id=f"plan_{task_description[:30]}",
+                    task_description=task_description,
+                    task_type="planning",
+                    extractions=extractions,
+                )
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian planning memory export skipped: %s", exc)
 
         logger.info(
             "MemoryAgent: stored %d semantic, %d procedural from planning",

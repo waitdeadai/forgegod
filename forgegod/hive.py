@@ -54,6 +54,16 @@ class HiveCoordinator:
         self._results_dir = self.config.project_dir / "hive" / "results"
         self._queue_dir = self.config.project_dir / "hive" / "queue"
         self._worktree_base = self.config.project_dir / "worktrees"
+        self._obsidian = None
+        if self.config.obsidian.enabled:
+            try:
+                from forgegod.obsidian import ObsidianAdapter
+
+                adapter = ObsidianAdapter(config)
+                if adapter.is_configured():
+                    self._obsidian = adapter
+            except Exception as exc:
+                logger.debug("Obsidian adapter unavailable: %s", exc)
 
     async def run(
         self,
@@ -107,12 +117,14 @@ class HiveCoordinator:
             await self._run_batch(loop_helper, prd, selected)
             self._save_prd(prd_path, prd)
             self._save_state()
+            self._export_hive_summary(prd)
 
             if self._all_done(prd):
                 self.state.status = "idle"
                 self._save_state()
                 break
 
+        self._export_hive_summary(prd)
         return self.state
 
     async def _plan_batch(
@@ -394,6 +406,14 @@ Ready stories:
     def _save_state(self) -> None:
         self._state_path.parent.mkdir(parents=True, exist_ok=True)
         self._state_path.write_text(self.state.model_dump_json(indent=2), encoding="utf-8")
+
+    def _export_hive_summary(self, prd: PRD) -> None:
+        if not self._obsidian:
+            return
+        try:
+            self._obsidian.export_hive_summary(prd=prd, state=self.state)
+        except Exception as exc:  # pragma: no cover - optional integration
+            logger.debug("Obsidian hive export skipped: %s", exc)
 
     @staticmethod
     def _save_prd(prd_path: Path, prd: PRD) -> None:

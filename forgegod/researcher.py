@@ -39,6 +39,16 @@ class Researcher:
         self.router = router
         self.recon = config.recon
         self.deep_research_cfg = config.deep_research
+        self._obsidian = None
+        if self.config.obsidian.enabled:
+            try:
+                from forgegod.obsidian import ObsidianAdapter
+
+                adapter = ObsidianAdapter(config)
+                if adapter.is_configured():
+                    self._obsidian = adapter
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian adapter unavailable: %s", exc)
 
     async def research(
         self,
@@ -85,6 +95,11 @@ class Researcher:
             len(brief.architecture_patterns),
             len(brief.security_warnings),
         )
+        if self._obsidian:
+            try:
+                self._obsidian.export_research_brief(brief, depth=depth.value)
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian research export skipped: %s", exc)
         return brief
 
     def _research_limits(self, depth: ResearchDepth) -> dict[str, int]:
@@ -435,6 +450,12 @@ class Researcher:
                 f"information_gain={last_gain:.2f} < "
                 f"{cfg.information_gain_threshold} threshold"
             )
+
+        if self._obsidian:
+            try:
+                self._obsidian.export_deep_research_brief(brief)
+            except Exception as exc:  # pragma: no cover - optional integration
+                logger.debug("Obsidian deep research export skipped: %s", exc)
 
         return brief
 
