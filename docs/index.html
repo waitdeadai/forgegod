@@ -254,9 +254,12 @@ nav .container {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
   scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
+.terminal-body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .terminal-body .prompt { color: var(--cyan); }
 .terminal-body .command { color: var(--text); }
 .terminal-body .output { color: var(--text-dim); }
@@ -805,19 +808,21 @@ footer a { color: var(--cyan); }
   padding: 1.5rem;
 }
 .live-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
   gap: 1.5rem;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: start;
 }
-.live-title-wrap { max-width: 700px; }
+.live-title-wrap { max-width: 700px; min-width: 0; }
 .live-title-wrap .section-title { text-align: left; margin-bottom: 0.85rem; }
 .live-title-wrap .section-subtitle { text-align: left; max-width: none; margin: 0; }
 .live-statuses {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
   gap: 0.75rem;
-  min-width: 300px;
+  width: 100%;
+  max-width: 420px;
+  justify-self: end;
 }
 .live-status {
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -827,17 +832,23 @@ footer a { color: var(--cyan); }
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
 }
 .live-status-label {
   color: var(--text-dim);
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.16em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .live-status-value {
   color: var(--text);
   font-size: 0.82rem;
   font-family: var(--font-mono);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .live-footnote,
 .live-updated {
@@ -957,6 +968,11 @@ footer a { color: var(--cyan); }
   .feature-full { grid-column: span 2; }
   .bridge-spotlight-grid { grid-template-columns: 1fr; }
   .moat-grid { grid-template-columns: repeat(2, 1fr); }
+  .live-header { grid-template-columns: 1fr; }
+  .live-statuses {
+    max-width: 460px;
+    justify-self: start;
+  }
 }
 @media (max-width: 768px) {
   .features { grid-template-columns: 1fr; }
@@ -969,7 +985,6 @@ footer a { color: var(--cyan); }
   .comparison-table { font-size: 0.68rem; min-width: 640px; }
   .comparison-scroll { margin-top: 1rem; }
   .comparison-hint { display: block; }
-  .live-header { flex-direction: column; }
   .live-statuses { min-width: 0; width: 100%; }
   .stats {
     gap: 0.85rem;
