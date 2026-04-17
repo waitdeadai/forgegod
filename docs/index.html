@@ -232,6 +232,7 @@ nav .container {
   background: #0d0d14; border: 1px solid var(--surface-border);
   border-radius: 10px; overflow: hidden;
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.5), 0 0 80px var(--cyan-glow);
+  contain: layout paint;
 }
 .terminal-bar {
   display: flex; align-items: center; gap: 6px;
@@ -248,7 +249,13 @@ nav .container {
 }
 .terminal-body {
   padding: 1.2rem; font-family: var(--font-mono); font-size: 0.8rem;
-  line-height: 1.8; min-height: 280px;
+  line-height: 1.8;
+  height: clamp(300px, 34vw, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
 }
 .terminal-body .prompt { color: var(--cyan); }
 .terminal-body .command { color: var(--text); }
@@ -880,7 +887,7 @@ footer a { color: var(--cyan); }
   .install-box code { font-size: 0.9rem; }
   .bench-callout { padding: 1rem; }
   .bench-bar-label { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
-  .terminal-body { font-size: 0.7rem; min-height: 220px; padding: 0.8rem; }
+  .terminal-body { font-size: 0.7rem; height: 260px; padding: 0.8rem; }
   .footer-links { gap: 0.5rem; }
 }
 @media (max-width: 480px) {
@@ -2363,9 +2370,17 @@ function copyInstall() {
 // -- Terminal typing animation --
 var lineIdx = 0;
 var animGen = 0;
+var terminalBody = document.getElementById('terminal');
 var typewriter = document.getElementById('typewriter');
 var output = document.getElementById('terminal-output');
 var cursorEl = document.getElementById('cursor');
+
+function syncTerminalScroll() {
+  if (!terminalBody) return;
+  requestAnimationFrame(function() {
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+  });
+}
 
 function typeCommand(text, cb, gen) {
   var i = 0;
@@ -2374,6 +2389,7 @@ function typeCommand(text, cb, gen) {
   var iv = setInterval(function() {
     if (gen !== animGen) { clearInterval(iv); return; }
     typewriter.textContent += text[i];
+    syncTerminalScroll();
     i++;
     if (i >= text.length) {
       clearInterval(iv);
@@ -2391,6 +2407,7 @@ function showOutput(items, cb, gen) {
     div.className = items[i].cls;
     div.textContent = items[i].text;
     output.appendChild(div);
+    syncTerminalScroll();
     i++;
     if (i >= items.length) {
       clearInterval(iv);
@@ -2408,6 +2425,7 @@ function runLine() {
   if (lineIdx >= lines.length) {
     lineIdx = 0;
     output.innerHTML = '';
+    syncTerminalScroll();
   }
   var line = lines[lineIdx];
   if (!line) { lineIdx = 0; return; }
@@ -2415,6 +2433,7 @@ function runLine() {
 
   if (lineIdx === 1 && output.children.length > 0) {
     output.innerHTML = '';
+    syncTerminalScroll();
   }
 
   typeCommand(line.cmd, function() {
@@ -2423,17 +2442,20 @@ function runLine() {
     cmdLine.innerHTML = '<span class="prompt">$ </span><span class="command">' + typewriter.textContent + '</span>';
     output.appendChild(cmdLine);
     typewriter.textContent = '';
+    syncTerminalScroll();
 
     showOutput(line.output, function() {
       if (gen !== animGen) return;
       if (lineIdx < lines.length) {
         output.appendChild(document.createElement('div'));
+        syncTerminalScroll();
         setTimeout(function() { if (gen === animGen) runLine(); }, line.delay);
       } else {
         setTimeout(function() {
           if (gen !== animGen) return;
           output.innerHTML = '';
           lineIdx = 0;
+          syncTerminalScroll();
           try { runLine(); } catch(e) {}
         }, 4000);
       }
@@ -2448,6 +2470,7 @@ function restartTerminal() {
   output.innerHTML = '';
   typewriter.textContent = '';
   cursorEl.style.display = 'inline-block';
+  syncTerminalScroll();
   setTimeout(function() { runLine(); }, 500);
 }
 

@@ -195,6 +195,7 @@ These reduce common LLM coding mistakes. Tradeoff: bias toward caution over spee
 - Prefer small patches and rerun the smallest relevant verification command after each change.
 - If you change runtime behavior, update `docs/OPERATIONS.md` and the dated audit doc in the same patch.
 - If you change public-facing claims, provider counts, versions, benchmark numbers, security posture, or capability copy, update `docs/index.html` and verify the live site in the same workstream.
+- If you change animated or interactive surfaces in `docs/index.html`, keep their viewport height stable and verify they do not push downstream sections during runtime on desktop or mobile.
 - Do not describe a change as SOTA, state-of-the-art, or beyond-SOTA unless both conditions are true: the design is backed by current 2026 sources and the repo proves it locally with passing tests or benchmarks.
 - If README-style claims drift again, correct the docs or add a dated audit note instead of leaving silent mismatches.
 
