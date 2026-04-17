@@ -84,7 +84,7 @@
   --max-w: 1100px;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   background: var(--bg);
@@ -282,6 +282,83 @@ nav .container {
   text-align: center; color: var(--text-dim); font-size: 0.95rem;
   max-width: 700px; margin: 0 auto 3rem; line-height: 1.6;
 }
+.bridge-spotlight {
+  margin: 0 auto 1.5rem;
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 229, 255, 0.12), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(240, 192, 64, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(18, 18, 26, 0.98), rgba(10, 10, 15, 0.98));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  padding: 1.5rem;
+}
+.bridge-spotlight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+.bridge-spotlight-copy h3 {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 0.65rem;
+}
+.bridge-spotlight-copy p {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+.bridge-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+.bridge-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+.bridge-stack {
+  display: grid;
+  gap: 0.85rem;
+}
+.bridge-card {
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  padding: 0.95rem 1rem;
+}
+.bridge-card-label {
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 0.45rem;
+}
+.bridge-card code {
+  display: block;
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bridge-card-note {
+  margin-top: 0.55rem;
+  color: var(--text-dim);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
 .features {
   display: grid; grid-template-columns: repeat(6, 1fr);
   gap: 1rem;
@@ -442,6 +519,33 @@ nav .container {
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 229, 255, 0.06);
   margin-bottom: 1.5rem;
 }
+.showcase-frame-wrapper:fullscreen {
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  margin: 0;
+  background: #05060a;
+}
+.showcase-frame-wrapper:fullscreen .showcase-iframe {
+  height: 100dvh;
+}
+.showcase-frame-wrapper:fullscreen .showcase-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  background: linear-gradient(180deg, rgba(5, 6, 10, 0), rgba(5, 6, 10, 0.92));
+  border-top: none;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(10px);
+}
+.showcase-frame-wrapper:fullscreen .showcase-badge {
+  top: 18px;
+  left: 20px;
+}
 .showcase-badge {
   position: absolute;
   top: 12px;
@@ -457,17 +561,26 @@ nav .container {
 }
 .showcase-iframe {
   width: 100%;
-  height: 640px;
+  height: clamp(760px, 90vh, 1180px);
   border: none;
   display: block;
+  background: #090b10;
 }
 .showcase-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   padding: 0.75rem 1rem;
   background: rgba(255,255,255,0.02);
   border-top: 1px solid var(--surface-border);
+}
+.showcase-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 .showcase-open-btn {
   font-family: var(--font-mono);
@@ -484,9 +597,25 @@ nav .container {
   color: var(--bg);
   text-decoration: none;
 }
+.showcase-fullscreen-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gold);
+  background: rgba(240, 192, 64, 0.08);
+  border: 1px solid rgba(240, 192, 64, 0.45);
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.showcase-fullscreen-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
 .showcase-credit {
   font-size: 0.7rem;
   color: var(--text-dim);
+  flex: 1 1 260px;
 }
 .showcase-stats {
   display: grid;
@@ -512,9 +641,12 @@ nav .container {
   color: var(--text-dim);
 }
 @media (max-width: 640px) {
-  .showcase-iframe { height: 520px; }
+  .showcase-iframe { height: 88dvh; min-height: 720px; }
   .showcase-stats { grid-template-columns: repeat(2, 1fr); }
   .showcase-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .showcase-actions { width: 100%; }
+  .showcase-open-btn,
+  .showcase-fullscreen-btn { width: 100%; justify-content: center; text-align: center; }
 }
 
 /* -- Comparison -- */
@@ -823,6 +955,7 @@ footer a { color: var(--cyan); }
   .feature { grid-column: span 1; }
   .feature-hero { grid-column: span 2; }
   .feature-full { grid-column: span 2; }
+  .bridge-spotlight-grid { grid-template-columns: 1fr; }
   .moat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
@@ -849,6 +982,7 @@ footer a { color: var(--cyan); }
   .nav-install { display: none; }
   .providers { gap: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bench-grid { grid-template-columns: 1fr; }
+  .bridge-spotlight { padding: 1.2rem; }
   .nav-hamburger { display: block; }
   .nav-links { display: none; }
   .nav-links.open {
@@ -1011,6 +1145,32 @@ body::after {
   <div class="container">
     <h2 class="section-title" data-i18n="title_features">CORE CAPABILITIES</h2>
     <p class="section-subtitle" data-i18n="features_subtitle">Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, optional human-readable memory projection, and first-party bridges into external chat runtimes.</p>
+    <div class="bridge-spotlight">
+      <div class="bridge-spotlight-grid">
+        <div class="bridge-spotlight-copy">
+          <h3 data-i18n="bridge_spotlight_title">Native Hermes and OpenClaw Integration</h3>
+          <p data-i18n="bridge_spotlight_desc">ForgeGod already exposes a first-party bridge for external chat runtimes. Export Hermes and OpenClaw adapters, keep stable session IDs, and route Telegram, WhatsApp, Discord, or thread-based conversations straight into ForgeGod instead of maintaining fragile prompt glue outside the harness.</p>
+          <div class="bridge-pill-row">
+            <span class="bridge-pill">Hermes</span>
+            <span class="bridge-pill">OpenClaw</span>
+            <span class="bridge-pill" data-i18n="bridge_pill_channels">Telegram · WhatsApp · Discord</span>
+            <span class="bridge-pill" data-i18n="bridge_pill_runtime">Native runtime delegation</span>
+          </div>
+        </div>
+        <div class="bridge-stack">
+          <div class="bridge-card">
+            <div class="bridge-card-label" data-i18n="bridge_card_export">Export adapters</div>
+            <code>forgegod integrations export-hermes-skill --output ./dist/hermes
+forgegod integrations export-openclaw-skill --output ./dist/openclaw</code>
+          </div>
+          <div class="bridge-card">
+            <div class="bridge-card-label" data-i18n="bridge_card_runtime">Bridge runtime</div>
+            <code>forgegod bridge chat --runtime hermes --session-id wa-42 "Continue the checkout fix"</code>
+            <div class="bridge-card-note" data-i18n="bridge_card_note">Machine-friendly JSON or text responses, persistent session continuity, and repo-local context reuse are already live in the CLI.</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="features">
 
       <!-- Row 1: Recon hero (3) + Adversarial (3) -->
@@ -1490,20 +1650,25 @@ body::after {
     <h2 class="section-title" data-i18n="title_showcase">REFERENCE APP</h2>
     <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-bottom:2rem;max-width:640px;margin-left:auto;margin-right:auto;" data-i18n="showcase_subtitle">A public ForgeGod-built application used to exercise the harness across planning, implementation, review, and mobile UI work. It remains a live reference deployment, not a marketing mockup.</p>
 
-    <div class="showcase-frame-wrapper">
+    <div class="showcase-frame-wrapper" id="showcase-frame">
       <div class="showcase-badge">ForgeGod Reference Deployment</div>
       <iframe
         src="https://tarot-ecru-five.vercel.app/"
         class="showcase-iframe"
+        id="showcase-iframe"
         loading="lazy"
         title="Tarot 3:33 - ForgeGod reference app"
+        allowfullscreen
         allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi"
         sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
       ></iframe>
       <div class="showcase-footer">
-        <a href="https://tarot-ecru-five.vercel.app/" target="_blank" rel="noopener" class="showcase-open-btn">
-          Open Reference App ↗
-        </a>
+        <div class="showcase-actions">
+          <button type="button" class="showcase-fullscreen-btn" onclick="openShowcaseFullscreen()" data-i18n="showcase_fullscreen">Fullscreen Demo ⤢</button>
+          <a href="https://tarot-ecru-five.vercel.app/" target="_blank" rel="noopener" class="showcase-open-btn" data-i18n="showcase_open">
+            Open Reference App ↗
+          </a>
+        </div>
         <span class="showcase-credit">Built with ForgeGod loops, research, and review passes · Next.js + TypeScript · Deployed to Vercel</span>
       </div>
     </div>
@@ -1777,6 +1942,8 @@ var STRINGS = {
     title_how: "HOW IT WORKS",
     title_showcase: "REFERENCE APP",
     showcase_subtitle: "A public ForgeGod-built application used to exercise the harness across planning, implementation, review, and mobile UI work. It remains a live reference deployment, not a marketing mockup.",
+    showcase_fullscreen: "Fullscreen Demo ⤢",
+    showcase_open: "Open Reference App ↗",
     nav_showcase: "Reference",
     title_compare: "HOW WE COMPARE",
     cmp_hint: "Swipe horizontally to compare.",
@@ -1938,6 +2105,13 @@ var STRINGS = {
     feat_specialists_title: "Native Audit and Specialist Agents",
     feat_specialists_desc: "audit-agent is wired into ForgeGod as a native preflight gate. `forgegod audit`, `forgegod loop`, and `forgegod hive` can refresh audit artifacts, halt on blockers, and expose security, architecture, and plan-risk specialist passes before planning continues. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate blocks one-pass \"good enough\" exits without verification.",
     feat_specialists_tag: "Native audit + grounding + taste + max-effort",
+    bridge_spotlight_title: "Native Hermes and OpenClaw Integration",
+    bridge_spotlight_desc: "ForgeGod already exposes a first-party bridge for external chat runtimes. Export Hermes and OpenClaw adapters, keep stable session IDs, and route Telegram, WhatsApp, Discord, or thread-based conversations straight into ForgeGod instead of maintaining fragile prompt glue outside the harness.",
+    bridge_pill_channels: "Telegram · WhatsApp · Discord",
+    bridge_pill_runtime: "Native runtime delegation",
+    bridge_card_export: "Export adapters",
+    bridge_card_runtime: "Bridge runtime",
+    bridge_card_note: "Machine-friendly JSON or text responses, persistent session continuity, and repo-local context reuse are already live in the CLI.",
     feat_bridge_title: "Hermes and OpenClaw Runtime Bridges",
     feat_bridge_desc: "ForgeGod now exposes a machine-friendly bridge for external chat runtimes. Export first-party Hermes and OpenClaw adapters, keep stable session IDs, and let Telegram, WhatsApp, Discord, or thread-bound conversations delegate repo work into ForgeGod without prompt-only glue.",
     feat_bridge_tag: "External chat runtimes -> ForgeGod",
@@ -1990,6 +2164,8 @@ var STRINGS = {
     title_how: "CÓMO FUNCIONA",
     title_showcase: "APP DE REFERENCIA",
     showcase_subtitle: "Una aplicación pública construida con ForgeGod para exigir el harness en planificación, implementación, review y UI mobile. Sigue siendo un deployment de referencia vivo, no una maqueta de marketing.",
+    showcase_fullscreen: "Demo en pantalla completa ⤢",
+    showcase_open: "Abrir app de referencia ↗",
     nav_showcase: "Referencia",
     title_compare: "CÓMO NOS COMPARAMOS",
     cmp_hint: "Deslizá horizontalmente para comparar.",
@@ -2151,6 +2327,13 @@ var STRINGS = {
     feat_specialists_title: "Auditoria Nativa y Agentes Especialistas",
     feat_specialists_desc: "audit-agent esta conectado a ForgeGod como gate nativo de preflight. `forgegod audit`, `forgegod loop` y `forgegod hive` pueden refrescar artefactos de auditoria, frenar ante bloqueos y exponer pasadas especialistas de seguridad, arquitectura y riesgo de plan antes de seguir. ResearchAgent ancla la implementacion con briefs basados en fuentes actuales. TasteAgent agrega review de diseno opcional despues del code review. EffortGate bloquea cierres de una sola pasada sin verificacion.",
     feat_specialists_tag: "Auditoria nativa + grounding + taste + max-effort",
+    bridge_spotlight_title: "Integración Nativa con Hermes y OpenClaw",
+    bridge_spotlight_desc: "ForgeGod ya expone un bridge de primera clase para runtimes externos de chat. Exportá adaptadores para Hermes y OpenClaw, mantené session IDs estables y enviá conversaciones de Telegram, WhatsApp, Discord o threads directo a ForgeGod en lugar de depender de pegamento frágil hecho sólo con prompts.",
+    bridge_pill_channels: "Telegram · WhatsApp · Discord",
+    bridge_pill_runtime: "Delegación nativa de runtime",
+    bridge_card_export: "Exportar adaptadores",
+    bridge_card_runtime: "Runtime bridge",
+    bridge_card_note: "Respuestas machine-friendly en JSON o texto, continuidad persistente de sesión y reutilización del contexto local del repo ya están vivos en el CLI.",
     feat_bridge_title: "Puentes de Runtime para Hermes y OpenClaw",
     feat_bridge_desc: "ForgeGod ahora expone un bridge machine-friendly para runtimes externos de chat. Exporta adaptadores de primera clase para Hermes y OpenClaw, conserva session IDs estables y deja que Telegram, WhatsApp, Discord o conversaciones con threads deleguen trabajo de repo hacia ForgeGod sin pegamento de prompts.",
     feat_bridge_tag: "Runtimes de chat externos -> ForgeGod",
@@ -2365,6 +2548,17 @@ function copyInstall() {
     btn.style.color = '#00ff88';
     setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
   });
+}
+
+function openShowcaseFullscreen() {
+  var wrapper = document.getElementById('showcase-frame');
+  if (!wrapper) return;
+  var request = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen || wrapper.msRequestFullscreen;
+  if (request) {
+    request.call(wrapper);
+    return;
+  }
+  window.open('https://tarot-ecru-five.vercel.app/', '_blank', 'noopener');
 }
 
 // -- Terminal typing animation --
