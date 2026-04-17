@@ -654,6 +654,112 @@ footer a { color: var(--cyan); }
 .bench-callout strong { color: var(--text); }
 .bench-callout a { color: var(--cyan); }
 
+/* -- Live Ship Log -- */
+.live-section { padding: 4.5rem 0 2rem; }
+.live-shell {
+  border: 1px solid rgba(0, 229, 255, 0.14);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(240, 192, 64, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(18, 18, 26, 0.98), rgba(10, 10, 15, 0.98));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  padding: 1.5rem;
+}
+.live-header {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.live-title-wrap { max-width: 700px; }
+.live-title-wrap .section-title { text-align: left; margin-bottom: 0.85rem; }
+.live-title-wrap .section-subtitle { text-align: left; max-width: none; margin: 0; }
+.live-statuses {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  min-width: 300px;
+}
+.live-status {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.live-status-label {
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.live-status-value {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}
+.live-footnote,
+.live-updated {
+  margin-top: 0.9rem;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+}
+.live-footnote a,
+.live-updated a { color: var(--cyan); }
+.repo-feed {
+  list-style: none;
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.9rem;
+}
+.feed-item,
+.feed-empty {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem 1.05rem;
+}
+.feed-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+.feed-sha {
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+.feed-sha:hover { text-decoration: underline; }
+.feed-time {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-align: right;
+}
+.feed-message {
+  margin-top: 0.5rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.feed-meta {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+}
+.feed-meta a { color: var(--gold); }
+.feed-empty {
+  color: var(--text-dim);
+  text-align: center;
+  font-size: 0.82rem;
+}
+
 /* -- Sources -- */
 .sources-list {
   margin-top: 1rem; font-size: 0.65rem; color: var(--text-dim);
@@ -723,6 +829,8 @@ footer a { color: var(--cyan); }
   .comparison-table { font-size: 0.68rem; min-width: 640px; }
   .comparison-scroll { margin-top: 1rem; }
   .comparison-hint { display: block; }
+  .live-header { flex-direction: column; }
+  .live-statuses { min-width: 0; width: 100%; }
   .stats {
     gap: 0.85rem;
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -794,6 +902,9 @@ footer a { color: var(--cyan); }
   .moat { padding: 1.3rem; }
   .container { padding: 0 1rem; }
   .providers { grid-template-columns: 1fr; }
+  .live-statuses { grid-template-columns: 1fr; }
+  .feed-item-header { flex-direction: column; align-items: flex-start; }
+  .feed-time { text-align: left; }
   .comparison-table th:first-child,
   .comparison-table td:first-child { min-width: 11rem; }
 }
@@ -1333,6 +1444,39 @@ body::after {
   </div>
 </section>
 
+<!-- Live Ship Log -->
+<section class="live-section" id="live">
+  <div class="container">
+    <div class="live-shell">
+      <div class="live-header">
+        <div class="live-title-wrap">
+          <h2 class="section-title" data-i18n="title_live">LIVE SHIP LOG</h2>
+          <p class="section-subtitle" data-i18n-html="live_subtitle">Near-real-time commit feed from <code style="color:var(--cyan)">main</code>. It auto-refreshes every two minutes, caches the last good result in the browser, and falls back cleanly if GitHub rate-limits the request.</p>
+        </div>
+        <div class="live-statuses">
+          <div class="live-status">
+            <span class="live-status-label" data-i18n="live_branch_label">Branch</span>
+            <span class="live-status-value">main</span>
+          </div>
+          <div class="live-status">
+            <span class="live-status-label" data-i18n="live_refresh_label">Refresh</span>
+            <span class="live-status-value" data-i18n="live_refresh_value">2 min</span>
+          </div>
+          <div class="live-status">
+            <span class="live-status-label" data-i18n="live_source_label">Source</span>
+            <span class="live-status-value">GitHub REST</span>
+          </div>
+        </div>
+      </div>
+      <div class="live-updated" id="repo-feed-status" data-i18n="live_loading">Loading latest commits...</div>
+      <ul class="repo-feed" id="repo-feed">
+        <li class="feed-empty" data-i18n="live_loading">Loading latest commits...</li>
+      </ul>
+      <p class="live-footnote" data-i18n-html="live_note">Pulled from the public GitHub commits API for <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">waitdeadai/forgegod</a>. Public unauthenticated requests are limited, so the widget reuses a cached feed if GitHub temporarily says no.</p>
+    </div>
+  </div>
+</section>
+
 <!-- Showcase -->
 <section class="showcase-section" id="showcase">
   <div class="container">
@@ -1793,6 +1937,24 @@ var STRINGS = {
     cmp_stress: "Stress tested + benchmarked",
     bench_callout: '<strong>The bottom line:</strong> serious coding agents are defined as much by harness design as by model choice. ForgeGod\u2019s routing, review, memory, and execution controls are the product surface.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
+    title_live: "LIVE SHIP LOG",
+    live_subtitle: 'Near-real-time commit feed from <code style="color:var(--cyan)">main</code>. It auto-refreshes every two minutes, caches the last good result in the browser, and falls back cleanly if GitHub rate-limits the request.',
+    live_branch_label: "Branch",
+    live_refresh_label: "Refresh",
+    live_refresh_value: "2 min",
+    live_source_label: "Source",
+    live_loading: "Loading latest commits...",
+    live_note: 'Pulled from the public GitHub commits API for <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">waitdeadai/forgegod</a>. Public unauthenticated requests are limited, so the widget reuses a cached feed if GitHub temporarily says no.',
+    live_status_live: "Live from GitHub · updated {time}",
+    live_status_cached: "Cached feed · last successful sync {time}",
+    live_status_error: 'GitHub feed unavailable right now. Open the <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">commit history</a>.',
+    live_empty_error: 'GitHub feed is temporarily unavailable. Open the <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">commit history</a>.',
+    live_author_prefix: "Author",
+    live_view_commit: "Open commit",
+    live_relative_now: "just now",
+    live_relative_minute: "{n} min ago",
+    live_relative_hour: "{n} hr ago",
+    live_relative_day: "{n} d ago",
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod</code> \u2192 describe your task',
     install_note: 'Python 3.11+ \u2022 Auto-bootstraps local config on first chat \u2022 Add <code style="color:var(--cyan)">forgegod --terse</code> when you want lower token overhead \u2022 Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> or <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> to verify the harness itself \u2022 Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults \u2022 Export Hermes/OpenClaw adapters with <code style="color:var(--cyan)">forgegod integrations ...</code> when you want chat-runtime delegation \u2022 Use <code style="color:var(--cyan)">forgegod init</code> when you want the guided wizard \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
@@ -1988,6 +2150,24 @@ var STRINGS = {
     cmp_stress: "Probado bajo estr\u00e9s + benchmarks",
     bench_callout: '<strong>La conclusión:</strong> los coding agents serios se definen tanto por el diseño del harness como por el modelo elegido. El ruteo, el review, la memoria y los controles de ejecución de ForgeGod son la superficie del producto.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Análisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
+    title_live: "BITÁCORA EN VIVO",
+    live_subtitle: 'Feed casi en tiempo real de commits de <code style="color:var(--cyan)">main</code>. Se refresca cada dos minutos, guarda el último resultado correcto en el navegador y cae limpio si GitHub limita la consulta.',
+    live_branch_label: "Rama",
+    live_refresh_label: "Actualización",
+    live_refresh_value: "2 min",
+    live_source_label: "Fuente",
+    live_loading: "Cargando commits recientes...",
+    live_note: 'Se alimenta de la API pública de commits de GitHub para <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">waitdeadai/forgegod</a>. Las consultas públicas sin auth tienen límite, así que el widget reutiliza un feed cacheado si GitHub responde temporalmente que no.',
+    live_status_live: "En vivo desde GitHub · actualizado {time}",
+    live_status_cached: "Feed cacheado · última sincronización correcta {time}",
+    live_status_error: 'El feed de GitHub no está disponible ahora. Abrí el <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">historial de commits</a>.',
+    live_empty_error: 'El feed de GitHub no está disponible temporalmente. Abrí el <a href="https://github.com/waitdeadai/forgegod/commits/main" target="_blank" rel="noopener">historial de commits</a>.',
+    live_author_prefix: "Autor",
+    live_view_commit: "Abrir commit",
+    live_relative_now: "justo ahora",
+    live_relative_minute: "hace {n} min",
+    live_relative_hour: "hace {n} h",
+    live_relative_day: "hace {n} d",
     provider_free: "$0 / GRATIS",
     install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describe tu tarea',
     install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usá <code style="color:var(--cyan)">forgegod --terse</code> cuando quieras menor overhead de tokens \u2022 Corré <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccioná superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Exportá adaptadores Hermes/OpenClaw con <code style="color:var(--cyan)">forgegod integrations ...</code> cuando quieras delegación desde runtimes de chat \u2022 Usá <code style="color:var(--cyan)">forgegod init</code> si querés el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
@@ -2030,6 +2210,7 @@ function setLang(lang) {
 
   // Restart terminal with new language
   restartTerminal();
+  renderRepoFeedFromState();
 }
 
 // -- Terminal Demo Lines (per language) --
@@ -2339,6 +2520,183 @@ document.addEventListener('keydown', function(event) {
 });
 window.addEventListener('resize', function() {
   if (window.innerWidth > 768) closeMenu();
+});
+
+// -- Live repo feed --
+var REPO_FEED = {
+  endpoint: 'https://api.github.com/repos/waitdeadai/forgegod/commits?sha=main&per_page=8',
+  cacheKey: 'forgegod-site-commit-feed-v1',
+  refreshMs: 120000,
+  maxCacheAgeMs: 15 * 60 * 1000,
+  lastPayload: null
+};
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function repoFeedText(key) {
+  return (STRINGS[currentLang] && STRINGS[currentLang][key]) || (STRINGS.en && STRINGS.en[key]) || '';
+}
+
+function repoFeedFormatAbsolute(isoString) {
+  try {
+    return new Intl.DateTimeFormat(currentLang === 'es' ? 'es-AR' : 'en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(isoString));
+  } catch (e) {
+    return isoString;
+  }
+}
+
+function repoFeedFormatRelative(isoString) {
+  var diffMs = Date.now() - Date.parse(isoString);
+  if (!isFinite(diffMs) || diffMs < 0) return repoFeedFormatAbsolute(isoString);
+  var minute = 60 * 1000;
+  var hour = 60 * minute;
+  var day = 24 * hour;
+  if (diffMs < minute) return repoFeedText('live_relative_now');
+  if (diffMs < hour) return repoFeedText('live_relative_minute').replace('{n}', String(Math.max(1, Math.round(diffMs / minute))));
+  if (diffMs < day) return repoFeedText('live_relative_hour').replace('{n}', String(Math.max(1, Math.round(diffMs / hour))));
+  return repoFeedText('live_relative_day').replace('{n}', String(Math.max(1, Math.round(diffMs / day))));
+}
+
+function repoFeedSetStatus(mode, isoString) {
+  var statusEl = document.getElementById('repo-feed-status');
+  if (!statusEl) return;
+  if (mode === 'error') {
+    statusEl.innerHTML = repoFeedText('live_status_error');
+    return;
+  }
+  var template = mode === 'cached' ? repoFeedText('live_status_cached') : repoFeedText('live_status_live');
+  statusEl.textContent = template.replace('{time}', repoFeedFormatAbsolute(isoString));
+}
+
+function repoFeedSaveCache(payload) {
+  try {
+    localStorage.setItem(REPO_FEED.cacheKey, JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function repoFeedLoadCache() {
+  try {
+    var raw = localStorage.getItem(REPO_FEED.cacheKey);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.commits) || !parsed.fetchedAt) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function renderRepoFeed(commits, mode, fetchedAt) {
+  var feedEl = document.getElementById('repo-feed');
+  if (!feedEl) return;
+  if (!Array.isArray(commits) || commits.length === 0) {
+    feedEl.innerHTML = '<li class="feed-empty">' + repoFeedText('live_loading') + '</li>';
+    return;
+  }
+  feedEl.innerHTML = commits.map(function(commit) {
+    var sha = commit.sha ? commit.sha.slice(0, 7) : 'unknown';
+    var htmlUrl = commit.html_url || 'https://github.com/waitdeadai/forgegod/commits/main';
+    var author = (commit.author && commit.author.login) || (commit.commit && commit.commit.author && commit.commit.author.name) || 'unknown';
+    var iso = commit.commit && commit.commit.author ? commit.commit.author.date : '';
+    var message = commit.commit && commit.commit.message ? commit.commit.message.split('\n')[0] : sha;
+    return [
+      '<li class="feed-item">',
+      '<div class="feed-item-header">',
+      '<a class="feed-sha" href="' + htmlUrl + '" target="_blank" rel="noopener">#' + sha + '</a>',
+      '<div class="feed-time" title="' + escapeHtml(repoFeedFormatAbsolute(iso)) + '">' + escapeHtml(repoFeedFormatRelative(iso)) + '</div>',
+      '</div>',
+      '<div class="feed-message">' + escapeHtml(message) + '</div>',
+      '<div class="feed-meta">',
+      '<span>' + escapeHtml(repoFeedText('live_author_prefix')) + ': ' + escapeHtml(author) + '</span>',
+      '<a href="' + htmlUrl + '" target="_blank" rel="noopener">' + escapeHtml(repoFeedText('live_view_commit')) + '</a>',
+      '</div>',
+      '</li>'
+    ].join('');
+  }).join('');
+  repoFeedSetStatus(mode, fetchedAt);
+}
+
+function renderRepoFeedFromState() {
+  if (REPO_FEED.lastPayload && Array.isArray(REPO_FEED.lastPayload.commits)) {
+    renderRepoFeed(REPO_FEED.lastPayload.commits, REPO_FEED.lastPayload.mode || 'live', REPO_FEED.lastPayload.fetchedAt);
+    return;
+  }
+  var cached = repoFeedLoadCache();
+  if (cached) {
+    REPO_FEED.lastPayload = {
+      commits: cached.commits,
+      fetchedAt: cached.fetchedAt,
+      mode: 'cached'
+    };
+    renderRepoFeed(cached.commits, 'cached', cached.fetchedAt);
+  }
+}
+
+function refreshRepoFeed(force) {
+  var cached = repoFeedLoadCache();
+  if (!force && cached && (Date.now() - Date.parse(cached.fetchedAt)) < REPO_FEED.refreshMs) {
+    REPO_FEED.lastPayload = {
+      commits: cached.commits,
+      fetchedAt: cached.fetchedAt,
+      mode: 'cached'
+    };
+    renderRepoFeed(cached.commits, 'cached', cached.fetchedAt);
+    return Promise.resolve();
+  }
+
+  return fetch(REPO_FEED.endpoint, {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  }).then(function(response) {
+    if (!response.ok) throw new Error('GitHub feed returned ' + response.status);
+    return response.json();
+  }).then(function(commits) {
+    var payload = {
+      commits: Array.isArray(commits) ? commits : [],
+      fetchedAt: new Date().toISOString()
+    };
+    REPO_FEED.lastPayload = {
+      commits: payload.commits,
+      fetchedAt: payload.fetchedAt,
+      mode: 'live'
+    };
+    repoFeedSaveCache(payload);
+    renderRepoFeed(payload.commits, 'live', payload.fetchedAt);
+  }).catch(function() {
+    if (cached && (Date.now() - Date.parse(cached.fetchedAt)) < REPO_FEED.maxCacheAgeMs) {
+      REPO_FEED.lastPayload = {
+        commits: cached.commits,
+        fetchedAt: cached.fetchedAt,
+        mode: 'cached'
+      };
+      renderRepoFeed(cached.commits, 'cached', cached.fetchedAt);
+      return;
+    }
+    REPO_FEED.lastPayload = null;
+    var feedEl = document.getElementById('repo-feed');
+    if (feedEl) {
+      feedEl.innerHTML = '<li class="feed-empty">' + repoFeedText('live_empty_error') + '</li>';
+    }
+    repoFeedSetStatus('error');
+  });
+}
+
+renderRepoFeedFromState();
+refreshRepoFeed(false);
+setInterval(function() {
+  refreshRepoFeed(true);
+}, REPO_FEED.refreshMs);
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') refreshRepoFeed(false);
 });
 
 // -- Animate benchmark bars on scroll --
