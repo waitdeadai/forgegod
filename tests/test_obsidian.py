@@ -204,6 +204,7 @@ async def test_hive_exports_latest_summary_note(tmp_path):
     config = ForgeGodConfig()
     config.project_dir = repo / ".forgegod"
     config.project_dir.mkdir(parents=True, exist_ok=True)
+    config.audit.enabled = False
     config.obsidian.enabled = True
     config.obsidian.vault_path = str((tmp_path / "vault").resolve())
     (config.project_dir / "config.toml").write_text(

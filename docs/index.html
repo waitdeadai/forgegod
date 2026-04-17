@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeGod - Research-Backed Autonomous Coding Agent</title>
-<meta name="description" content="Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited against a verified 2026 baseline.">
+<meta name="description" content="Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited against a verified 2026 baseline.">
 <meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, MiniMax, OpenAI, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://forgegod.com">
 <meta property="og:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta property="og:description" content="Research-backed autonomous coding agent with multi-model routing, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited, tested, and open source.">
+<meta property="og:description" content="Research-backed autonomous coding agent with multi-model routing, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited, tested, and open source.">
 <meta property="og:image" content="https://forgegod.com/og-image.webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,7 +21,7 @@
 <meta property="og:locale:alternate" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta name="twitter:description" content="Multi-model autonomous coding agent with research-first workflows, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited and tested against a verified 2026 baseline.">
+<meta name="twitter:description" content="Multi-model autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited and tested against a verified 2026 baseline.">
 <meta name="twitter:image" content="https://forgegod.com/og-image.webp">
 <meta name="twitter:image:alt" content="ForgeGod official mascot">
 <link rel="icon" type="image/webp" href="mascot-192.webp">
@@ -36,7 +36,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier cognitive memory, optional Obsidian vault projection, and a verified 2026 baseline.",
+  "description": "Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier cognitive memory, optional Obsidian vault projection, and a verified 2026 baseline.",
   "url": "https://forgegod.com",
   "downloadUrl": "https://pypi.org/project/forgegod/",
   "softwareVersion": "0.1.0",
@@ -851,7 +851,7 @@ body::after {
     </picture>
     <h1>FORGEGOD</h1>
     <p class="hero-tagline" data-i18n-html="hero_tagline">
-      A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, explicit review, specialist agents, and local or cloud execution.
+      A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, native audit preflight, explicit review, specialist agents, and local or cloud execution.
     </p>
     <div class="hero-cta" onclick="copyInstall()">
       <span class="copy-hint" data-i18n="copy_hint">Click to copy</span>
@@ -936,8 +936,8 @@ body::after {
       <div class="feature">
         <div class="feature-icon">&#8734;</div>
         <h3 data-i18n="feat_loop_title">Structured Loops and Hive Execution</h3>
-        <p data-i18n="feat_loop_desc">Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding. Each worker stays isolated, reviewable, and machine-readable.</p>
-        <span class="feature-tag" data-i18n="feat_loop_tag">Loop + hive + bounded subagents</span>
+        <p data-i18n="feat_loop_desc">Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding. Loop and hive can refresh native audit artifacts first, so blocked repos stop before planning instead of after damage.</p>
+        <span class="feature-tag" data-i18n="feat_loop_tag">Audit-gated loop + hive + subagents</span>
       </div>
 
       <div class="feature">
@@ -993,9 +993,9 @@ body::after {
 
       <div class="feature">
         <div class="feature-icon">&#127912;</div>
-        <h3 data-i18n="feat_specialists_title">Specialist and Companion Agents</h3>
-        <p data-i18n="feat_specialists_desc">audit-agent acts as a repo-level preflight auditor before planning. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate enforces max-effort completion by blocking one-pass "good enough" exits without verification.</p>
-        <span class="feature-tag" data-i18n="feat_specialists_tag">Audit + grounding + taste + max-effort</span>
+        <h3 data-i18n="feat_specialists_title">Native Audit and Specialist Agents</h3>
+        <p data-i18n="feat_specialists_desc">audit-agent is wired into ForgeGod as a native preflight gate. `forgegod audit`, `forgegod loop`, and `forgegod hive` can refresh audit artifacts, halt on blockers, and expose security, architecture, and plan-risk specialist passes before planning continues. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate blocks one-pass "good enough" exits without verification.</p>
+        <span class="feature-tag" data-i18n="feat_specialists_tag">Native audit + grounding + taste + max-effort</span>
       </div>
 
     </div>
@@ -1310,7 +1310,7 @@ body::after {
           <div class="bench-bar-label"><span data-i18n="bench_rel_parallel">Parallel loop + local hive</span><span>100%</span></div>
           <div class="bench-bar-track"><div class="bench-bar-fill bar-green" data-width="100"></div></div>
         </div>
-        <div class="bench-source" data-i18n-html="bench_src_reliability">Current verified baseline: 654 collected tests, 569 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, and <code style="color:var(--cyan)">forgegod hive</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a></div>
+        <div class="bench-source" data-i18n-html="bench_src_reliability">Current verified baseline: 667 collected tests, 582 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code>, and <code style="color:var(--cyan)">forgegod obsidian</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a></div>
       </div>
 
     </div>
@@ -1602,12 +1602,12 @@ body::after {
 var STRINGS = {
   en: {
     page_title: "ForgeGod - Research-Backed Autonomous Coding Agent",
-    meta_desc: "Open-source autonomous coding agent with research-first workflows, adversarial review, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode.",
+    meta_desc: "Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode.",
     nav_features: "Features",
     nav_results: "Results",
     nav_moats: "Why Us",
     nav_compare: "Compare",
-    hero_tagline: 'A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, explicit review, specialist agents, and local or cloud execution.',
+    hero_tagline: 'A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, native audit preflight, explicit review, specialist agents, and local or cloud execution.',
     copy_hint: "Click to copy",
     stat_tools: "Built-in Tools",
     stat_providers: "Provider Families",
@@ -1628,8 +1628,8 @@ var STRINGS = {
     feat_routing_desc: "ForgeGod connects to 9 provider families and 10 route surfaces, including native OpenAI Codex subscription auth, OpenAI API, Z.AI, and MiniMax. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
     feat_routing_tag: "9 provider families + explicit OpenAI surfaces",
     feat_loop_title: "Structured Loops and Hive Execution",
-    feat_loop_desc: "Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding. Each worker stays isolated, reviewable, and machine-readable.",
-    feat_loop_tag: "Loop + hive + bounded subagents",
+    feat_loop_desc: "Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding. Loop and hive can refresh native audit artifacts first, so blocked repos stop before planning instead of after damage.",
+    feat_loop_tag: "Audit-gated loop + hive + subagents",
     feat_reflexion_title: "Checks Its Own Work",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. First it tries with the free local AI. If that fails, it escalates to a smarter (but cheap) cloud AI. If that fails too, it brings in the most powerful AI available. It validates the code is correct at every step before moving on.",
     feat_reflexion_tag: "3 attempts, escalating quality",
@@ -1658,7 +1658,7 @@ var STRINGS = {
     feat_memoryagent_desc: "After every task, a specialized AI analyzes what happened and extracts reusable learnings into 5 structured memory tiers. Not heuristic pattern matching \u2014 an actual LLM that understands context, identifies principles, catalogs error fixes, and maps causal relationships. It can also export clean human-readable summaries into an optional Obsidian vault.",
     feat_memoryagent_tag: "LLM-powered extraction + vault summaries",
     feat_routing_desc: "Connects to 9 provider families and 10 route surfaces, including native OpenAI Codex subscription auth, OpenAI API, Z.AI, and MiniMax. You can run the recommended adversarial split harness, force a single-model profile, or choose explicit OpenAI surfaces: auto, api-only, codex-only, or api+codex.",
-    feat_loop_desc: "Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding.",
+    feat_loop_desc: "Run work sequentially through the Ralph loop, dispatch ready stories through the local hive with isolated worktrees, or prepend bounded subagent analysis before coding. Loop and hive can refresh native audit artifacts first, so blocked repos stop before planning instead of after damage.",
     feat_reflexion_desc: "Every piece of code gets up to 3 attempts. Starts with free local AI, escalates to smarter cloud AI if needed. Validates correctness at every step before moving on.",
     feat_budget_desc: "Set a daily budget and ForgeGod respects it. As you approach your limit, it shifts to cheaper models. Hit the limit? It switches to free local AI or pauses. Run 100% free forever.",
     feat_sica_desc: "ForgeGod records outcomes, learns from them, and refines prompts, routing, and execution strategy under explicit safety policy. Improvement is part of the harness, not an undocumented habit.",
@@ -1776,10 +1776,10 @@ var STRINGS = {
     bench_rel_fallback: "Fallback chain + cascade routing",
     bench_rel_circuit: "Circuit breaker (half-open + sliding)",
     bench_rel_parallel: "Parallel loop + local hive",
-    bench_src_reliability: 'Current verified baseline: 654 collected tests, 569 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, and <code style="color:var(--cyan)">forgegod hive</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
-    feat_specialists_title: "Specialist and Companion Agents",
-    feat_specialists_desc: "audit-agent acts as a repo-level preflight auditor before planning. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate enforces max-effort completion by blocking one-pass \"good enough\" exits without verification.",
-    feat_specialists_tag: "Audit + grounding + taste + max-effort",
+    bench_src_reliability: 'Current verified baseline: 667 collected tests, 582 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code>, and <code style="color:var(--cyan)">forgegod obsidian</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
+    feat_specialists_title: "Native Audit and Specialist Agents",
+    feat_specialists_desc: "audit-agent is wired into ForgeGod as a native preflight gate. `forgegod audit`, `forgegod loop`, and `forgegod hive` can refresh audit artifacts, halt on blockers, and expose security, architecture, and plan-risk specialist passes before planning continues. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate blocks one-pass \"good enough\" exits without verification.",
+    feat_specialists_tag: "Native audit + grounding + taste + max-effort",
     cmp_stress: "Stress tested + benchmarked",
     bench_callout: '<strong>The bottom line:</strong> serious coding agents are defined as much by harness design as by model choice. ForgeGod\u2019s routing, review, memory, and execution controls are the product surface.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
@@ -1794,12 +1794,12 @@ var STRINGS = {
   },
   es: {
     page_title: "ForgeGod - Agente de Codigo Autonomo Respaldado por Investigacion",
-    meta_desc: "Agente de código autónomo open source con workflows research-first, review adversarial, subagentes acotados, hive local, memoria de 5 niveles, proyección opcional a Obsidian y modo local $0.",
+    meta_desc: "Agente de codigo autonomo open source con workflows research-first, auditoria nativa preflight, subagentes acotados, hive local, memoria de 5 niveles, proyeccion opcional a Obsidian y modo local $0.",
     nav_features: "Características",
     nav_results: "Resultados",
     nav_moats: "Por Qu\u00e9",
     nav_compare: "Comparar",
-    hero_tagline: 'Un harness de código <strong>research-backed</strong> para trabajo serio de software. Grounding con fuentes actuales, review explícito, agentes especialistas y ejecución local o cloud.',
+    hero_tagline: 'Un harness de codigo <strong>research-backed</strong> para trabajo serio de software. Grounding con fuentes actuales, auditoria nativa preflight, review explicito, agentes especialistas y ejecucion local o cloud.',
     copy_hint: "Click para copiar",
     stat_tools: "Herramientas",
     stat_providers: "Familias de proveedores",
@@ -1820,8 +1820,8 @@ var STRINGS = {
     feat_routing_desc: "ForgeGod se conecta a 9 familias de proveedores y 10 superficies de ruteo, incluyendo auth nativa de OpenAI Codex, OpenAI API, Z.AI y MiniMax. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explícitas: auto, api-only, codex-only o api+codex.",
     feat_routing_tag: "9 familias + superficies OpenAI explícitas",
     feat_loop_title: "Loops Estructurados y Ejecución en Hive",
-    feat_loop_desc: "Corré trabajo secuencial en el Ralph loop, despachá stories listas en el hive local con worktrees aislados, o anteponé análisis acotado con subagentes antes de programar. Cada worker queda aislado, revisable y legible por máquina.",
-    feat_loop_tag: "Loop + hive + subagentes acotados",
+    feat_loop_desc: "Corre trabajo secuencial en el Ralph loop, despacha stories listas en el hive local con worktrees aislados, o antepone analisis acotado con subagentes antes de programar. Loop y hive pueden refrescar artefactos nativos de auditoria primero, asi un repo bloqueado se frena antes de planificar y no despues del dano.",
+    feat_loop_tag: "Loop auditado + hive + subagentes",
     feat_reflexion_title: "Revisa Su Propio Trabajo",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Primero prueba con la IA local gratuita. Si falla, escala a una IA de nube m\u00e1s inteligente (pero barata). Si eso tambi\u00e9n falla, trae la IA m\u00e1s poderosa disponible. Valida que el c\u00f3digo sea correcto en cada paso antes de avanzar.",
     feat_reflexion_tag: "3 intentos, calidad creciente",
@@ -1850,7 +1850,7 @@ var STRINGS = {
     feat_memoryagent_desc: "Despu\u00e9s de cada tarea, una IA especializada analiza lo que pas\u00f3 y extrae aprendizajes reutilizables en 5 niveles de memoria estructurada. No es reconocimiento heur\u00edstico \u2014 es un LLM real que entiende contexto, identifica principios, cataloga soluciones de errores y mapea relaciones causales. Tambi\u00e9n puede exportar res\u00famenes limpios y legibles a un vault opcional de Obsidian.",
     feat_memoryagent_tag: "Extracci\u00f3n con LLM + res\u00famenes al vault",
     feat_routing_desc: "Se conecta a 9 familias de proveedores y 10 superficies de ruteo, incluyendo auth nativa de OpenAI Codex, OpenAI API, Z.AI y MiniMax. Podés usar el harness adversarial recomendado, forzar un perfil single-model, o elegir superficies OpenAI explícitas: auto, api-only, codex-only o api+codex.",
-    feat_loop_desc: "Corré trabajo secuencial en el Ralph loop, despachá stories listas en el hive local con worktrees aislados, o anteponé análisis acotado con subagentes antes de programar.",
+    feat_loop_desc: "Corre trabajo secuencial en el Ralph loop, despacha stories listas en el hive local con worktrees aislados, o antepone analisis acotado con subagentes antes de programar. Loop y hive pueden refrescar artefactos nativos de auditoria primero, asi un repo bloqueado se frena antes de planificar y no despues del dano.",
     feat_reflexion_desc: "Cada pieza de c\u00f3digo recibe hasta 3 intentos. Empieza con IA local gratis, escala a IA de nube m\u00e1s inteligente si es necesario. Valida la correcci\u00f3n en cada paso antes de avanzar.",
     feat_budget_desc: "Configur\u00e1 un presupuesto diario y ForgeGod lo respeta. Al acercarte al l\u00edmite, cambia a modelos m\u00e1s baratos. \u00bfLlegaste al l\u00edmite? Cambia a IA local gratis o se pausa. Corr\u00e9 100% gratis para siempre.",
     feat_sica_desc: "ForgeGod registra resultados, aprende de ellos y ajusta prompts, ruteo y estrategia de ejecución bajo una política explícita de seguridad. La mejora es parte del harness, no un hábito informal.",
@@ -1968,10 +1968,10 @@ var STRINGS = {
     bench_rel_fallback: "Cadena de respaldo + enrutamiento en cascada",
     bench_rel_circuit: "Circuit breaker (half-open + ventana)",
     bench_rel_parallel: "Loop paralelo + hive local",
-    bench_src_reliability: 'Baseline verificada actual: 654 tests recolectados, 569 tests no-stress pasando mas 1 skipped por defecto, 84/84 stress tests en verde, lint en verde, compilación bytecode en verde, build del paquete en verde, y smoke checks vivos para <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code> y <code style="color:var(--cyan)">forgegod hive</code>. Los caminos opt-in con <code style="color:var(--cyan)">--subagents</code> están cubiertos en la suite focalizada, y las matrices de superficie OpenAI siguen soportando API-only, Codex-only o ruteo híbrido API+Codex. Las barras de benchmark de arriba siguen siendo históricas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditoría</a>',
-    feat_specialists_title: "Agentes Especialistas y Companion Agents",
-    feat_specialists_desc: "audit-agent actúa como auditor preflight a nivel repo antes de planificar. ResearchAgent ancla la implementación con briefs basados en fuentes actuales. TasteAgent agrega review de diseño opcional después del code review. EffortGate hace cumplir el modo max-effort bloqueando cierres de una sola pasada sin verificación.",
-    feat_specialists_tag: "Audit + grounding + taste + max-effort",
+    bench_src_reliability: 'Baseline verificada actual: 667 tests recolectados, 582 tests no-stress pasando mas 1 skipped por defecto, 84/84 stress tests en verde, lint en verde, compilación bytecode en verde, build del paquete en verde, y smoke checks vivos para <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code> y <code style="color:var(--cyan)">forgegod obsidian</code>. Los caminos opt-in con <code style="color:var(--cyan)">--subagents</code> están cubiertos en la suite focalizada, y las matrices de superficie OpenAI siguen soportando API-only, Codex-only o ruteo híbrido API+Codex. Las barras de benchmark de arriba siguen siendo históricas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditoría</a>',
+    feat_specialists_title: "Auditoria Nativa y Agentes Especialistas",
+    feat_specialists_desc: "audit-agent esta conectado a ForgeGod como gate nativo de preflight. `forgegod audit`, `forgegod loop` y `forgegod hive` pueden refrescar artefactos de auditoria, frenar ante bloqueos y exponer pasadas especialistas de seguridad, arquitectura y riesgo de plan antes de seguir. ResearchAgent ancla la implementacion con briefs basados en fuentes actuales. TasteAgent agrega review de diseno opcional despues del code review. EffortGate bloquea cierres de una sola pasada sin verificacion.",
+    feat_specialists_tag: "Auditoria nativa + grounding + taste + max-effort",
     cmp_stress: "Probado bajo estr\u00e9s + benchmarks",
     bench_callout: '<strong>La conclusión:</strong> los coding agents serios se definen tanto por el diseño del harness como por el modelo elegido. El ruteo, el review, la memoria y los controles de ejecución de ForgeGod son la superficie del producto.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Análisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
@@ -2042,6 +2042,13 @@ function getTerminalLines() {
         { text: '  zai-coding-plan: listo', cls: 'success' },
         { text: '  openrouter: no listo', cls: 'output' },
       ]},
+      { cmd: 'forgegod audit status', delay: 1200, output: [
+        { text: '  ForgeGod Audit', cls: 'output' },
+        { text: '  + bridge audit-agent: listo', cls: 'success' },
+        { text: '  + ready_to_plan: true', cls: 'success' },
+        { text: '  + blockers: 0', cls: 'success' },
+        { text: '  + specialists: security, architecture, plan-risk', cls: 'success' },
+      ]},
       { cmd: 'forgegod --subagents', delay: 1400, output: [
       { text: '  ForgeGod - sesión conversacional lista', cls: 'output' },
       { text: '  + Harness: adversarial (recomendado)', cls: 'success' },
@@ -2061,6 +2068,7 @@ function getTerminalLines() {
       ]},
       { cmd: 'forgegod hive --prd .forgegod/prd.json --workers 2 --subagents', delay: 1500, output: [
         { text: '  Hive coordinator listo', cls: 'output' },
+        { text: '  + Preflight de auditoria: listo para planificar', cls: 'success' },
         { text: '  + 2 worktrees aislados preparados', cls: 'success' },
         { text: '  + Workers con salida JSON activados', cls: 'success' },
         { text: '  + Análisis con subagentes por worker', cls: 'success' },
@@ -2093,6 +2101,13 @@ function getTerminalLines() {
       { text: '  zai-coding-plan: ready', cls: 'success' },
       { text: '  openrouter: not ready', cls: 'output' },
     ]},
+    { cmd: 'forgegod audit status', delay: 1200, output: [
+      { text: '  ForgeGod Audit', cls: 'output' },
+      { text: '  + audit-agent bridge: ready', cls: 'success' },
+      { text: '  + ready_to_plan: true', cls: 'success' },
+      { text: '  + blockers: 0', cls: 'success' },
+      { text: '  + specialists: security, architecture, plan-risk', cls: 'success' },
+    ]},
     { cmd: 'forgegod --subagents', delay: 1400, output: [
       { text: '  ForgeGod - natural-language session ready', cls: 'output' },
       { text: '  + Harness: adversarial (recommended)', cls: 'success' },
@@ -2112,6 +2127,7 @@ function getTerminalLines() {
     ]},
     { cmd: 'forgegod hive --prd .forgegod/prd.json --workers 2 --subagents', delay: 1500, output: [
       { text: '  Hive coordinator online', cls: 'output' },
+      { text: '  + Audit preflight: ready_to_plan', cls: 'success' },
       { text: '  + 2 isolated worktrees prepared', cls: 'success' },
       { text: '  + Worker JSON reporting enabled', cls: 'success' },
       { text: '  + Subagent analysis enabled per worker', cls: 'success' },

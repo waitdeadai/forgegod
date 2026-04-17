@@ -47,6 +47,19 @@ This document is the current system of record for day-to-day work in this reposi
 | `FORGEGOD_RUN_DOCKER_STRICT_TESTS=1 python -m pytest tests/test_strict_sandbox_integration.py -q -rs` | `skipped` (Docker daemon not ready) |
 | `python -m forgegod --version` | launches and reports `F O R G E G O D v0.1.0` |
 
+## Revalidation (2026-04-17)
+
+- `python -m pytest --collect-only -q` -> `667 tests collected`
+- `python -m pytest -m "not stress" -q` -> `582 passed, 1 skipped, 84 deselected`
+- `python -m pytest -m stress -q` -> `84 passed, 583 deselected`
+- `python -m ruff check forgegod tests` -> passes
+- `python -m build` -> passes; builds sdist and wheel
+- `python -m forgegod.cli --help` -> passes
+- `python -m forgegod.cli audit --help` -> passes
+- `python -m forgegod.cli audit status --help` -> passes
+- `python -m forgegod.cli hive --help` -> passes
+- `python -m forgegod.cli obsidian --help` -> passes
+
 ## Current Reality Check
 
 - `forgegod loop` is safer than the previous audited baseline: auto-commit and auto-push are now opt-in config flags, not default behavior.
@@ -90,7 +103,7 @@ This document is the current system of record for day-to-day work in this reposi
 - Strict mode also blocks suspicious generated-code writes and edits.
 - ForgeGod now ships `forgegod design`, which imports `DESIGN.md` presets from `awesome-design-md`, and the agent automatically injects local `DESIGN.md` into frontend tasks.
 - ForgeGod now ships `forgegod contribute`, which reads `CONTRIBUTING.md`/repo rules, can discover approachable GitHub issues, and can plan or execute contribution-sized work in a target repository.
-- ForgeGod now ships `audit-agent` as a first-class skill at `.forgegod/skills/audit-agent/SKILL.md`. It produces `.forgegod/AUDIT.md` via an 11-step protocol before any story planning or loop execution. Trigger conditions: first entry with no AUDIT.md, >20 commits since last audit, new dependency added, or human request. Ralph Loop checks for AUDIT.md before spawning any story agent. If `ready_to_plan: false`, it halts and surfaces blockers. Standalone package: `pip install audit-agent` at https://github.com/waitdeadai/audit-agent.
+- ForgeGod now exposes `audit-agent` as a native bridge instead of treating it as documentation-only glue. `forgegod audit` can refresh repo-level audit artifacts, `forgegod loop` and `forgegod hive` can auto-refresh those artifacts before planning, and both halt cleanly when `ready_to_plan` is false. Specialist surfaces such as `security`, `architecture`, `plan-risk`, and `delta` ride through the same bridge. Standalone package: `pip install audit-agent` at https://github.com/waitdeadai/audit-agent.
 - Stories with acceptance criteria now force reviewer coverage by default,
   instead of relying purely on sample-rate review.
 - ForgeGod now exposes `forgegod permissions`, which makes the current

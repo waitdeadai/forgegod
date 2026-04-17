@@ -293,6 +293,18 @@ class DeepResearchConfig(BaseModel):
     )
 
 
+class AuditAgentConfig(BaseModel):
+    """audit-agent bridge settings for ForgeGod runtime and CLI surfaces."""
+
+    enabled: bool = True
+    command: str = "auto"
+    timeout_s: float = 300.0
+    auto_run_on_loop: bool = True
+    auto_run_on_hive: bool = True
+    require_ready_to_plan: bool = True
+    prefer_json_artifacts: bool = True
+
+
 class SOTAMonitorConfig(BaseModel):
     """SOTA monitoring configuration — tracks performance against external benchmarks."""
 
@@ -369,6 +381,7 @@ class ForgeGodConfig(BaseModel):
     minimax: MiniMaxConfig = Field(default_factory=MiniMaxConfig)
     recon: ReconConfig = Field(default_factory=ReconConfig)
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    audit: AuditAgentConfig = Field(default_factory=AuditAgentConfig)
     subagents: SubagentsConfig = Field(default_factory=SubagentsConfig)
     hive: HiveConfig = Field(default_factory=HiveConfig)
     obsidian: ObsidianConfig = Field(default_factory=ObsidianConfig)

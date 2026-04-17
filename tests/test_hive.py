@@ -33,6 +33,7 @@ async def test_hive_applies_worktree_patch(tmp_path):
     config = ForgeGodConfig()
     config.project_dir = repo / ".forgegod"
     config.project_dir.mkdir(parents=True, exist_ok=True)
+    config.audit.enabled = False
     (config.project_dir / "config.toml").write_text(
         toml.dumps(config.model_dump(mode="json", exclude={"global_dir", "project_dir"})),
         encoding="utf-8",
@@ -99,6 +100,7 @@ async def test_hive_rejects_prompt_approval_mode(tmp_path):
     config = ForgeGodConfig()
     config.project_dir = repo / ".forgegod"
     config.project_dir.mkdir(parents=True, exist_ok=True)
+    config.audit.enabled = False
     config.security.approval_mode = "prompt"
 
     prd_path = config.project_dir / "prd.json"
@@ -110,4 +112,24 @@ async def test_hive_rejects_prompt_approval_mode(tmp_path):
 
     coordinator = HiveCoordinator(config=config, worker_runner=None)
     with pytest.raises(RuntimeError, match="does not support prompt approvals"):
+        await coordinator.run(prd_path, max_iterations=1, max_workers=1, dry_run=True)
+
+
+@pytest.mark.asyncio
+async def test_hive_blocks_when_audit_gate_is_not_ready(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    config = ForgeGodConfig()
+    config.project_dir = repo / ".forgegod"
+    config.project_dir.mkdir(parents=True, exist_ok=True)
+
+    prd_path = config.project_dir / "prd.json"
+    prd = PRD(project="Hive Audit Test", stories=[Story(id="T001", title="Blocked story")])
+    prd_path.write_text(prd.model_dump_json(indent=2), encoding="utf-8")
+
+    monkeypatch.setattr("forgegod.loop.RalphLoop._check_audit", lambda self: False)
+
+    coordinator = HiveCoordinator(config=config, worker_runner=None)
+    with pytest.raises(RuntimeError, match="not ready to plan"):
         await coordinator.run(prd_path, max_iterations=1, max_workers=1, dry_run=True)

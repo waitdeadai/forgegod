@@ -35,10 +35,12 @@ app = typer.Typer(
 design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
 obsidian_app = typer.Typer(help="Manage optional Obsidian vault projection surfaces.")
+audit_app = typer.Typer(help="Manage audit-agent preflight and specialist audit surfaces.")
 
 app.add_typer(design_app, name="design")
 app.add_typer(auth_app, name="auth")
 app.add_typer(obsidian_app, name="obsidian")
+app.add_typer(audit_app, name="audit")
 
 # -- Mascot - The One-Eyed Triangle --
 _VER = __version__
@@ -193,6 +195,42 @@ def _ensure_project_bootstrap(
             )
         console.print(f"[forge.muted]Project config: {project_dir}[/forge.muted]")
     return True
+
+
+def _load_audit_bridge_config(project_path: Path | None = None):
+    from forgegod.config import load_config
+
+    root = Path(project_path or ".").resolve()
+    _ensure_project_bootstrap(root, announce=False)
+    return root, load_config(root)
+
+
+def _run_audit_cli_surface(
+    surface: str,
+    *,
+    path: Path | None = None,
+    args: list[str] | None = None,
+):
+    from forgegod.audit import (
+        ensure_audit_ready,
+        invoke_audit_surface,
+        load_audit_state,
+        summarize_audit_state,
+    )
+
+    root, config = _load_audit_bridge_config(path)
+    result = invoke_audit_surface(
+        config,
+        surface,
+        project_root=root,
+        args=args,
+        check=False,
+    )
+    state = load_audit_state(config, project_root=root)
+    if surface == "run":
+        state = ensure_audit_ready(config, reason="manual", project_root=root)
+    summary = summarize_audit_state(state)
+    return root, config, result, state, summary
 
 
 def _build_run_config(
@@ -1194,6 +1232,198 @@ def auth_explain(
             "ForgeGod will default to codex-only for OpenAI roles. "
             "Use --openai-surface codex-only to make that explicit."
         )
+
+
+@audit_app.command("status")
+def audit_status(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+):
+    """Show the current audit-agent preflight status for this workspace."""
+    from forgegod.audit import load_audit_state, resolve_audit_command, summarize_audit_state
+
+    root, config = _load_audit_bridge_config(path)
+    state = load_audit_state(config, project_root=root)
+    command = resolve_audit_command(config)
+
+    if state.exists:
+        console.print(f"[forge.primary]Audit[/forge.primary] {summarize_audit_state(state)}")
+        if state.blockers:
+            for blocker in state.blockers[:5]:
+                console.print(f"  - {blocker}")
+        if state.specialist_summaries:
+            for kind, summary in state.specialist_summaries.items():
+                if not summary:
+                    continue
+                console.print(
+                    f"[forge.muted]{kind}[/forge.muted]: ready={summary.get('ready', True)} "
+                    f"blockers={len(summary.get('blockers', []))}"
+                )
+        return
+
+    if command is None:
+        console.print(
+            "[yellow]No cached audit artifacts found and audit-agent is unavailable.[/yellow]"
+        )
+        raise typer.Exit(1)
+
+    try:
+        _, _, result, state, summary = _run_audit_cli_surface("status", path=root)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[forge.primary]Audit[/forge.primary] {summary}")
+    if result.returncode != 0:
+        raise typer.Exit(1)
+
+
+@audit_app.command("run")
+def audit_run(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+):
+    """Run or refresh the repo-level audit-agent surface."""
+    try:
+        _, _, result, state, summary = _run_audit_cli_surface("run", path=path)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[forge.primary]Audit[/forge.primary] {summary}")
+    if state.blockers:
+        for blocker in state.blockers[:5]:
+            console.print(f"  - {blocker}")
+    if result.returncode != 0 or (state.exists and not state.ready_to_plan):
+        raise typer.Exit(1)
+
+
+@audit_app.command("delta")
+def audit_delta(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    task: str = typer.Option("", "--task", help="Optional task label for targeted delta audit"),
+    review_feedback: str = typer.Option("", "--review-feedback", help="Reviewer feedback to pass through"),
+    failure_details: str = typer.Option("", "--failure-details", help="Failure details to pass through"),
+    changed_file: list[str] | None = typer.Option(
+        None,
+        "--changed-file",
+        help="Repeat to pass explicit changed file(s) into the delta audit.",
+    ),
+):
+    """Run the targeted delta-audit surface through ForgeGod."""
+    args: list[str] = []
+    if task:
+        args.extend(["--task", task])
+    if review_feedback:
+        args.extend(["--review-feedback", review_feedback])
+    if failure_details:
+        args.extend(["--failure-details", failure_details])
+    for item in changed_file or []:
+        args.extend(["--changed-file", item])
+
+    try:
+        _, _, result, _state, _summary = _run_audit_cli_surface("delta", path=path, args=args)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+
+    output = (result.stdout or result.stderr).strip()
+    if output:
+        console.print(_safe_console_text(output))
+    if result.returncode != 0:
+        raise typer.Exit(1)
+
+
+@audit_app.command("security")
+def audit_security(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    changed_file: list[str] | None = typer.Option(
+        None,
+        "--changed-file",
+        help="Repeat to limit the audit to specific file(s).",
+    ),
+    semgrep: bool = typer.Option(False, "--semgrep", help="Enable Semgrep if installed."),
+):
+    """Run the security specialist audit surface."""
+    args: list[str] = []
+    for item in changed_file or []:
+        args.extend(["--changed-file", item])
+    if semgrep:
+        args.append("--semgrep")
+    try:
+        _, _, result, _state, _summary = _run_audit_cli_surface("security", path=path, args=args)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    output = (result.stdout or result.stderr).strip()
+    if output:
+        console.print(_safe_console_text(output))
+    if result.returncode != 0:
+        raise typer.Exit(1)
+
+
+@audit_app.command("architecture")
+def audit_architecture(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    changed_file: list[str] | None = typer.Option(
+        None,
+        "--changed-file",
+        help="Repeat to limit the audit to specific file(s).",
+    ),
+):
+    """Run the architecture specialist audit surface."""
+    args: list[str] = []
+    for item in changed_file or []:
+        args.extend(["--changed-file", item])
+    try:
+        _, _, result, _state, _summary = _run_audit_cli_surface("architecture", path=path, args=args)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    output = (result.stdout or result.stderr).strip()
+    if output:
+        console.print(_safe_console_text(output))
+    if result.returncode != 0:
+        raise typer.Exit(1)
+
+
+@audit_app.command("plan-risk")
+def audit_plan_risk(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    task: str = typer.Option("", "--task", help="Optional task label for the existing PLAN.md."),
+    plan: Path | None = typer.Option(None, "--plan", help="Explicit PLAN.md path."),
+):
+    """Run the plan-risk specialist audit surface."""
+    args: list[str] = []
+    if task:
+        args.extend(["--task", task])
+    if plan is not None:
+        args.extend(["--plan", str(plan)])
+    try:
+        _, _, result, _state, _summary = _run_audit_cli_surface("plan-risk", path=path, args=args)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    output = (result.stdout or result.stderr).strip()
+    if output:
+        console.print(_safe_console_text(output))
+    if result.returncode != 0:
+        raise typer.Exit(1)
+
+
+@audit_app.command("eval")
+def audit_eval(
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+):
+    """Run the offline audit-agent eval harness."""
+    try:
+        _, _, result, _state, _summary = _run_audit_cli_surface("eval", path=path)
+    except RuntimeError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    output = (result.stdout or result.stderr).strip()
+    if output:
+        console.print(_safe_console_text(output))
+    if result.returncode != 0:
+        raise typer.Exit(1)
 
 
 @app.command()

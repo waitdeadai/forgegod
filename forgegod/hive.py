@@ -76,6 +76,13 @@ class HiveCoordinator:
         """Run hive batches until done or iteration limit reached."""
         prd = PRD(**json.loads(prd_path.read_text(encoding="utf-8")))
         loop_helper = RalphLoop(config=self.config, prd=prd, router=self.router)
+        if not loop_helper._check_audit():
+            self.state.status = "paused"
+            self._save_state()
+            raise RuntimeError(
+                "audit-agent marked the repository as not ready to plan. "
+                "Resolve blockers before running hive mode."
+            )
 
         workers = max_workers or self.config.hive.max_workers
         iterations = max_iterations or self.config.hive.max_iterations

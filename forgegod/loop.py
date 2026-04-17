@@ -13,11 +13,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 from forgegod.agent import Agent
+from forgegod.audit import ensure_audit_ready
 from forgegod.budget import BudgetTracker
 from forgegod.cli_ux import console, emit_cli_event
 from forgegod.config import ForgeGodConfig
@@ -254,46 +254,30 @@ class RalphLoop:
         self._running = False
 
     def _check_audit(self) -> bool:
-        """Check AUDIT.md readiness before spawning any story agent.
-
-        Reads .forgegod/AUDIT.md and halts if ready_to_plan is False.
-        This is the gate that audit-agent produces before ForgeGod plans.
-        Cached after first read so we don't re-parse every tick.
-        """
+        """Check audit-agent readiness before spawning any story agent."""
         if not hasattr(self, "_audit_cache"):
             self._audit_cache: dict | None = None
 
         if self._audit_cache is None:
-            audit_path = self.config.project_dir / "AUDIT.md"
-            if not audit_path.exists():
-                logger.debug("No AUDIT.md found — skipping audit check")
-                return True
-
-            try:
-                content = audit_path.read_text(encoding="utf-8", errors="replace")
-            except OSError:
-                return True
-
-            # Extract ready_to_plan from JSON block
-            m = re.search(
-                r"```json\s*\n(.*?)\n```",
-                content,
-                re.DOTALL,
+            state = ensure_audit_ready(
+                self.config,
+                reason="loop",
+                project_root=self._workspace_root,
             )
-            if m:
-                try:
-                    block = json.loads(m.group(1))
-                    agent = block.get("audit_agent", {})
-                    self._audit_cache = {
-                        "ready": agent.get("ready_to_plan", True),
-                        "blockers": agent.get("blockers", []),
-                        "high_risk": agent.get("high_risk_modules", []),
-                        "recommended_start": agent.get("recommended_start_points", []),
-                    }
-                except (json.JSONDecodeError, KeyError):
-                    self._audit_cache = None
-            else:
-                self._audit_cache = None
+            if not state.exists:
+                if state.message:
+                    logger.warning("Audit preflight unavailable: %s", state.message)
+                return True
+            self._audit_cache = {
+                "ready": state.ready_to_plan,
+                "blockers": state.blockers,
+                "high_risk": state.high_risk_modules,
+                "recommended_start": state.recommended_start_points,
+                "specialists": state.specialist_summaries,
+                "source": state.source,
+            }
+            if state.message:
+                logger.info("Audit preflight: %s", state.message)
 
         cache = self._audit_cache
         if cache is None:
@@ -1083,6 +1067,22 @@ class RalphLoop:
                         "\n  WARNING: This story touches HIGH-RISK modules. "
                         "Run extra verification before declaring done.\n"
                     )
+            specialists = self._audit_cache.get("specialists", {})
+            if specialists and not self.config.terse.enabled:
+                prompt += "\n## Audit Specialist Surfaces\n"
+                for kind, summary in specialists.items():
+                    if not summary:
+                        continue
+                    blockers = summary.get("blockers", [])
+                    relevant_modules = summary.get("relevant_modules", [])
+                    ready_flag = summary.get("ready", True)
+                    prompt += (
+                        f"- {kind}: ready={ready_flag}, "
+                        f"blockers={len(blockers)}, "
+                        f"relevant_modules={len(relevant_modules)}\n"
+                    )
+                    for blocker in blockers[:3]:
+                        prompt += f"  - blocker: {blocker}\n"
 
         if self.prd.learnings:
             prompt += "\n## Learnings from previous stories\n"

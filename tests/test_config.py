@@ -41,6 +41,9 @@ def test_default_config():
     assert config.openai.parallel_tool_calls is True
     assert config.zai.use_coding_plan is True
     assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
+    assert config.audit.enabled is True
+    assert config.audit.command == "auto"
+    assert config.audit.auto_run_on_loop is True
 
 
 def test_deep_merge():
@@ -73,6 +76,7 @@ def test_init_project():
         data = toml.loads(config_text)
         assert "models" in data
         assert "budget" in data
+        assert "audit" in data
         assert data["budget"]["mode"] == "normal"
 
 

@@ -1527,6 +1527,9 @@ class HarnessEvalRunner:
         config.memory.enabled = False
         config.memory.extraction_enabled = False
         config.agent.research_before_code = False
+        config.audit.enabled = False
+        config.audit.auto_run_on_loop = False
+        config.audit.auto_run_on_hive = False
         config.security.permission_mode = permission_mode
         config.security.approval_mode = approval_mode
         config.security.sandbox_mode = sandbox_mode
