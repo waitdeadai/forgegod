@@ -604,6 +604,7 @@ def _interactive_task_session(
     allowed_tool: list[str] | None = None,
     verbose: bool = False,
     terse: bool = False,
+    subagents: bool = False,
 ) -> int:
     _print_banner()
     console.print(
@@ -657,6 +658,7 @@ def _interactive_task_session(
             verbose=verbose,
             terse=terse,
             show_banner=False,
+            subagents_enabled=True if subagents else None,
         )
         if exit_code != 0:
             console.print("[yellow]ForgeGod needs another try or a different instruction.[/yellow]")
@@ -690,6 +692,11 @@ def main(
     ),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logging"),
     terse: bool = typer.Option(False, "--terse", help="Caveman mode - terse prompts"),
+    subagents: bool = typer.Option(
+        False,
+        "--subagents",
+        help="Run bounded parallel subagent analysis before each interactive task",
+    ),
 ):
     if version:
         _print_banner()
@@ -719,6 +726,7 @@ def main(
             allowed_tool=allowed_tool,
             verbose=verbose,
             terse=terse,
+            subagents=subagents,
         )
     )
 
@@ -1281,6 +1289,11 @@ def run(
         "--json-out",
         help="Write machine-readable run results to a JSON file",
     ),
+    subagents: bool = typer.Option(
+        False,
+        "--subagents",
+        help="Run bounded parallel subagent analysis before coding",
+    ),
 ):
     """Execute a single coding task."""
     raise typer.Exit(
@@ -1296,6 +1309,7 @@ def run(
             terse=terse,
             debug_wire=debug_wire,
             json_out=json_out,
+            subagents_enabled=True if subagents else None,
         )
     )
 
@@ -1360,6 +1374,11 @@ def hive(
         False, "--debug-wire",
         help="Log all LLM boundary crossings to wire.log",
     ),
+    subagents: bool = typer.Option(
+        False,
+        "--subagents",
+        help="Run bounded parallel subagent analysis inside each worker",
+    ),
 ):
     """Run the local multi-process hive coordinator."""
     from forgegod.config import load_config
@@ -1377,6 +1396,8 @@ def hive(
         config.security.approval_mode = approval_mode
     if allowed_tool is not None:
         config.security.allowed_tools = list(allowed_tool)
+    if subagents:
+        config.subagents.enabled = True
     if config.security.approval_mode == "prompt":
         console.print("[red]Hive mode does not support prompt approvals.[/red]")
         raise typer.Exit(1)

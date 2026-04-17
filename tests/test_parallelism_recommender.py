@@ -77,12 +77,13 @@ class TestRecommendParallelism:
         assert rec.mode == ParallelismMode.RESEARCH_FIRST
         assert rec.research_recommended is True
 
-    def test_research_first_research_before_code_enabled(self):
-        """research_before_code=True → RESEARCH_FIRST even for medium tasks."""
+    def test_research_before_code_marks_research_without_forcing_mode(self):
+        """research_before_code=True keeps topology selection but marks research."""
         cfg = _cfg()
         cfg.agent.research_before_code = True
         rec = recommend_parallelism("add async caching to the cache module", cfg)
-        assert rec.mode == ParallelismMode.RESEARCH_FIRST
+        assert rec.mode in (ParallelismMode.SEQUENTIAL, ParallelismMode.SUBAGENTS)
+        assert rec.research_recommended is True
 
     def test_research_first_sota_keyword(self):
         """SOTA keyword → RESEARCH_FIRST."""

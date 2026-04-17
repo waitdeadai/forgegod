@@ -335,6 +335,22 @@ class TestEffortGateApplyToStory:
         assert story.status.value == "todo"  # StoryStatus.TODO
         assert any("[effort_gate]" in err for err in story.error_log)
 
+    def test_apply_to_story_records_suggestions(self):
+        config = ForgeGodConfig(effort=EffortConfig(enabled=True))
+        gate = EffortGate(config)
+        story = MockStory()
+        result = EffortResult(
+            passed=False,
+            shortcut_detected=True,
+            shortcut_type="insufficient_drafts",
+            blocked_reason="Need another draft",
+            suggestions=["Review edge cases", "Run tests"],
+        )
+
+        gate.apply_to_story(story, result)
+
+        assert any("Suggestions:" in err for err in story.error_log)
+
 
 # ── Integration: config profile → effort enabled ─────────────────────────
 

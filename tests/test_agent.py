@@ -469,6 +469,40 @@ class TestCompletionEvidence:
         assert triggered == []
 
     @pytest.mark.asyncio
+    async def test_agent_run_invokes_subagents_when_enabled(self, tmp_path, monkeypatch):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter(["Implemented cleanly."])
+
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        config.agent.research_before_code = False
+        config.subagents.enabled = True
+
+        calls: list[str] = []
+
+        async def fake_run_subagents(self, task):
+            calls.append(task)
+
+        monkeypatch.setattr(Agent, "_maybe_run_subagents", fake_run_subagents)
+
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=2,
+        )
+        agent.memory = None
+
+        result = await agent.run("Implement the API handler")
+        agent.budget.close()
+
+        assert result.success is True
+        assert calls == ["Implement the API handler"]
+
+    @pytest.mark.asyncio
     async def test_agent_run_requires_post_edit_verification_and_diff(self, tmp_path):
         from forgegod.agent import Agent
 

@@ -1,4 +1,4 @@
-"""ForgeGod Parallelism Recommender — SOTA 2026 task → strategy mapping.
+"""ForgeGod parallelism recommender for execution topology selection.
 
 Recommends optimal parallelism strategy based on task complexity:
 - Sequential: small tasks (overhead doesn't justify)
@@ -104,7 +104,7 @@ def recommend_parallelism(
     """Recommend parallelism strategy based on task complexity.
 
     Decision tree:
-    1. If research_first enabled or architectural decision → RESEARCH_FIRST
+    1. Architectural decision or architecture-heavy research brief → RESEARCH_FIRST
     2. If estimated_lines >= 500 and estimated_files >= 5 → HIVE
     3. If estimated_lines >= 50 and estimated_files >= 2 → SUBAGENTS
     4. Otherwise → SEQUENTIAL
@@ -119,14 +119,16 @@ def recommend_parallelism(
     """
     estimated_lines, estimated_files = _estimate_task_complexity(task)
 
-    # Rule 1: Research-first for architectural decisions
-    if config.agent.research_before_code or _is_architectural_decision(task, research_brief):
+    research_recommended = bool(config.agent.research_before_code)
+
+    # Rule 1: Research-first is reserved for architecture-heavy decisions.
+    if _is_architectural_decision(task, research_brief):
         return ParallelismRecommendation(
             mode=ParallelismMode.RESEARCH_FIRST,
             workers=1,
             reasoning=(
-                f"Architectural decision detected or research_before_code enabled. "
-                f"Task: {task[:80]}..."
+                f"Architectural decision detected. Research-backed design work should "
+                f"finish before implementation starts. Task: {task[:80]}..."
             ),
             research_recommended=True,
             estimated_speedup="1.5-2x (quality improvement from SOTA research)",
@@ -141,8 +143,12 @@ def recommend_parallelism(
             reasoning=(
                 f"Large task: ~{estimated_lines} lines across ~{estimated_files} files. "
                 f"Multi-process coordination recommended."
+                + (
+                    " Run research first because research_before_code is enabled."
+                    if research_recommended else ""
+                )
             ),
-            research_recommended=False,
+            research_recommended=research_recommended,
             estimated_speedup=f"{workers}-8x faster",
         )
 
@@ -155,8 +161,12 @@ def recommend_parallelism(
             reasoning=(
                 f"Medium task: ~{estimated_lines} lines across ~{estimated_files} files. "
                 f"Subagent parallelization with {workers} workers."
+                + (
+                    " Run research first because research_before_code is enabled."
+                    if research_recommended else ""
+                )
             ),
-            research_recommended=False,
+            research_recommended=research_recommended,
             estimated_speedup=f"{workers}-4x faster",
         )
 
@@ -167,7 +177,11 @@ def recommend_parallelism(
         reasoning=(
             f"Small task: ~{estimated_lines} lines, ~{estimated_files} file. "
             f"Sequential execution avoids parallelism overhead."
+            + (
+                " Research is still recommended before code changes."
+                if research_recommended else ""
+            )
         ),
-        research_recommended=False,
+        research_recommended=research_recommended,
         estimated_speedup="1x (baseline)",
     )

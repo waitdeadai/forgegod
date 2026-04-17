@@ -245,6 +245,7 @@ Task:
         sub_config = self.config.model_copy(deep=True)
         sub_config.security.permission_mode = "read-only"
         sub_config.security.approval_mode = "deny"
+        sub_config.subagents.enabled = False
         if self.config.subagents.allowed_tools:
             sub_config.security.allowed_tools = list(self.config.subagents.allowed_tools)
 

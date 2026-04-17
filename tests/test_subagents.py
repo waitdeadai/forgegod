@@ -69,3 +69,35 @@ async def test_subagent_review_retry(monkeypatch):
     report = bundle.reports[0]
     assert report.attempts == 2
     assert report.review_verdict == "approve"
+
+
+@pytest.mark.asyncio
+async def test_subagent_prompt_disables_nested_orchestration(monkeypatch):
+    seen = {}
+
+    class InspectingAgent:
+        def __init__(self, *, config, **_kwargs):
+            seen["permission_mode"] = config.security.permission_mode
+            seen["approval_mode"] = config.security.approval_mode
+            seen["subagents_enabled"] = config.subagents.enabled
+
+        async def run(self, _prompt: str) -> AgentResult:
+            return AgentResult(success=True, output="analysis output")
+
+    config = ForgeGodConfig()
+    config.subagents.enabled = True
+    monkeypatch.setattr("forgegod.subagents.Agent", InspectingAgent)
+
+    orchestrator = SubagentOrchestrator(
+        config=config,
+        router=DummyRouter(),
+        budget=BudgetTracker(config),
+    )
+    result = await orchestrator._run_subagent_prompt("Inspect the auth flow")
+
+    assert result.success is True
+    assert seen == {
+        "permission_mode": "read-only",
+        "approval_mode": "deny",
+        "subagents_enabled": False,
+    }

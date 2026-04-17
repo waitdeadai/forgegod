@@ -1,4 +1,9 @@
-"""ForgeGod Effort Gate — enforces max_effort rules after coder output."""
+"""ForgeGod effort gate for max-effort completion checks.
+
+The gate stays fully local by default: it uses deterministic shortcut detection,
+minimum-draft enforcement, and verification evidence checks. That keeps the
+quality floor stable even when no external quality-judge package is installed.
+"""
 
 from __future__ import annotations
 
@@ -8,13 +13,6 @@ from forgegod.config import EffortConfig, ForgeGodConfig
 from forgegod.shortcut_detector import ShortcutDetector
 
 logger = logging.getLogger("forgegod.effort")
-
-# SOTA 2026 upgrade: replace regex gate with external effort_agent.EffortAgent
-# The external package uses LLM-based evaluation (more nuanced shortcut detection).
-# To upgrade: in EffortGate.__init__, set self._external_agent = EffortAgent(config)
-# Then in check(), after regex checks, also call self._external_agent.evaluate()
-# for LLM-based verdict: verdict = self._external_agent.evaluate(task, result, ...)
-# If verdict.verdict == EffortVerdict.REDO: return EffortResult(passed=False, ...)
 
 class EffortResult:
     def __init__(
@@ -165,9 +163,10 @@ class EffortGate:
         if effort_result.passed:
             return
         from forgegod.models import StoryStatus
+
         story.status = StoryStatus.TODO
         story.error_log.append(f"[effort_gate] {effort_result.blocked_reason}")
         if effort_result.suggestions:
             story.error_log.append(
-            f"[effort_gate] Suggestions: {'; '.join(effort_result.suggestions[:2])}"
-        )
+                f"[effort_gate] Suggestions: {'; '.join(effort_result.suggestions[:2])}"
+            )

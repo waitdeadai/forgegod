@@ -253,6 +253,7 @@ class Agent:
         self._completion_closeout_prompted = False
         self._auto_research_count = 0  # auto-research trigger count
         self._last_denied_tool: str | None = None  # tool name from last permission error
+        self._latest_research_brief: ResearchBrief | None = None
 
         # Wire logger for Boundary 3 debug tracing
         self._wire_logger = None
@@ -343,6 +344,8 @@ class Agent:
                     AutoResearchReason.MANUAL,
                     {"task": task},
                 )
+            if self.config.subagents.enabled:
+                await self._maybe_run_subagents(task)
             while self._turn < self.max_turns:
                 self._turn += 1
                 await self._emit_event("turn_started", turn=self._turn, role=self.role)
@@ -1186,13 +1189,14 @@ class Agent:
         role: str = "coder",
         max_turns: int = 50,
     ) -> AgentResult:
-        """Spawn a sub-agent as a context firewall (OpenClaw pattern).
+        """Spawn one fresh-context sub-agent as a context firewall.
 
         The sub-agent gets its own fresh context window. The parent only
         sees the condensed result, not the intermediate tool calls.
         This prevents context rot and keeps the parent's context clean.
 
-        Uses a cheaper model role by default (coder vs sentinel).
+        This is distinct from the parallel `SubagentOrchestrator`, which fans
+        out bounded analysis tasks before the main coding pass.
         """
         subagent = Agent(
             config=self.config,
@@ -1210,6 +1214,48 @@ class Agent:
             f for f in subagent.files_modified if f not in self.files_modified
         )
         return result
+
+    async def _maybe_run_subagents(self, task: str) -> None:
+        """Inject bounded subagent analysis before the main coding loop."""
+        try:
+            from forgegod.subagents import SubagentOrchestrator
+
+            orchestrator = SubagentOrchestrator(
+                config=self.config,
+                router=self.router,
+                budget=self.budget,
+            )
+            bundle = await orchestrator.run(
+                task,
+                research_brief=self._latest_research_brief,
+            )
+        except Exception as e:
+            logger.warning("Subagent orchestration failed: %s", e)
+            return
+
+        if not bundle.reports or not bundle.summary.strip():
+            return
+
+        summary = self._format_subagent_injection(bundle.summary)
+        self.messages.append({"role": "user", "content": summary})
+        self._wire_log_state("SUBAGENT_INJ", summary[:100] if summary else None)
+        try:
+            await self._emit_event(
+                "subagents_completed",
+                reports=len(bundle.reports),
+                merge_instructions=(bundle.merge_instructions[:200] if bundle.merge_instructions else ""),
+            )
+        except Exception:
+            pass
+
+    @staticmethod
+    def _format_subagent_injection(summary: str) -> str:
+        return (
+            "\n[ SUBAGENT ANALYSIS — INTERNAL PARALLEL FINDINGS ]\n"
+            "Use this as bounded context while you implement. Treat it as analysis, "
+            "not as completed work.\n\n"
+            f"{summary.strip()}"
+        )
 
     def _prune_tool_results(self):
         """Prune bloated tool results without rewriting the transcript.
@@ -1785,6 +1831,7 @@ class Agent:
             researcher = Researcher(self.config, self.router)
             task = context.get("task", "")
             brief = await researcher.research(task, depth=depth)
+            self._latest_research_brief = brief
 
             # Inject research findings into messages
             if brief:

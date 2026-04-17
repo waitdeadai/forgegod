@@ -169,12 +169,15 @@ class TasteAgent:
                 verdict=result.verdict,
                 overall_score=result.overall_score,
                 reasoning=result.reasoning,
-                issues=[i.get("problem", "") for i in result.issues] if result.issues else [],
-                suggestions=result.principles_learned,
-                revision_guidance=result.revision_guidance,
-                model_used=result.model_used,
-                cost_usd=result.cost_usd,
-                latency_ms=result.latency_ms,
+                issues=[
+                    i.get("problem", "") if isinstance(i, dict) else str(i)
+                    for i in (result.issues or [])
+                ],
+                suggestions=list(getattr(result, "principles_learned", []) or []),
+                revision_guidance=getattr(result, "revision_guidance", ""),
+                model_used=getattr(result, "model_used", ""),
+                cost_usd=float(getattr(result, "cost_usd", 0.0) or 0.0),
+                latency_ms=int(getattr(result, "latency_ms", 0) or 0),
             )
         except Exception as e:
             logger.warning(f"Taste evaluation failed: {e}")

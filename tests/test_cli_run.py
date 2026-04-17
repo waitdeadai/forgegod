@@ -277,11 +277,78 @@ def test_root_interactive_session_propagates_runtime_flags(monkeypatch):
                 "verbose": False,
                 "terse": True,
                 "show_banner": False,
+                "subagents_enabled": None,
             },
         )
     ]
     visible = "\n".join(printed)
     assert "Caveman mode enabled" in visible
+
+
+def test_root_interactive_session_propagates_subagents_flag(monkeypatch):
+    prompts = iter(["Add a status page", "/exit"])
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli._cli_is_interactive", lambda: True)
+    monkeypatch.setattr("forgegod.cli.console.input", lambda *_args, **_kwargs: next(prompts))
+    monkeypatch.setattr("forgegod.cli.console.print", lambda *args, **_kwargs: None)
+    monkeypatch.setattr("forgegod.cli._ensure_project_bootstrap", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "forgegod.cli._run_task_entrypoint",
+        lambda task, **kwargs: calls.append((task, kwargs)) or 0,
+    )
+
+    result = runner.invoke(app, ["--subagents"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        (
+            "Add a status page",
+            {
+                "model": None,
+                "review": True,
+                "permission_mode": None,
+                "approval_mode": None,
+                "allowed_tool": None,
+                "verbose": False,
+                "terse": False,
+                "show_banner": False,
+                "subagents_enabled": True,
+            },
+        )
+    ]
+
+
+def test_run_command_propagates_subagents_flag(monkeypatch):
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    monkeypatch.setattr(
+        "forgegod.cli._run_task_entrypoint",
+        lambda task, **kwargs: calls.append((task, kwargs)) or 0,
+    )
+
+    result = runner.invoke(app, ["run", "--subagents", "Implement the handler"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        (
+            "Implement the handler",
+            {
+                "model": None,
+                "review": True,
+                "research": True,
+                "permission_mode": None,
+                "approval_mode": None,
+                "allowed_tool": None,
+                "verbose": False,
+                "terse": False,
+                "debug_wire": False,
+                "json_out": None,
+                "subagents_enabled": True,
+            },
+        )
+    ]
 
 
 def test_root_interactive_session_bootstraps_project(monkeypatch):

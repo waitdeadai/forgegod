@@ -27,18 +27,18 @@
 </p>
 
 <p align="center">
-  <code>23 built-in tools</code> &bull; <code>8 LLM providers</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
+  <code>23 built-in tools</code> &bull; <code>9 provider families</code> &bull; <code>5-tier memory</code> &bull; <code>24/7 autonomous</code> &bull; <code>$0 local mode</code>
 </p>
 
 ---
 
-ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, Kimi via Moonshot, and Z.AI GLM) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, use cloud API keys when you need them, or connect native OpenAI Codex subscription auth and Z.AI Coding Plan inside the ForgeGod CLI.
+ForgeGod orchestrates multiple LLMs (OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, DeepSeek, Kimi via Moonshot, Z.AI GLM, and MiniMax) into a single autonomous coding engine. It routes tasks to the right model, runs 24/7 from a PRD, learns from every outcome, and self-improves its own strategy. Run it locally for $0 with Ollama, use cloud API keys when you need them, or connect native OpenAI Codex subscription auth and Z.AI Coding Plan inside the ForgeGod CLI.
 
 ```bash
 pip install forgegod
 ```
 
-> Audit note (re-verified 2026-04-17): the verified baseline now includes `23` registered tools, `8` provider families, `9` route surfaces, `641` collected tests, `556` non-stress tests passing plus `1` skipped by default, `84/84` stress tests passing, green lint, green bytecode compilation, a green package build, and live CLI smoke checks for `forgegod`, `forgegod run`, and `forgegod hive`. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. Research-before-code is now wired into runtime for code-changing tasks, and bad-review retries now trigger targeted research-backed troubleshooting instead of exiting cold. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod hive` is now a live local multi-process coordinator with isolated worktrees, and `forgegod evals` covers deterministic chat, run, loop, worktree, strict-interface, and OpenAI surface regressions. Native Windows Codex support is now a production-ready ForgeGod path when the official Codex CLI is installed and logged in. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), and [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md) before making runtime changes.
+> Audit note (re-verified 2026-04-17): the verified baseline now includes `23` registered tools, `9` provider families, `10` route surfaces, `654` collected tests, `569` non-stress tests passing plus `1` skipped by default, `84/84` stress tests passing, green lint, green bytecode compilation, a green package build, and live CLI smoke checks for `forgegod`, `forgegod run`, and `forgegod hive`. The strict Docker integration path remains opt-in and only runs when the local daemon is actually ready. Research-before-code is now wired into runtime for code-changing tasks, bad-review retries now trigger targeted research-backed troubleshooting instead of exiting cold, and bounded subagent analysis is now a live opt-in surface on `forgegod`, `forgegod run`, and `forgegod hive` via `--subagents`. The primary human entrypoint is now conversational `forgegod`; it auto-bootstraps repo-local config on first use, and it honors the same runtime overrides as scripted surfaces, including `--terse`, model overrides, permission/approval flags, provider preference, and explicit OpenAI surface selection. `forgegod run` remains the explicit scripted surface, `forgegod hive` is now a live local multi-process coordinator with isolated worktrees, and `forgegod evals` covers deterministic chat, run, loop, worktree, strict-interface, and OpenAI surface regressions. Native Windows Codex support is now a production-ready ForgeGod path when the official Codex CLI is installed and logged in. `forgegod loop` no longer auto-commits or auto-pushes by default. Read [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md), [docs/OPENAI_SURFACES_2026-04-10.md](docs/OPENAI_SURFACES_2026-04-10.md), and [docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md](docs/WEB_RESEARCH_2026-04-17_MULTI_AGENT_SURFACES.md) before making runtime changes.
 
 ## What Makes ForgeGod Different
 
@@ -65,6 +65,7 @@ Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) —
 - **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
 - **DESIGN.md Native** — Import a design preset, drop `DESIGN.md` in repo root, and frontend tasks inherit that design language automatically.
 - **Natural-Language CLI** — ForgeGod now explains what it is doing in plain language while it works, and the CLI surfaces share the same branded cyan/white/yellow UX instead of raw transport noise.
+- **Subagents + Hive** — Use bounded read-only `--subagents` analysis inside one task, or spread independent stories across the local `forgegod hive` coordinator with isolated git worktrees.
 - **Contribution Mode** — Read `CONTRIBUTING.md`, inspect the repo, surface approachable issues, and plan or execute contribution-sized changes with repo-specific guardrails.
 - **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
 - **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
@@ -196,9 +197,11 @@ forgegod auth sync --profile adversarial --prefer-provider openai --openai-surfa
 
 # Talk to ForgeGod in natural language
 forgegod
+forgegod --subagents
 
 # Explicit scripted task surface
 forgegod run "Add a /health endpoint to server.py with uptime and version info"
+forgegod run --subagents "Add a /health endpoint to server.py with uptime and version info"
 
 # Deterministic harness evals
 forgegod evals
@@ -217,6 +220,7 @@ forgegod loop --prd .forgegod/prd.json
 
 # Local multi-process hive coordinator with isolated worktrees
 forgegod hive --prd .forgegod/prd.json --workers 2
+forgegod hive --prd .forgegod/prd.json --workers 2 --subagents
 
 # Caveman mode — 50-75% token savings with ultra-terse prompts
 forgegod --terse
@@ -296,7 +300,7 @@ detected auth surfaces.
 
 ## 5-Tier Memory System
 
-ForgeGod has the most advanced memory system of any open-source coding agent:
+ForgeGod has one of the deepest memory systems in an open-source coding agent:
 
 | Tier | What | How | Retention |
 |:-----|:-----|:----|:----------|
