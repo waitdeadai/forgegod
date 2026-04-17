@@ -892,7 +892,7 @@ body::after {
 <section class="features-section" id="features">
   <div class="container">
     <h2 class="section-title" data-i18n="title_features">CORE CAPABILITIES</h2>
-    <p class="section-subtitle" data-i18n="features_subtitle">Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, and an optional human-readable vault surface.</p>
+    <p class="section-subtitle" data-i18n="features_subtitle">Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, optional human-readable memory projection, and first-party bridges into external chat runtimes.</p>
     <div class="features">
 
       <!-- Row 1: Recon hero (3) + Adversarial (3) -->
@@ -996,6 +996,13 @@ body::after {
         <h3 data-i18n="feat_specialists_title">Native Audit and Specialist Agents</h3>
         <p data-i18n="feat_specialists_desc">audit-agent is wired into ForgeGod as a native preflight gate. `forgegod audit`, `forgegod loop`, and `forgegod hive` can refresh audit artifacts, halt on blockers, and expose security, architecture, and plan-risk specialist passes before planning continues. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate blocks one-pass "good enough" exits without verification.</p>
         <span class="feature-tag" data-i18n="feat_specialists_tag">Native audit + grounding + taste + max-effort</span>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">&#128172;</div>
+        <h3 data-i18n="feat_bridge_title">Hermes and OpenClaw Runtime Bridges</h3>
+        <p data-i18n="feat_bridge_desc">ForgeGod now exposes a machine-friendly bridge for external chat runtimes. Export first-party Hermes and OpenClaw adapters, keep stable session IDs, and let Telegram, WhatsApp, Discord, or thread-bound conversations delegate repo work into ForgeGod without prompt-only glue.</p>
+        <span class="feature-tag" data-i18n="feat_bridge_tag">External chat runtimes -> ForgeGod</span>
       </div>
 
     </div>
@@ -1670,7 +1677,7 @@ var STRINGS = {
     feat_skills_title: "Loadable Skills",
     feat_skills_desc: "Pre-built instruction sets for common tasks \u2014 Django, FastAPI, React, testing, deployment. Load a skill and the agent follows battle-tested patterns instead of improvising.",
     feat_skills_tag: "Reusable expertise",
-    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, and an optional human-readable vault surface.",
+    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, optional human-readable memory projection, and first-party bridges into external chat runtimes.",
     title_moats: "ENGINEERING MOATS",
     moats_subtitle: "Six engineering decisions that define the current ForgeGod harness.",
     moat_1_title: "Research-Gated Changes",
@@ -1776,16 +1783,19 @@ var STRINGS = {
     bench_rel_fallback: "Fallback chain + cascade routing",
     bench_rel_circuit: "Circuit breaker (half-open + sliding)",
     bench_rel_parallel: "Parallel loop + local hive",
-    bench_src_reliability: 'Current verified baseline: 667 collected tests, 582 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code>, and <code style="color:var(--cyan)">forgegod obsidian</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
+    bench_src_reliability: 'Current verified baseline: 672 collected tests, 587 non-stress tests passing plus 1 skipped by default, 84/84 stress tests passing, lint green, bytecode compilation green, package build green, and live CLI smoke checks for <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code>, <code style="color:var(--cyan)">forgegod obsidian</code>, <code style="color:var(--cyan)">forgegod bridge</code>, and <code style="color:var(--cyan)">forgegod integrations</code>. Opt-in <code style="color:var(--cyan)">--subagents</code> paths are covered in the targeted suite, and the OpenAI surface matrices still support API-only, Codex-only, or hybrid API+Codex routing. Benchmark bars above remain historical until regenerated from the repaired runner. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Audit details</a>',
     feat_specialists_title: "Native Audit and Specialist Agents",
     feat_specialists_desc: "audit-agent is wired into ForgeGod as a native preflight gate. `forgegod audit`, `forgegod loop`, and `forgegod hive` can refresh audit artifacts, halt on blockers, and expose security, architecture, and plan-risk specialist passes before planning continues. ResearchAgent grounds implementation with current-source briefs. TasteAgent adds optional design review after code review. EffortGate blocks one-pass \"good enough\" exits without verification.",
     feat_specialists_tag: "Native audit + grounding + taste + max-effort",
+    feat_bridge_title: "Hermes and OpenClaw Runtime Bridges",
+    feat_bridge_desc: "ForgeGod now exposes a machine-friendly bridge for external chat runtimes. Export first-party Hermes and OpenClaw adapters, keep stable session IDs, and let Telegram, WhatsApp, Discord, or thread-bound conversations delegate repo work into ForgeGod without prompt-only glue.",
+    feat_bridge_tag: "External chat runtimes -> ForgeGod",
     cmp_stress: "Stress tested + benchmarked",
     bench_callout: '<strong>The bottom line:</strong> serious coding agents are defined as much by harness design as by model choice. ForgeGod\u2019s routing, review, memory, and execution controls are the product surface.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Full benchmark analysis</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">SWE-bench data</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider leaderboards</a>',
     cmp_sources: 'Sources: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removed v2.1+)</a>',
     provider_free: "$0 / FREE",
     install_then: 'Then: <code style="color:var(--cyan)">forgegod</code> \u2192 describe your task',
-    install_note: 'Python 3.11+ \u2022 Auto-bootstraps local config on first chat \u2022 Add <code style="color:var(--cyan)">forgegod --terse</code> when you want lower token overhead \u2022 Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> or <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> to verify the harness itself \u2022 Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults \u2022 Use <code style="color:var(--cyan)">forgegod init</code> when you want the guided wizard \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
+    install_note: 'Python 3.11+ \u2022 Auto-bootstraps local config on first chat \u2022 Add <code style="color:var(--cyan)">forgegod --terse</code> when you want lower token overhead \u2022 Run <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code>, or <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> or <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> to verify the harness itself \u2022 Inspect OpenAI surfaces with <code style="color:var(--cyan)">forgegod auth explain</code> before syncing defaults \u2022 Export Hermes/OpenClaw adapters with <code style="color:var(--cyan)">forgegod integrations ...</code> when you want chat-runtime delegation \u2022 Use <code style="color:var(--cyan)">forgegod init</code> when you want the guided wizard \u2022 Works on macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Full docs on GitHub</a>',
     footer_contributors: "Contributors",
     footer_contributing: "Contributing",
     footer_security: "Security",
@@ -1862,7 +1872,7 @@ var STRINGS = {
     feat_skills_title: "Skills Cargables",
     feat_skills_desc: "Instrucciones pre-armadas para tareas comunes \u2014 Django, FastAPI, React, testing, deploy. Carg\u00e1 un skill y el agente sigue patrones probados en vez de improvisar.",
     feat_skills_tag: "Experiencia reutilizable",
-    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial, automatización acotada y una superficie opcional de vault legible por humanos.",
+    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial, automatización acotada, proyección opcional de memoria legible y puentes de primera clase hacia runtimes externos de chat.",
     title_moats: "MOATS DE INGENIERÍA",
     moats_subtitle: "Seis decisiones de ingeniería que definen el harness actual de ForgeGod.",
     moat_1_title: "Cambios Guiados por Investigaci\u00f3n",
@@ -1968,16 +1978,19 @@ var STRINGS = {
     bench_rel_fallback: "Cadena de respaldo + enrutamiento en cascada",
     bench_rel_circuit: "Circuit breaker (half-open + ventana)",
     bench_rel_parallel: "Loop paralelo + hive local",
-    bench_src_reliability: 'Baseline verificada actual: 667 tests recolectados, 582 tests no-stress pasando mas 1 skipped por defecto, 84/84 stress tests en verde, lint en verde, compilación bytecode en verde, build del paquete en verde, y smoke checks vivos para <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code> y <code style="color:var(--cyan)">forgegod obsidian</code>. Los caminos opt-in con <code style="color:var(--cyan)">--subagents</code> están cubiertos en la suite focalizada, y las matrices de superficie OpenAI siguen soportando API-only, Codex-only o ruteo híbrido API+Codex. Las barras de benchmark de arriba siguen siendo históricas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditoría</a>',
+    bench_src_reliability: 'Baseline verificada actual: 672 tests recolectados, 587 tests no-stress pasando mas 1 skipped por defecto, 84/84 stress tests en verde, lint en verde, compilación bytecode en verde, build del paquete en verde, y smoke checks vivos para <code style="color:var(--cyan)">forgegod</code>, <code style="color:var(--cyan)">forgegod run</code>, <code style="color:var(--cyan)">forgegod hive</code>, <code style="color:var(--cyan)">forgegod audit</code>, <code style="color:var(--cyan)">forgegod obsidian</code>, <code style="color:var(--cyan)">forgegod bridge</code> y <code style="color:var(--cyan)">forgegod integrations</code>. Los caminos opt-in con <code style="color:var(--cyan)">--subagents</code> están cubiertos en la suite focalizada, y las matrices de superficie OpenAI siguen soportando API-only, Codex-only o ruteo híbrido API+Codex. Las barras de benchmark de arriba siguen siendo históricas hasta regenerarlas con el runner reparado. <a href="https://github.com/waitdeadai/forgegod/blob/main/docs/AUDIT_2026-04-07.md" target="_blank" rel="noopener">Detalles de auditoría</a>',
     feat_specialists_title: "Auditoria Nativa y Agentes Especialistas",
     feat_specialists_desc: "audit-agent esta conectado a ForgeGod como gate nativo de preflight. `forgegod audit`, `forgegod loop` y `forgegod hive` pueden refrescar artefactos de auditoria, frenar ante bloqueos y exponer pasadas especialistas de seguridad, arquitectura y riesgo de plan antes de seguir. ResearchAgent ancla la implementacion con briefs basados en fuentes actuales. TasteAgent agrega review de diseno opcional despues del code review. EffortGate bloquea cierres de una sola pasada sin verificacion.",
     feat_specialists_tag: "Auditoria nativa + grounding + taste + max-effort",
+    feat_bridge_title: "Puentes de Runtime para Hermes y OpenClaw",
+    feat_bridge_desc: "ForgeGod ahora expone un bridge machine-friendly para runtimes externos de chat. Exporta adaptadores de primera clase para Hermes y OpenClaw, conserva session IDs estables y deja que Telegram, WhatsApp, Discord o conversaciones con threads deleguen trabajo de repo hacia ForgeGod sin pegamento de prompts.",
+    feat_bridge_tag: "Runtimes de chat externos -> ForgeGod",
     cmp_stress: "Probado bajo estr\u00e9s + benchmarks",
     bench_callout: '<strong>La conclusión:</strong> los coding agents serios se definen tanto por el diseño del harness como por el modelo elegido. El ruteo, el review, la memoria y los controles de ejecución de ForgeGod son la superficie del producto.<br><a href="https://www.morphllm.com/ai-coding-benchmarks-2026" target="_blank" rel="noopener">Análisis completo de benchmarks</a> \u2022 <a href="https://epoch.ai/benchmarks/swe-bench-verified/" target="_blank" rel="noopener">Datos SWE-bench</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Leaderboards de Aider</a>',
     cmp_sources: 'Fuentes: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">Claude Code Docs</a> \u2022 <a href="https://github.com/openai/codex" target="_blank" rel="noopener">Codex CLI GitHub</a> \u2022 <a href="https://aider.chat/docs/leaderboards/" target="_blank" rel="noopener">Aider Docs</a> \u2022 <a href="https://www.blockchain-council.org/ai/cursor-ai-track-memory-across-conversations/" target="_blank" rel="noopener">Cursor Memory (removido v2.1+)</a>',
     provider_free: "$0 / GRATIS",
     install_then: 'Luego: <code style="color:var(--cyan)">forgegod</code> \u2192 describe tu tarea',
-    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usá <code style="color:var(--cyan)">forgegod --terse</code> cuando quieras menor overhead de tokens \u2022 Corré <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccioná superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Usá <code style="color:var(--cyan)">forgegod init</code> si querés el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
+    install_note: 'Python 3.11+ \u2022 Auto-crea config local en el primer chat \u2022 Usá <code style="color:var(--cyan)">forgegod --terse</code> cuando quieras menor overhead de tokens \u2022 Corré <code style="color:var(--cyan)">forgegod evals</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-surfaces</code>, <code style="color:var(--cyan)">forgegod evals --matrix openai-live</code> o <code style="color:var(--cyan)">forgegod evals --matrix openai-live-compare</code> o <code style="color:var(--cyan)">forgegod evals --matrix minimax-live-compare</code> para verificar el harness \u2022 Inspeccioná superficies OpenAI con <code style="color:var(--cyan)">forgegod auth explain</code> antes de sincronizar defaults \u2022 Exportá adaptadores Hermes/OpenClaw con <code style="color:var(--cyan)">forgegod integrations ...</code> cuando quieras delegación desde runtimes de chat \u2022 Usá <code style="color:var(--cyan)">forgegod init</code> si querés el wizard guiado \u2022 Funciona en macOS, Linux, Windows \u2022 <a href="https://github.com/waitdeadai/forgegod">Documentación completa en GitHub</a>',
     footer_contributors: "Colaboradores",
     footer_contributing: "Contribuir",
     footer_security: "Seguridad",
@@ -2049,6 +2062,13 @@ function getTerminalLines() {
         { text: '  + blockers: 0', cls: 'success' },
         { text: '  + specialists: security, architecture, plan-risk', cls: 'success' },
       ]},
+      { cmd: 'forgegod bridge chat --runtime hermes --session-id wa-42 "Continua el fix del checkout"', delay: 1500, output: [
+        { text: '  ForgeGod bridge activo', cls: 'output' },
+        { text: '  + runtime externo: hermes', cls: 'success' },
+        { text: '  + session-id persistente: wa-42', cls: 'success' },
+        { text: '  + contexto reciente cargado del repo local', cls: 'success' },
+        { text: '  + respuesta machine-friendly devuelta al chat', cls: 'success' },
+      ]},
       { cmd: 'forgegod --subagents', delay: 1400, output: [
       { text: '  ForgeGod - sesión conversacional lista', cls: 'output' },
       { text: '  + Harness: adversarial (recomendado)', cls: 'success' },
@@ -2107,6 +2127,13 @@ function getTerminalLines() {
       { text: '  + ready_to_plan: true', cls: 'success' },
       { text: '  + blockers: 0', cls: 'success' },
       { text: '  + specialists: security, architecture, plan-risk', cls: 'success' },
+    ]},
+    { cmd: 'forgegod bridge chat --runtime hermes --session-id wa-42 "Continue the checkout fix"', delay: 1500, output: [
+      { text: '  ForgeGod bridge online', cls: 'output' },
+      { text: '  + external runtime: hermes', cls: 'success' },
+      { text: '  + persistent session-id: wa-42', cls: 'success' },
+      { text: '  + recent context loaded from local repo state', cls: 'success' },
+      { text: '  + machine-friendly reply returned to chat', cls: 'success' },
     ]},
     { cmd: 'forgegod --subagents', delay: 1400, output: [
       { text: '  ForgeGod - natural-language session ready', cls: 'output' },

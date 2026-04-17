@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -17,11 +18,24 @@ from forgegod.cli_ux import (
     LoopNarrator,
     RunNarrator,
     build_banner_text,
+    build_mini_banner_text,
     configure_cli_logging,
     console,
 )
 from forgegod.cli_ux import (
     safe_console_text as _ux_safe_console_text,
+)
+from forgegod.integrations import (
+    append_bridge_turns,
+    build_bridge_task,
+    load_bridge_session,
+    parse_bridge_result,
+    reset_bridge_session,
+    sanitize_session_id,
+    save_bridge_session,
+    scaffold_hermes_skill,
+    scaffold_openclaw_backend,
+    scaffold_openclaw_skill,
 )
 
 app = typer.Typer(
@@ -36,11 +50,15 @@ design_app = typer.Typer(help="Manage DESIGN.md presets and imports.")
 auth_app = typer.Typer(help="Manage native provider auth surfaces and login status.")
 obsidian_app = typer.Typer(help="Manage optional Obsidian vault projection surfaces.")
 audit_app = typer.Typer(help="Manage audit-agent preflight and specialist audit surfaces.")
+bridge_app = typer.Typer(help="Machine-friendly external chat bridge for Hermes/OpenClaw style runtimes.")
+integrations_app = typer.Typer(help="Export first-party Hermes/OpenClaw integration assets.")
 
 app.add_typer(design_app, name="design")
 app.add_typer(auth_app, name="auth")
 app.add_typer(obsidian_app, name="obsidian")
 app.add_typer(audit_app, name="audit")
+app.add_typer(bridge_app, name="bridge")
+app.add_typer(integrations_app, name="integrations")
 
 # -- Mascot - The One-Eyed Triangle --
 _VER = __version__
@@ -90,7 +108,7 @@ def _cli_is_interactive() -> bool:
 def _print_banner(mini: bool = False):
     """Print the ForgeGod mascot banner."""
     if mini:
-        console.print(f"[cyan]^[/cyan] [bold cyan]ForgeGod[/bold cyan] [dim]v{_VER}[/dim]")
+        console.print(build_mini_banner_text(_VER))
     else:
         console.print(_build_banner())
 
@@ -461,19 +479,20 @@ async def _execute_run_task(
     show_banner: bool,
     json_out: Path | None = None,
     story_id: str = "",
+    silent: bool = False,
 ) -> int:
     from forgegod.agent import Agent
     from forgegod.researcher import Researcher
     from forgegod.reviewer import Reviewer
     from forgegod.router import ModelRouter
 
-    if show_banner:
+    if show_banner and not silent:
         _print_banner(mini=True)
         if config.terse.enabled:
             console.print("[dim]Caveman mode enabled - ultra-terse prompts[/dim]")
 
     router = ModelRouter(config)
-    narrator = RunNarrator()
+    narrator = None if silent else RunNarrator()
     try:
         approver = _build_tool_approver() if config.security.approval_mode == "prompt" else None
         agent = Agent(
@@ -486,11 +505,12 @@ async def _execute_run_task(
 
         if not result.success:
             failure = _safe_console_text(result.error or result.output or "Unknown failure")
-            console.print(f"[red]Task failed:[/red] {failure}")
-            if result.completion_blockers:
-                console.print("[yellow]Completion blockers:[/yellow]")
-                for blocker in result.completion_blockers:
-                    console.print(f"  - {_safe_console_text(blocker)}")
+            if not silent:
+                console.print(f"[red]Task failed:[/red] {failure}")
+                if result.completion_blockers:
+                    console.print("[yellow]Completion blockers:[/yellow]")
+                    for blocker in result.completion_blockers:
+                        console.print(f"  - {_safe_console_text(blocker)}")
             if json_out is not None:
                 _write_json_result(
                     json_out,
@@ -514,10 +534,11 @@ async def _execute_run_task(
             if review_result.verdict.value != "approve":
                 retried_result = None
                 if config.agent.auto_research_on_bad_review and _task_requires_code_changes(task):
-                    console.print(
-                        "[forge.warn]Reviewer requested revisions. "
-                        "Running research-backed troubleshooting before one retry.[/forge.warn]"
-                    )
+                    if not silent:
+                        console.print(
+                            "[forge.warn]Reviewer requested revisions. "
+                            "Running research-backed troubleshooting before one retry.[/forge.warn]"
+                        )
                     brief = None
                     try:
                         researcher = Researcher(config, router)
@@ -526,10 +547,11 @@ async def _execute_run_task(
                             depth=config.agent.research_depth_on_bad_review,
                         )
                     except Exception as exc:
-                        console.print(
-                            "[forge.warn]Research retry degraded gracefully:[/forge.warn] "
-                            f"{_safe_console_text(str(exc))[:200]}"
-                        )
+                        if not silent:
+                            console.print(
+                                "[forge.warn]Research retry degraded gracefully:[/forge.warn] "
+                                f"{_safe_console_text(str(exc))[:200]}"
+                            )
 
                     retry_task = _build_review_retry_task(task, review_result, brief)
                     retry_config = config.model_copy(deep=True)
@@ -553,7 +575,8 @@ async def _execute_run_task(
                         result = _merge_agent_results(result, retried_result)
 
                 if review_result.verdict.value != "approve":
-                    _print_review_block(review_result)
+                    if not silent:
+                        _print_review_block(review_result)
                     if json_out is not None:
                         _write_json_result(
                             json_out,
@@ -566,19 +589,20 @@ async def _execute_run_task(
                         )
                     return 1
 
-        console.print(
-            Panel(
-                _safe_console_text(f"[green]Task completed[/green]\n{result.output[:500]}")
+        if not silent:
+            console.print(
+                Panel(
+                    _safe_console_text(f"[green]Task completed[/green]\n{result.output[:500]}")
+                )
             )
-        )
-        if result.files_modified:
-            console.print(f"Files modified: {', '.join(result.files_modified)}")
-        if result.verification_commands:
-            console.print(f"Verification: {', '.join(result.verification_commands)}")
-        console.print(
-            f"Cost: ${result.total_usage.cost_usd:.4f} | "
-            f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
-        )
+            if result.files_modified:
+                console.print(f"Files modified: {', '.join(result.files_modified)}")
+            if result.verification_commands:
+                console.print(f"Verification: {', '.join(result.verification_commands)}")
+            console.print(
+                f"Cost: ${result.total_usage.cost_usd:.4f} | "
+                f"Tokens: {result.total_usage.input_tokens + result.total_usage.output_tokens:,}"
+            )
         if json_out is not None:
             _write_json_result(
                 json_out,
@@ -609,6 +633,7 @@ def _run_task_entrypoint(
     json_out: Path | None = None,
     story_id: str = "",
     subagents_enabled: bool | None = None,
+    silent: bool = False,
 ) -> int:
     config = _build_run_config(
         model=model,
@@ -631,6 +656,7 @@ def _run_task_entrypoint(
             show_banner=show_banner,
             json_out=json_out,
             story_id=story_id,
+            silent=silent,
         )
     )
 
@@ -1577,6 +1603,159 @@ def worker(
     )
 
 
+@bridge_app.command("chat")
+def bridge_chat(
+    message: str = typer.Argument(..., help="Incoming chat message to route into ForgeGod"),
+    session_id: str = typer.Option("default", "--session-id", help="Stable external session id"),
+    runtime: str = typer.Option("generic", "--runtime", help="Source runtime: hermes, openclaw, generic"),
+    format: str = typer.Option("text", "--format", help="Response format: text or json"),
+    system_prompt: str = typer.Option("", "--system-prompt", help="Optional upstream system prompt"),
+    image: list[str] | None = typer.Option(
+        None,
+        "--image",
+        help="Repeat to pass local file/image path(s) attached by the upstream runtime.",
+    ),
+    history_turns: int = typer.Option(6, "--history-turns", help="Recent transcript turns to inject"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Override coder model"),
+    review: bool = typer.Option(True, "--review/--no-review", help="Review output before returning"),
+    research: bool = typer.Option(
+        True,
+        "--research/--no-research",
+        help="Run research-before-code in bridge mode",
+    ),
+    permission_mode: str | None = typer.Option(
+        None,
+        "--permission-mode",
+        help="Permission mode: read-only, workspace-write, danger-full-access",
+    ),
+    approval_mode: str | None = typer.Option(
+        None,
+        "--approval-mode",
+        help="Approval mode: deny, prompt, approve",
+    ),
+    allowed_tool: list[str] | None = typer.Option(
+        None,
+        "--allow-tool",
+        help="Repeat to restrict tools for this bridge call",
+    ),
+    terse: bool = typer.Option(False, "--terse", help="Enable terse prompting"),
+    subagents: bool = typer.Option(False, "--subagents", help="Enable bounded subagent analysis"),
+):
+    """Route one external chat message into ForgeGod with optional session continuity."""
+    from forgegod.config import load_config
+
+    config = load_config()
+    project_dir = config.project_dir
+    safe_session_id = sanitize_session_id(session_id)
+    session = load_bridge_session(project_dir, safe_session_id, platform=runtime)
+    task = build_bridge_task(
+        message,
+        session=session,
+        system_prompt=system_prompt,
+        images=list(image or []),
+        history_turns=history_turns,
+    )
+
+    temp_dir = project_dir / "integrations" / "bridge_results"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        prefix=f"{safe_session_id}_",
+        suffix=".json",
+        dir=str(temp_dir),
+        delete=False,
+    ) as handle:
+        result_path = Path(handle.name)
+
+    exit_code = _run_task_entrypoint(
+        task,
+        model=model,
+        review=review,
+        research=research,
+        permission_mode=permission_mode,
+        approval_mode=approval_mode,
+        allowed_tool=allowed_tool,
+        terse=terse,
+        show_banner=False,
+        json_out=result_path,
+        subagents_enabled=subagents,
+        silent=True,
+    )
+    response = parse_bridge_result(result_path, session_id=safe_session_id)
+    append_bridge_turns(
+        session,
+        user_message=message,
+        assistant_message=response.response,
+    )
+    save_bridge_session(project_dir, session)
+
+    if format == "json":
+        typer.echo(response.model_dump_json(indent=2))
+    else:
+        typer.echo(response.response)
+
+    raise typer.Exit(exit_code)
+
+
+@bridge_app.command("reset")
+def bridge_reset(
+    session_id: str = typer.Option(..., "--session-id", help="Bridge session id to clear"),
+):
+    """Clear one saved bridge session."""
+    from forgegod.config import load_config
+
+    config = load_config()
+    removed = reset_bridge_session(config.project_dir, sanitize_session_id(session_id))
+    if removed:
+        console.print(f"[forge.success]Cleared bridge session[/forge.success] {session_id}")
+        return
+    console.print(f"[forge.warn]No bridge session found[/forge.warn] for {session_id}")
+    raise typer.Exit(1)
+
+
+@integrations_app.command("export-hermes-skill")
+def export_hermes_skill(
+    output: Path = typer.Option(..., "--output", help="Directory to write the Hermes skill scaffold into"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
+):
+    """Export a first-party Hermes skill that routes coding tasks through ForgeGod."""
+    try:
+        written = scaffold_hermes_skill(output, force=force)
+    except FileExistsError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    console.print(f"[forge.primary]Hermes skill exported[/forge.primary] to {output}")
+    for path in written:
+        console.print(f"  - {path}")
+
+
+@integrations_app.command("export-openclaw-skill")
+def export_openclaw_skill(
+    output: Path = typer.Option(..., "--output", help="Directory to write the OpenClaw skill scaffold into"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
+):
+    """Export a first-party OpenClaw skill that routes coding tasks through ForgeGod."""
+    try:
+        written = scaffold_openclaw_skill(output, force=force)
+    except FileExistsError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    console.print(f"[forge.primary]OpenClaw skill exported[/forge.primary] to {output}")
+    for path in written:
+        console.print(f"  - {path}")
+
+
+@integrations_app.command("export-openclaw-backend")
+def export_openclaw_backend(
+    output: Path = typer.Option(..., "--output", help="File path for the OpenClaw CLI backend JSON snippet"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing file"),
+):
+    """Export a starter OpenClaw CLI backend config for ForgeGod bridge mode."""
+    try:
+        written = scaffold_openclaw_backend(output, force=force)
+    except FileExistsError as exc:
+        console.print(f"[red]{_safe_console_text(str(exc))}[/red]")
+        raise typer.Exit(1)
+    console.print(f"[forge.primary]OpenClaw backend config exported[/forge.primary] to {written}")
 @app.command()
 def hive(
     prd: Path = typer.Option(

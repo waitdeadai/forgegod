@@ -199,6 +199,35 @@ class HiveState(BaseModel):
     total_iterations: int = 0
 
 
+class BridgeTurn(BaseModel):
+    """One preserved external-chat turn routed into ForgeGod."""
+
+    role: str
+    content: str
+
+
+class BridgeSessionState(BaseModel):
+    """Persisted context for external chat runtimes using ForgeGod as an engine."""
+
+    session_id: str
+    platform: str = "generic"
+    turns: list[BridgeTurn] = Field(default_factory=list)
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class BridgeResponse(BaseModel):
+    """Machine-readable response for Hermes/OpenClaw bridge calls."""
+
+    session_id: str
+    success: bool = False
+    exit_code: int = 1
+    response: str = ""
+    files_modified: list[str] = Field(default_factory=list)
+    verification_commands: list[str] = Field(default_factory=list)
+    review_verdict: str = ""
+    error: str = ""
+
+
 # ── Code Generation ──
 
 

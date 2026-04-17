@@ -49,8 +49,8 @@ This document is the current system of record for day-to-day work in this reposi
 
 ## Revalidation (2026-04-17)
 
-- `python -m pytest --collect-only -q` -> `667 tests collected`
-- `python -m pytest -m "not stress" -q` -> `582 passed, 1 skipped, 84 deselected`
+- `python -m pytest --collect-only -q` -> `672 tests collected`
+- `python -m pytest -m "not stress" -q` -> `587 passed, 1 skipped, 84 deselected`
 - `python -m pytest -m stress -q` -> `84 passed, 583 deselected`
 - `python -m ruff check forgegod tests` -> passes
 - `python -m build` -> passes; builds sdist and wheel

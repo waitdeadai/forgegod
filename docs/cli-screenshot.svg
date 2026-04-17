@@ -26,45 +26,43 @@
   <!-- Command -->
   <text x="20" y="66" fill="#28c840">&#x276F; <tspan fill="#e0e0e0">forgegod init</tspan></text>
 
-  <!-- Aureola -->
-  <text x="250" y="96" fill="#febc2e" text-anchor="middle">___</text>
-  <text x="250" y="114" fill="#febc2e" text-anchor="middle">(   )</text>
-  <text x="250" y="132" fill="#febc2e" text-anchor="middle">---</text>
-
-  <!-- Triangle -->
-  <text x="250" y="150" fill="#00e5ff" text-anchor="middle">.</text>
-  <text x="250" y="168" fill="#00e5ff" text-anchor="middle">/&#xA0;\</text>
-  <text x="250" y="186" text-anchor="middle"><tspan fill="#00e5ff">/&#xA0;</tspan><tspan fill="#fff" font-weight="700">1</tspan><tspan fill="#00e5ff">&#xA0;\</tspan></text>
-  <text x="250" y="204" fill="#00e5ff" text-anchor="middle">/&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;\</text>
-  <text x="250" y="222" fill="#00e5ff" text-anchor="middle">/&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;\</text>
-  <text x="250" y="240" fill="#00e5ff" text-anchor="middle">/_________\</text>
+  <!-- Mascot -->
+  <text x="250" y="88" fill="#febc2e" text-anchor="middle">.</text>
+  <text x="250" y="106" fill="#febc2e" text-anchor="middle">.-==========-.</text>
+  <text x="250" y="124" fill="#febc2e" text-anchor="middle">.-'&#xA0;&#xA0;&#xA0;.-====-.&#xA0;&#xA0;&#xA0;'-. </text>
+  <text x="250" y="142" fill="#febc2e" text-anchor="middle">\________/</text>
+  <text x="250" y="160" fill="#00e5ff" text-anchor="middle">/\</text>
+  <text x="250" y="178" fill="#00e5ff" text-anchor="middle">/&#xA0;/\&#xA0;\</text>
+  <text x="250" y="196" fill="#00e5ff" text-anchor="middle">/&#xA0;/&#xA0;&#xA0;\&#xA0;\</text>
+  <text x="250" y="214" text-anchor="middle"><tspan fill="#00e5ff">/&#xA0;/(_</tspan><tspan fill="#fff" font-weight="700">1</tspan><tspan fill="#00e5ff">_)\&#xA0;\</tspan></text>
+  <text x="250" y="232" fill="#00e5ff" text-anchor="middle">/_/_______\_\</text>
 
   <!-- Branding -->
-  <text x="250" y="270" text-anchor="middle"><tspan fill="#00e5ff" font-weight="700">F O R G E G O D</tspan><tspan fill="#666">&#xA0;&#xA0;v0.1.0</tspan></text>
-  <text x="250" y="288" fill="#666" text-anchor="middle">Autonomous coding engine</text>
+  <text x="250" y="260" text-anchor="middle"><tspan fill="#00e5ff" font-weight="700">F O R G E G O D</tspan><tspan fill="#666">&#xA0;&#xA0;v0.1.0</tspan></text>
+  <text x="250" y="278" fill="#666" text-anchor="middle">Autonomous coding engine</text>
 
   <!-- Init output -->
-  <text x="20" y="318" fill="#e0e0e0" font-weight="700">Initializing project...</text>
+  <text x="20" y="308" fill="#e0e0e0" font-weight="700">Initializing project...</text>
 
-  <text x="20" y="348"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">OpenAI API key detected</tspan></text>
-  <text x="20" y="366"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Anthropic API key detected</tspan></text>
-  <text x="20" y="384"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Ollama running (4 models)</tspan></text>
-  <text x="20" y="402" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;qwen3-coder-next</text>
-  <text x="20" y="420" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;devstral</text>
-  <text x="20" y="438" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;codestral</text>
-  <text x="20" y="456" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;llama3.3</text>
-  <text x="20" y="474"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Detected: python</tspan></text>
-  <text x="20" y="492" fill="#e0e0e0">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;Test runner: pytest</text>
-  <text x="20" y="510"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Git repository</tspan></text>
+  <text x="20" y="338"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">OpenAI API key detected</tspan></text>
+  <text x="20" y="356"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Anthropic API key detected</tspan></text>
+  <text x="20" y="374"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Ollama running (4 models)</tspan></text>
+  <text x="20" y="392" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;qwen3-coder-next</text>
+  <text x="20" y="410" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;devstral</text>
+  <text x="20" y="428" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;codestral</text>
+  <text x="20" y="446" fill="#555">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;llama3.3</text>
+  <text x="20" y="464"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Detected: python</tspan></text>
+  <text x="20" y="482" fill="#e0e0e0">&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;Test runner: pytest</text>
+  <text x="20" y="500"><tspan fill="#28c840">&#xA0;&#xA0;+&#xA0;</tspan><tspan fill="#e0e0e0">Git repository</tspan></text>
 
-  <text x="20" y="540" fill="#28c840" font-weight="700">Initialized at ~/myproject/.forgegod</text>
+  <text x="20" y="530" fill="#28c840" font-weight="700">Initialized at ~/myproject/.forgegod</text>
 
-  <text x="20" y="570" fill="#e0e0e0" font-weight="700">Quick start:</text>
-  <text x="20" y="588" fill="#e0e0e0">&#xA0;&#xA0;forgegod run "Add a /health endpoint with uptime info"</text>
+  <text x="20" y="560" fill="#e0e0e0" font-weight="700">Quick start:</text>
+  <text x="20" y="578" fill="#e0e0e0">&#xA0;&#xA0;forgegod run "Add a /health endpoint with uptime info"</text>
 
-  <text x="20" y="618" fill="#666">Config: .forgegod/config.toml | Memory: .forgegod/memory.db</text>
-  <text x="20" y="636" fill="#666">Running in hybrid mode: Ollama (free) + OpenAI (quality gate)</text>
+  <text x="20" y="608" fill="#666">Config: .forgegod/config.toml | Memory: .forgegod/memory.db</text>
+  <text x="20" y="626" fill="#666">Running in hybrid mode: Ollama (free) + OpenAI (quality gate)</text>
 
   <!-- Cursor -->
-  <text x="20" y="664" fill="#28c840">&#x276F; <tspan fill="#666">&#x2588;</tspan></text>
+  <text x="20" y="654" fill="#28c840">&#x276F; <tspan fill="#666">&#x2588;</tspan></text>
 </svg>

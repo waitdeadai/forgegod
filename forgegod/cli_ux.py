@@ -48,19 +48,33 @@ def safe_console_text(text: str, *, active_console: Console | None = None) -> st
 def build_banner_text(version: str) -> Text:
     """Build the ForgeGod mascot banner with brand colors."""
     text = Text()
-    text.append("        .-~~~~~~~~-.\n", style="forge.secondary")
-    text.append("     .-'            '-.\n", style="forge.secondary")
-    text.append("          /\\\n", style="forge.primary")
-    text.append("         /  \\\n", style="forge.primary")
-    text.append("        /  (", style="forge.primary")
+    text.append("                 .\n", style="forge.secondary")
+    text.append("            .-==========-.\n", style="forge.secondary")
+    text.append("         .-'   .-====-.   '-.\n", style="forge.secondary")
+    text.append("              \\________/\n", style="forge.secondary")
+    text.append("                 /\\\n", style="forge.primary")
+    text.append("                / /\\ \\\n", style="forge.primary")
+    text.append("               / /  \\ \\\n", style="forge.primary")
+    text.append("              / /(_", style="forge.primary")
     text.append("1", style="forge.highlight")
-    text.append(")  \\\n", style="forge.primary")
-    text.append("       /        \\\n", style="forge.primary")
-    text.append("      /__________\\\n", style="forge.primary")
+    text.append("_)\\ \\\n", style="forge.primary")
+    text.append("             /_/_______\\_\\\n", style="forge.primary")
     text.append("\n")
     text.append("   F O R G E G O D", style="forge.primary")
     text.append(f"  v{version}\n", style="forge.muted")
     text.append("   Autonomous coding engine\n", style="forge.muted")
+    return text
+
+
+def build_mini_banner_text(version: str) -> Text:
+    """Build the compact ForgeGod mascot mark for terse CLI surfaces."""
+    text = Text()
+    text.append("( ) ", style="forge.secondary")
+    text.append("/", style="forge.primary")
+    text.append("1", style="forge.highlight")
+    text.append("\\ ", style="forge.primary")
+    text.append("ForgeGod", style="forge.primary")
+    text.append(f" v{version}", style="forge.muted")
     return text
 
 
