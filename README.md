@@ -1,6 +1,6 @@
 <p align="center">
   <a href="README.md"><img src="https://img.shields.io/badge/lang-en-blue.svg" alt="English"></a>
-  <a href="README.es.md"><img src="https://img.shields.io/badge/lang-es-yellow.svg" alt="Español"></a>
+  <a href="README.es.md"><img src="https://img.shields.io/badge/lang-es-yellow.svg" alt="Spanish"></a>
 </p>
 
 <p align="center">
@@ -58,17 +58,17 @@ Every other coding CLI uses **one model at a time** and **resets to zero** each 
 
 ### The Moat: Harness > Model
 
-Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) — harness engineering matters as much as the model. ForgeGod is the harness:
+Scaffolding adds [~11 points on SWE-bench](https://arxiv.org/abs/2410.06992) - harness engineering matters as much as the model. ForgeGod is the harness:
 
-- **Ralph Loop** — 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
-- **5-Tier Memory** — Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
-- **Reflexion Coder** — 3-attempt code gen with escalating models: local (free) → cloud (cheap) → frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
-- **DESIGN.md Native** — Import a design preset, drop `DESIGN.md` in repo root, and frontend tasks inherit that design language automatically.
-- **Natural-Language CLI** — ForgeGod now explains what it is doing in plain language while it works, and the CLI surfaces share the same branded cyan/white/yellow UX instead of raw transport noise.
-- **Subagents + Hive** — Use bounded read-only `--subagents` analysis inside one task, or spread independent stories across the local `forgegod hive` coordinator with isolated git worktrees.
-- **Contribution Mode** — Read `CONTRIBUTING.md`, inspect the repo, surface approachable issues, and plan or execute contribution-sized changes with repo-specific guardrails.
-- **SICA** — Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
-- **Budget Modes** — `normal` → `throttle` → `local-only` → `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
+- **Ralph Loop** - 24/7 coding from a PRD. Progress lives in git, not LLM context. Fresh agent per story. No context rot.
+- **5-Tier Memory** - Episodic (what happened) + Semantic (what I know) + Procedural (how I do things) + Graph (how things connect) + Error-Solutions (what fixes what). Memories decay, consolidate, and reinforce automatically.
+- **Reflexion Coder** - 3-attempt code gen with escalating models: local (free) -> cloud (cheap) -> frontier (when it matters). The repo now wires workspace scoping, command auditing, blocked paths, and generated-code warnings into runtime, while the audit tracks the remaining hardening gaps.
+- **DESIGN.md Native** - Import a design preset, drop `DESIGN.md` in repo root, and frontend tasks inherit that design language automatically.
+- **Natural-Language CLI** - ForgeGod now explains what it is doing in plain language while it works, and the CLI surfaces share the same branded cyan/white/yellow UX instead of raw transport noise.
+- **Subagents + Hive** - Use bounded read-only `--subagents` analysis inside one task, or spread independent stories across the local `forgegod hive` coordinator with isolated git worktrees.
+- **Contribution Mode** - Read `CONTRIBUTING.md`, inspect the repo, surface approachable issues, and plan or execute contribution-sized changes with repo-specific guardrails.
+- **SICA** - Self-Improving Coding Agent. Modifies its own prompts, model routing, and strategy based on outcomes. Safety guardrails and audit policy keep that loop honest.
+- **Budget Modes** - `normal` -> `throttle` -> `local-only` -> `halt`. Auto-triggered by spend. Run forever on Ollama for $0.
 
 ## Getting Started (No Coding Required)
 
@@ -164,7 +164,7 @@ automation. The same root entrypoint also accepts session overrides such as
 
 ### Something not working?
 
-Run `forgegod doctor` — it checks your setup and tells you exactly what to fix.
+Run `forgegod doctor` - it checks your setup and tells you exactly what to fix.
 
 If you want the real `strict` sandbox, read
 [docs/STRICT_SANDBOX_SETUP.md](docs/STRICT_SANDBOX_SETUP.md).
@@ -210,7 +210,7 @@ forgegod evals --matrix openai-surfaces
 forgegod evals --matrix openai-live
 forgegod evals --matrix openai-live-compare
 
-# Plan a project → generates PRD
+# Plan a project -> generates PRD
 forgegod plan "Build a REST API for a todo app with auth, CRUD, and tests"
 
 # 24/7 autonomous loop from PRD
@@ -222,7 +222,7 @@ forgegod loop --prd .forgegod/prd.json
 forgegod hive --prd .forgegod/prd.json --workers 2
 forgegod hive --prd .forgegod/prd.json --workers 2 --subagents
 
-# Caveman mode — 50-75% token savings with ultra-terse prompts
+# Caveman mode - 50-75% token savings with ultra-terse prompts
 forgegod --terse
 
 # Check what it learned
@@ -272,31 +272,32 @@ detected auth surfaces.
 ## How the Ralph Loop Works
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  RALPH LOOP                      │
-│                                                  │
-│  ┌──────┐   ┌───────┐   ┌─────────┐   ┌─────┐ │
-│  │ READ │──▶│ SPAWN │──▶│ EXECUTE │──▶│ VAL │ │
-│  │ PRD  │   │ AGENT │   │  STORY  │   │IDATE│ │
-│  └──────┘   └───────┘   └─────────┘   └──┬──┘ │
-│      ▲                                    │     │
-│      │         ┌────────┐    ┌────────┐   │     │
-│      └─────────│ROTATE  │◀───│COMMIT  │◀──┘     │
-│                │CONTEXT │    │OR RETRY│   pass   │
-│                └────────┘    └────────┘          │
-│                                                  │
-│  Progress is in GIT, not LLM context.           │
-│  Fresh agent per story. No context rot.          │
-│  Create .forgegod/KILLSWITCH to stop.           │
-└─────────────────────────────────────────────────┘
++-------------------------------------------------+
+|                  RALPH LOOP                     |
+|                                                 |
+|  [READ PRD] -> [SPAWN AGENT] -> [EXECUTE STORY] |
+|                                   |             |
+|                                   v             |
+|                         [VALIDATE / REVIEW]     |
+|                                   |             |
+|                        pass ------+------ retry |
+|                                   |             |
+|                              [COMMIT]           |
+|                                   |             |
+|                              [ROTATE] ----------+
+|                                                 |
+|  Progress is in GIT, not LLM context.           |
+|  Fresh agent per story. No context rot.         |
+|  Create .forgegod/KILLSWITCH to stop.           |
++-------------------------------------------------+
 ```
 
-1. **Read PRD** — Pick highest-priority TODO story
-2. **Spawn agent** — Fresh context (progress is in git, not memory)
-3. **Execute** — Agent uses 23 tools to implement the story
-4. **Validate** — Tests, lint, syntax, frontier review
-5. **Finalize or retry** — Pass: review diff + mark done. Fail: retry up to 3x with model escalation
-6. **Rotate** — Next story. Context is always fresh.
+1. **Read PRD** - Pick highest-priority TODO story
+2. **Spawn agent** - Fresh context (progress is in git, not memory)
+3. **Execute** - Agent uses 23 tools to implement the story
+4. **Validate** - Tests, lint, syntax, frontier review
+5. **Finalize or retry** - Pass: review diff + mark done. Fail: retry up to 3x with model escalation
+6. **Rotate** - Next story. Context is always fresh.
 
 ## 5-Tier Memory System
 
@@ -308,9 +309,9 @@ ForgeGod has one of the deepest memory systems in an open-source coding agent:
 | **Semantic** | Extracted principles | Confidence + decay + reinforcement | Indefinite |
 | **Procedural** | Code patterns & fix recipes | Success rate tracking | Indefinite |
 | **Graph** | Entity relationships + causal edges | Auto-extracted from outcomes | Indefinite |
-| **Error-Solution** | Error pattern → fix mapping | Fuzzy match lookup | Indefinite |
+| **Error-Solution** | Error pattern -> fix mapping | Fuzzy match lookup | Indefinite |
 
-Memories **decay** with category-specific half-life (14d debugging → 90d architecture), **consolidate** via O(n*k) category-bucketed comparison, and are **recalled** via FTS5 + Jaccard hybrid retrieval (Reciprocal Rank Fusion). SQLite WAL mode for concurrent access.
+Memories **decay** with category-specific half-life (14d debugging -> 90d architecture), **consolidate** via O(n*k) category-bucketed comparison, and are **recalled** via FTS5 + Jaccard hybrid retrieval (Reciprocal Rank Fusion). SQLite WAL mode for concurrent access.
 
 ```bash
 # Check memory health
@@ -341,9 +342,9 @@ export FORGEGOD_BUDGET_MODE=local-only
 
 Ultra-terse prompts that reduce token usage 50-75% with no accuracy loss for coding tasks. Backed by 2026 research:
 
-- [Mini-SWE-Agent](https://github.com/SWE-agent/mini-swe-agent) — 100 lines, >74% SWE-bench Verified
-- [Chain of Draft](https://arxiv.org/abs/2502.18600) — 7.6% tokens, same accuracy
-- [CCoT](https://arxiv.org/abs/2401.05618) — 48.7% shorter, negligible impact
+- [Mini-SWE-Agent](https://github.com/SWE-agent/mini-swe-agent) - 100 lines, >74% SWE-bench Verified
+- [Chain of Draft](https://arxiv.org/abs/2502.18600) - 7.6% tokens, same accuracy
+- [CCoT](https://arxiv.org/abs/2401.05618) - 48.7% shorter, negligible impact
 
 ```bash
 # Add --terse to any command
@@ -358,7 +359,7 @@ forgegod plan --terse "Refactor auth module"
 # enabled = true
 ```
 
-Caveman mode compresses system prompts (~200 → ~80 tokens), tool descriptions (3-8 words each), and tool output (tracebacks → last frame only). JSON schemas for planner/reviewer stay byte-identical.
+Caveman mode compresses system prompts (~200 -> ~80 tokens), tool descriptions (3-8 words each), and tool output (tracebacks -> last frame only). JSON schemas for planner/reviewer stay byte-identical.
 
 ## Configuration
 
@@ -461,57 +462,57 @@ Run your own: `forgegod benchmark`
 
 ```
 forgegod/
-├── cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status, benchmark, doctor)
-├── config.py       # TOML config + env vars + 3-level priority
-├── router.py       # Multi-provider LLM router + persistent pool + cascade routing + half-open circuit breaker
-├── agent.py        # Core agent loop (tools + context compression + sub-agents)
-├── coder.py        # Reflexion code generation (3 attempts, model escalation, GOAP)
-├── loop.py         # Ralph loop (24/7 autonomous coding, parallel workers, story timeout)
-├── planner.py      # Task decomposition → PRD
-├── reviewer.py     # Frontier model quality gate (sample-based)
-├── sica.py         # Self-improving strategy modification (guardrails + audit policy)
-├── memory.py       # 5-tier cognitive memory (FTS5 + RRF hybrid retrieval, WAL mode)
-├── budget.py       # SQLite cost + token tracking, forecasting, auto budget modes
-├── worktree.py     # Parallel git worktree workers
-├── tui.py          # Rich terminal dashboard
-├── terse.py        # Caveman mode — terse prompts, tool compression, savings tracker
-���── benchmark.py    # Model benchmarking engine (12 tasks, 4 tiers, composite scoring)
-├── onboarding.py   # Interactive setup wizard for new users
-├── doctor.py       # Installation health check (6 diagnostic checks)
-├── i18n.py         # Translation strings (English + Spanish es-419)
-├── models.py       # Pydantic v2 data models
-└── tools/
-    ├── filesystem.py  # async read/write (aiofiles), atomic writes, fuzzy edit, glob, grep, repo_map
-    ├── shell.py       # bash (isolated runtime env + strict command policy + secret redaction)
-    ├── git.py         # git status, diff, commit, worktrees
-    ├── mcp.py         # MCP server client (5,800+ servers)
-    └── skills.py      # On-demand skill loading
+|-- cli.py          # Typer CLI (init, run, loop, plan, review, cost, memory, status, benchmark, doctor)
+|-- config.py       # TOML config + env vars + 3-level priority
+|-- router.py       # Multi-provider LLM router + persistent pool + cascade routing + half-open circuit breaker
+|-- agent.py        # Core agent loop (tools + context compression + sub-agents)
+|-- coder.py        # Reflexion code generation (3 attempts, model escalation, GOAP)
+|-- loop.py         # Ralph loop (24/7 autonomous coding, parallel workers, story timeout)
+|-- planner.py      # Task decomposition -> PRD
+|-- reviewer.py     # Frontier model quality gate (sample-based)
+|-- sica.py         # Self-improving strategy modification (guardrails + audit policy)
+|-- memory.py       # 5-tier cognitive memory (FTS5 + RRF hybrid retrieval, WAL mode)
+|-- budget.py       # SQLite cost + token tracking, forecasting, auto budget modes
+|-- worktree.py     # Parallel git worktree workers
+|-- tui.py          # Rich terminal dashboard
+|-- terse.py        # Caveman mode - terse prompts, tool compression, savings tracker
+|-- benchmark.py    # Model benchmarking engine (12 tasks, 4 tiers, composite scoring)
+|-- onboarding.py   # Interactive setup wizard for new users
+|-- doctor.py       # Installation health check (6 diagnostic checks)
+|-- i18n.py         # Translation strings (English + Spanish es-419)
+|-- models.py       # Pydantic v2 data models
+`-- tools/
+    |-- filesystem.py  # async read/write (aiofiles), atomic writes, fuzzy edit, glob, grep, repo_map
+    |-- shell.py       # bash (isolated runtime env + strict command policy + secret redaction)
+    |-- git.py         # git status, diff, commit, worktrees
+    |-- mcp.py         # MCP server client (5,800+ servers)
+    `-- skills.py      # On-demand skill loading
 ```
 
 ## Security
 
 Defense-in-depth, not security theater:
 
-- **Real strict sandbox** — `strict` runs inside Docker with no network, read-only rootfs, dropped caps, and workspace-only mounts
-- **Standard shell policy** — `standard` keeps the local guardrails: isolated runtime dirs, blocked shell operators, and workspace scoping
-- **Secret redaction** — 11 patterns strip API keys from tool output before LLM context
-- **Prompt injection detection** — 8 patterns scan for jailbreak/role-override attempts
-- **AST code validation** — Detects obfuscated dangerous calls (`getattr(os, 'system')`) that regex misses, and blocks suspicious writes in `strict` mode
-- **Workspace-scoped file ops** — file and shell tools reject paths that escape the active workspace root
-- **Supply chain defense** — Flags known-abandoned/typosquat packages (python-jose, jeIlyfish, etc.)
-- **Canary token system** — Detects if system prompt leaks into tool arguments, with per-session rotation
-- **Budget limits** — Cost controls with token tracking + burn-rate forecasting
-- **Killswitch** — Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
-- **Sensitive file protection** — `.env`, credentials files get warnings + automatic redaction
+- **Real strict sandbox** - `strict` runs inside Docker with no network, read-only rootfs, dropped caps, and workspace-only mounts
+- **Standard shell policy** - `standard` keeps the local guardrails: isolated runtime dirs, blocked shell operators, and workspace scoping
+- **Secret redaction** - 11 patterns strip API keys from tool output before LLM context
+- **Prompt injection detection** - 8 patterns scan for jailbreak/role-override attempts
+- **AST code validation** - Detects obfuscated dangerous calls (`getattr(os, 'system')`) that regex misses, and blocks suspicious writes in `strict` mode
+- **Workspace-scoped file ops** - file and shell tools reject paths that escape the active workspace root
+- **Supply chain defense** - Flags known-abandoned/typosquat packages (python-jose, jeIlyfish, etc.)
+- **Canary token system** - Detects if system prompt leaks into tool arguments, with per-session rotation
+- **Budget limits** - Cost controls with token tracking + burn-rate forecasting
+- **Killswitch** - Create `.forgegod/KILLSWITCH` to immediately halt autonomous loops
+- **Sensitive file protection** - `.env`, credentials files get warnings + automatic redaction
 
 > **Warning**: ForgeGod executes shell commands and modifies files. As of the verified 2026-04-08 baseline, `strict` uses a real Docker sandbox backend and blocks if Docker/image prerequisites are missing, while `standard` remains a host-local guarded workflow. Use `forgegod doctor` and [docs/STRICT_SANDBOX_SETUP.md](docs/STRICT_SANDBOX_SETUP.md) instead of weakening the sandbox just to get past setup friction.
 
 ## Operational Docs
 
-- [AGENTS.md](AGENTS.md) — repo-local instructions for coding agents
-- [docs/OPERATIONS.md](docs/OPERATIONS.md) — current system of record and verified commands
-- [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) — detailed code audit and remediation order
-- [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) — external guidance used to shape the repo docs
+- [AGENTS.md](AGENTS.md) - repo-local instructions for coding agents
+- [docs/OPERATIONS.md](docs/OPERATIONS.md) - current system of record and verified commands
+- [docs/AUDIT_2026-04-07.md](docs/AUDIT_2026-04-07.md) - detailed code audit and remediation order
+- [docs/WEB_RESEARCH_2026-04-07.md](docs/WEB_RESEARCH_2026-04-07.md) - external guidance used to shape the repo docs
 
 See [SECURITY.md](SECURITY.md) for the full policy and vulnerability reporting.
 
@@ -533,10 +534,11 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the current contributor list.
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0 - see [LICENSE](LICENSE).
 
 ---
 
 <p align="center">
   Built by <a href="https://waitdead.com">WAITDEAD</a> &bull; Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a> &bull; Powered by techniques from OpenClaw, Hermes, and SOTA 2026 coding agent research.
 </p>
+
