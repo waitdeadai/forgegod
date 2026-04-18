@@ -1056,7 +1056,7 @@ def auth_status():
             else "[yellow]not ready[/yellow]"
         ),
         (
-            "MINIMAX_API_KEY"
+            "MINIMAX_API_KEY (run `forgegod auth verify minimax` for a live probe)"
             if os.environ.get("MINIMAX_API_KEY")
             else "Set MINIMAX_API_KEY from platform.minimax.io"
         ),
@@ -1118,6 +1118,11 @@ def auth_sync(
         "--openai-surface",
         help="OpenAI surface: auto, api-only, codex-only, api+codex",
     ),
+    minimax_region: str = typer.Option(
+        "auto",
+        "--minimax-region",
+        help="MiniMax endpoint preset: auto, cn, global",
+    ),
 ):
     """Rewrite model defaults based on detected native auth surfaces."""
     import toml
@@ -1144,6 +1149,8 @@ def auth_sync(
     data.setdefault("harness", {})["profile"] = profile
     data["harness"]["preferred_provider"] = prefer_provider
     data["harness"]["openai_surface"] = openai_surface
+    data.setdefault("minimax", {})["region"] = minimax_region
+    data["minimax"]["base_url"] = "auto"
     budget = data.setdefault("budget", {})
     if providers and not ollama_available:
         if budget.get("mode") in {"local-only", "halt"}:
@@ -1168,6 +1175,7 @@ def auth_sync(
     console.print(f"[dim]Provider preference:[/dim] {prefer_provider}")
     console.print(f"[dim]Requested OpenAI surface:[/dim] {openai_surface_label(openai_surface)}")
     console.print(f"[dim]Effective OpenAI surface:[/dim] {openai_surface_label(effective_surface)}")
+    console.print(f"[dim]MiniMax region preset:[/dim] {minimax_region}")
     if providers and not ollama_available:
         console.print(
             "[dim]Budget sync:[/dim] cloud-ready config ensured "
@@ -1224,6 +1232,11 @@ def auth_explain(
         "--openai-surface",
         help="OpenAI surface: auto, api-only, codex-only, api+codex",
     ),
+    minimax_region: str = typer.Option(
+        "auto",
+        "--minimax-region",
+        help="MiniMax endpoint preset: auto, cn, global",
+    ),
 ):
     """Explain how ForgeGod will map roles from the currently available auth surfaces."""
     from forgegod.config import openai_surface_label, resolve_openai_surface
@@ -1249,6 +1262,7 @@ def auth_explain(
     summary.add_row("Provider preference", prefer_provider)
     summary.add_row("Requested OpenAI surface", openai_surface_label(openai_surface))
     summary.add_row("Effective OpenAI surface", openai_surface_label(effective_surface))
+    summary.add_row("MiniMax region preset", minimax_region)
     summary.add_row("Detected providers", ", ".join(providers) if providers else "none")
     summary.add_row("Ollama ready", "yes" if ollama_available else "no")
     console.print(summary)
@@ -1266,16 +1280,46 @@ def auth_explain(
             f"requested {openai_surface_label(openai_surface)}, "
             f"but ForgeGod only detected {openai_surface_label(effective_surface)} today."
         )
-    if (
-        openai_surface == "auto"
-        and "openai-codex" in providers
-        and "openai" not in providers
-    ):
-        console.print(
-            "[yellow]Note:[/yellow] Only Codex subscription was detected. "
-            "ForgeGod will default to codex-only for OpenAI roles. "
-            "Use --openai-surface codex-only to make that explicit."
-        )
+
+
+@auth_app.command("verify")
+def auth_verify(
+    provider: str = typer.Argument(..., help="Provider to probe live, e.g. minimax"),
+    path: Path = typer.Option(Path("."), "--path", "-p", help="Project root"),
+    region: str = typer.Option(
+        "auto",
+        "--region",
+        help="MiniMax endpoint preset: auto, cn, global",
+    ),
+    model: str = typer.Option(
+        "MiniMax-M2.7-highspeed",
+        "--model",
+        help="Model name to probe live",
+    ),
+):
+    """Run a cheap live auth probe for a provider surface."""
+    from forgegod.config import load_config
+    from forgegod.doctor import verify_minimax_live
+
+    if provider != "minimax":
+        raise typer.BadParameter("Only `minimax` live verification is wired today.")
+
+    root = Path(path).resolve()
+    _ensure_project_bootstrap(root, announce=False)
+    config = load_config(root)
+    if region != "auto":
+        config.minimax.region = region
+        config.minimax.base_url = "auto"
+
+    console.print(
+        f"[dim]Live MiniMax probe:[/dim] model={model} region={region}"
+    )
+    ok, detail = asyncio.run(verify_minimax_live(config, region=region, model=model))
+    if ok:
+        console.print(f"[green]MiniMax live verification passed[/green] {detail}")
+        raise typer.Exit(0)
+    console.print(f"[red]MiniMax live verification failed[/red] {detail}")
+    raise typer.Exit(1)
 
 
 @audit_app.command("status")

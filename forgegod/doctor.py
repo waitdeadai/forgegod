@@ -10,6 +10,7 @@ from pathlib import Path
 from rich.table import Table
 
 from forgegod.cli_ux import console
+from forgegod.config import ForgeGodConfig, minimax_base_urls
 from forgegod.i18n import t
 from forgegod.sandbox import diagnose_strict_sandbox
 
@@ -22,6 +23,45 @@ class HealthCheck:
         self.passed = passed
         self.detail = detail
         self.fix = fix
+
+
+async def verify_minimax_live(
+    config: ForgeGodConfig,
+    *,
+    region: str = "auto",
+    model: str = "MiniMax-M2.7-highspeed",
+) -> tuple[bool, str]:
+    """Run a cheap live MiniMax probe against the configured region preset."""
+    import openai
+
+    api_key = os.environ.get("MINIMAX_API_KEY", "")
+    if not api_key:
+        return False, "MINIMAX_API_KEY is not set"
+
+    minimax_cfg = config.minimax.model_copy(deep=True)
+    if region != "auto":
+        minimax_cfg.region = region
+        minimax_cfg.base_url = "auto"
+
+    errors: list[str] = []
+    for base_url in minimax_base_urls(minimax_cfg):
+        client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=minimax_cfg.timeout,
+        )
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "Reply with exactly OK"}],
+                max_tokens=8,
+                temperature=0,
+            )
+            text = (response.choices[0].message.content or "").strip()
+            return True, f"{model} OK via {base_url} -> {text[:32] or '(empty response)'}"
+        except Exception as exc:
+            errors.append(f"{base_url}: {exc}")
+    return False, " | ".join(errors)
 
 
 def run_doctor(project_path: Path | None = None) -> list[HealthCheck]:

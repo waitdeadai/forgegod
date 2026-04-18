@@ -6,12 +6,15 @@ from pathlib import Path
 import toml
 
 from forgegod.config import (
+    MINIMAX_CN_BASE_URL,
+    MINIMAX_GLOBAL_BASE_URL,
     ForgeGodConfig,
     _coerce,
     _deep_merge,
     _env_overrides,
     init_project,
     load_config,
+    minimax_base_urls,
     openai_surface_label,
     recommend_model_defaults,
     resolve_openai_surface,
@@ -41,10 +44,38 @@ def test_default_config():
     assert config.openai.parallel_tool_calls is True
     assert config.zai.use_coding_plan is True
     assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
-    assert config.minimax.base_url == "https://api.minimaxi.com/v1"
+    assert config.minimax.base_url == "auto"
+    assert config.minimax.region == "auto"
     assert config.audit.enabled is True
     assert config.audit.command == "auto"
     assert config.audit.auto_run_on_loop is True
+
+
+def test_minimax_base_urls_auto_prefers_cn_then_global():
+    config = ForgeGodConfig()
+    assert minimax_base_urls(config.minimax) == [
+        MINIMAX_CN_BASE_URL,
+        MINIMAX_GLOBAL_BASE_URL,
+    ]
+
+
+def test_minimax_base_urls_region_cn():
+    config = ForgeGodConfig()
+    config.minimax.region = "cn"
+    assert minimax_base_urls(config.minimax) == [MINIMAX_CN_BASE_URL]
+
+
+def test_minimax_base_urls_region_global():
+    config = ForgeGodConfig()
+    config.minimax.region = "global"
+    assert minimax_base_urls(config.minimax) == [MINIMAX_GLOBAL_BASE_URL]
+
+
+def test_minimax_base_urls_explicit_base_url_wins():
+    config = ForgeGodConfig()
+    config.minimax.region = "global"
+    config.minimax.base_url = "https://custom.minimax.test/v1/"
+    assert minimax_base_urls(config.minimax) == ["https://custom.minimax.test/v1"]
 
 
 def test_deep_merge():

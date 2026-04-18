@@ -14,7 +14,7 @@ from typing import Any
 
 import httpx
 
-from forgegod.config import MODEL_COSTS, ForgeGodConfig
+from forgegod.config import MODEL_COSTS, ForgeGodConfig, minimax_base_urls
 from forgegod.models import BudgetMode, ModelSpec, ModelUsage
 from forgegod.native_auth import (
     codex_automation_status,
@@ -1263,51 +1263,72 @@ class ModelRouter:
         if tools:
             kwargs["tools"] = tools
 
-        client = openai.AsyncOpenAI(
-            api_key=api_key,
-            base_url=self.config.minimax.base_url,
-            timeout=self.config.minimax.timeout,
-        )
-        # Boundary 1 — what goes IN to the LLM
-        self.wire_logger.debug(
-            ">> SENT [%s] | %d msgs | msgs=%r",
-            model,
-            len(messages),
-            messages,
-        )
-        resp = await client.chat.completions.create(**kwargs)
-        # Boundary 2 — what comes OUT of the LLM
-        msg = resp.choices[0].message
-        raw_dump = (
-            msg.model_dump()
-            if hasattr(msg, "model_dump")
-            else {"content": msg.content or "", "role": getattr(msg, "role", None)}
-        )
-        self.wire_logger.debug(
-            "<< RECV [%s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
-            model,
-            getattr(resp.choices[0], 'finish_reason', None),
-            bool(msg.tool_calls),
-            len(msg.content or ""),
-            raw_dump,
-        )
+        candidate_urls = minimax_base_urls(self.config.minimax)
+        errors: list[str] = []
 
-        choice = resp.choices[0]
-        if choice.message.tool_calls:
-            tool_calls_json = [{
-                "id": tc.id,
-                "name": tc.function.name,
-                "arguments": tc.function.arguments,
-            } for tc in choice.message.tool_calls]
-            content = json.dumps({"tool_calls": tool_calls_json})
-        else:
-            content = choice.message.content or ""
+        for index, base_url in enumerate(candidate_urls):
+            client = openai.AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=self.config.minimax.timeout,
+            )
+            try:
+                # Boundary 1 — what goes IN to the LLM
+                self.wire_logger.debug(
+                    ">> SENT [%s @ %s] | %d msgs | msgs=%r",
+                    model,
+                    base_url,
+                    len(messages),
+                    messages,
+                )
+                resp = await client.chat.completions.create(**kwargs)
+                # Boundary 2 — what comes OUT of the LLM
+                msg = resp.choices[0].message
+                raw_dump = (
+                    msg.model_dump()
+                    if hasattr(msg, "model_dump")
+                    else {"content": msg.content or "", "role": getattr(msg, "role", None)}
+                )
+                self.wire_logger.debug(
+                    "<< RECV [%s @ %s] | finish=%s | has_tc=%s | content_len=%d | raw=%r",
+                    model,
+                    base_url,
+                    getattr(resp.choices[0], 'finish_reason', None),
+                    bool(msg.tool_calls),
+                    len(msg.content or ""),
+                    raw_dump,
+                )
 
-        usage_data = {
-            "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
-            "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
-        }
-        return content, usage_data
+                choice = resp.choices[0]
+                if choice.message.tool_calls:
+                    tool_calls_json = [{
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    } for tc in choice.message.tool_calls]
+                    content = json.dumps({"tool_calls": tool_calls_json})
+                else:
+                    content = choice.message.content or ""
+
+                usage_data = {
+                    "input_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+                    "output_tokens": resp.usage.completion_tokens if resp.usage else 0,
+                    "minimax_base_url": base_url,
+                }
+                return content, usage_data
+            except Exception as exc:
+                errors.append(f"{base_url}: {exc}")
+                if index < len(candidate_urls) - 1:
+                    logger.warning(
+                        "MiniMax endpoint %s failed: %s; trying next endpoint",
+                        base_url,
+                        exc,
+                    )
+                    continue
+                joined = " | ".join(errors)
+                raise RuntimeError(joined) from exc
+
+        raise RuntimeError("MiniMax routing exhausted all configured endpoints without a response")
 
     # ── Helpers ──
 

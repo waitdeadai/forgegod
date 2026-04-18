@@ -149,6 +149,40 @@ def test_auth_sync_rewrites_models_and_normalizes_budget(tmp_path, monkeypatch, 
     assert "Effective OpenAI surface:" in visible
 
 
+def test_auth_sync_persists_minimax_region_preset(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="minimax:MiniMax-M2.7-highspeed",
+        coder="minimax:MiniMax-M2.7-highspeed",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai-codex:gpt-5.4",
+        escalation="openai-codex:gpt-5.4",
+        researcher="openai-codex:gpt-5.4",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["minimax:MiniMax-M2.7-highspeed", "openai-codex:gpt-5.4"],
+            ["minimax", "openai-codex"],
+            False,
+            recommended,
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "sync", "--path", str(tmp_path), "--minimax-region", "global"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    updated = toml.loads(
+        (tmp_path / ".forgegod" / "config.toml").read_text(encoding="utf-8")
+    )
+    assert updated["minimax"]["region"] == "global"
+    assert updated["minimax"]["base_url"] == "auto"
+    assert "MiniMax region preset:" in printed.getvalue()
+
+
 def test_auth_sync_shows_codex_coder_production_note(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="openai-codex:gpt-5.4",
@@ -404,6 +438,41 @@ def test_auth_explain_shows_effective_surface(tmp_path, monkeypatch, printed):
     assert "openai-codex:gpt-5.4" in visible
 
 
+def test_auth_explain_shows_minimax_region_preset(tmp_path, monkeypatch, printed):
+    recommended = ModelsConfig(
+        planner="minimax:MiniMax-M2.7-highspeed",
+        coder="minimax:MiniMax-M2.7-highspeed",
+        reviewer="openai-codex:gpt-5.4",
+        sentinel="openai-codex:gpt-5.4",
+        escalation="openai-codex:gpt-5.4",
+        researcher="openai-codex:gpt-5.4",
+    )
+
+    monkeypatch.setattr(
+        "forgegod.cli._detect_runtime_model_defaults",
+        lambda *_args, **_kwargs: (
+            ["minimax:MiniMax-M2.7-highspeed", "openai-codex:gpt-5.4"],
+            ["minimax", "openai-codex"],
+            False,
+            recommended,
+        ),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (True, "Supported"),
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "explain", "--path", str(tmp_path), "--minimax-region", "global"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    visible = printed.getvalue()
+    assert "MiniMax region preset" in visible
+    assert "global" in visible
+
+
 def test_auth_explain_downgrades_when_codex_is_not_supported(tmp_path, monkeypatch, printed):
     recommended = ModelsConfig(
         planner="zai:glm-5.1",
@@ -474,3 +543,45 @@ def test_init_quick_writes_openai_surface(tmp_path, monkeypatch, printed):
     assert data["harness"]["openai_surface"] == "api+codex"
     assert data["models"]["reviewer"] == "openai-codex:gpt-5.4"
     assert data["models"]["planner"] == "openai:gpt-5.4"
+
+
+def test_auth_verify_minimax_success(tmp_path, monkeypatch, printed):
+    async def fake_verify(*_args, **_kwargs):
+        return True, "MiniMax-M2.7-highspeed OK via https://api.minimax.io/v1 -> OK"
+
+    monkeypatch.setattr(
+        "forgegod.doctor.verify_minimax_live",
+        fake_verify,
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "verify", "minimax", "--path", str(tmp_path), "--region", "global"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    visible = printed.getvalue()
+    assert "Live MiniMax probe:" in visible
+    assert "region=global" in visible
+    assert "MiniMax live verification passed" in visible
+
+
+def test_auth_verify_minimax_failure(tmp_path, monkeypatch, printed):
+    async def fake_verify(*_args, **_kwargs):
+        return False, "https://api.minimaxi.com/v1: 401 invalid api key (2049)"
+
+    monkeypatch.setattr(
+        "forgegod.doctor.verify_minimax_live",
+        fake_verify,
+    )
+
+    result = runner.invoke(
+        app,
+        ["auth", "verify", "minimax", "--path", str(tmp_path), "--region", "cn"],
+    )
+
+    assert result.exit_code == 1, result.stdout
+    visible = printed.getvalue()
+    assert "Live MiniMax probe:" in visible
+    assert "region=cn" in visible
+    assert "MiniMax live verification failed" in visible

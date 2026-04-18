@@ -84,7 +84,7 @@ This document is the current system of record for day-to-day work in this reposi
   surface over `forgegod run`.
 - `forgegod init` onboarding now detects linked providers up front, recommends a setup path, explains repo-local secret storage, and keeps model connection guidance inside ForgeGod CLI instead of pushing users straight into manual shell editing.
 - OpenAI Codex subscription routing is now a first-class route surface. It is verified for planner/reviewer/adversary workflows, and `forgegod auth sync` writes auth-aware model defaults so those flows work without manual config edits.
-- MiniMax OpenAI-compatible routing now defaults to the official current endpoint `https://api.minimaxi.com/v1`. This was re-verified on `2026-04-18` against MiniMax's OpenAI-compatible and Token Plan quickstart docs after a live `401 invalid api key` failure exposed the old `api.minimax.io` endpoint drift in the harness.
+- MiniMax routing now supports explicit `cn` / `global` endpoint presets plus an `auto` fallback chain. `auto` tries `https://api.minimaxi.com/v1` first and then `https://api.minimax.io/v1`, which matches MiniMax's current CN/Global documentation split as re-verified on `2026-04-18`.
 - Z.AI's Coding Plan path is also first-class through `ZAI_CODING_API_KEY`, and `forgegod init` / onboarding / `forgegod auth sync` can wire it into role defaults automatically.
 - `forgegod init`, onboarding, and `forgegod auth sync` now also expose a harness profile choice: `adversarial` is the recommended split-model setup, while `single-model` intentionally pins every role to one detected model for users who prefer a simpler loop.
 - Those same setup flows now expose `preferred_provider = "openai"` as an explicit bias. In adversarial mode, ForgeGod can now prefer `openai:gpt-5.4` / `openai:gpt-5.4-mini` for API-backed roles while still using `openai-codex:gpt-5.4` as the reviewer when the ChatGPT/Codex subscription surface is linked.
@@ -143,6 +143,9 @@ This document is the current system of record for day-to-day work in this reposi
 - ForgeGod now has deterministic CLI coverage for auth-aware provider selection
   in `forgegod auth sync`, including cloud-budget normalization and clear
   production notes for supported Codex-only vs API+Codex routing.
+- ForgeGod now exposes `forgegod auth verify minimax`, a cheap live probe for
+  the MiniMax auth surface. This avoids conflating "key present in env" with
+  "provider reachable with the current region/endpoint preset".
 - ForgeGod now has a first-class deterministic harness eval surface:
   `forgegod evals`. It sits above unit tests and parity harnesses, saves
   per-case trace artifacts, and grades real CLI behavior for chat UX, terse

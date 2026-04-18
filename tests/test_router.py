@@ -619,6 +619,57 @@ class TestOpenAICompatConfig:
         assert captured["kwargs"]["parallel_tool_calls"] is True
         assert "tools" in captured["kwargs"]
 
+    @pytest.mark.asyncio
+    async def test_minimax_auto_region_falls_back_to_global_endpoint(self, monkeypatch):
+        captured_urls: list[str] = []
+
+        class FakeCompletions:
+            def __init__(self, base_url: str):
+                self.base_url = base_url
+
+            async def create(self, **kwargs):
+                if self.base_url == "https://api.minimaxi.com/v1":
+                    raise RuntimeError("401 invalid api key (2049)")
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="minimax ok", tool_calls=[]),
+                        )
+                    ],
+                    usage=SimpleNamespace(prompt_tokens=9, completion_tokens=4),
+                )
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                base_url = kwargs["base_url"]
+                captured_urls.append(base_url)
+                self.chat = SimpleNamespace(completions=FakeCompletions(base_url))
+
+        monkeypatch.setenv("MINIMAX_API_KEY", "sk-minimax")
+        monkeypatch.setattr("openai.AsyncOpenAI", FakeClient)
+
+        config = ForgeGodConfig()
+        config.minimax.region = "auto"
+        config.minimax.base_url = "auto"
+        router = ModelRouter(config)
+
+        text, usage = await router._call_minimax(
+            "MiniMax-M2.7-highspeed",
+            "Say hi",
+            "system",
+            False,
+            64,
+            0.2,
+            None,
+        )
+
+        assert text == "minimax ok"
+        assert usage["minimax_base_url"] == "https://api.minimax.io/v1"
+        assert captured_urls == [
+            "https://api.minimaxi.com/v1",
+            "https://api.minimax.io/v1",
+        ]
+
 
 class TestHTTP2Fallback:
     def test_get_client_falls_back_when_h2_extra_missing(self, monkeypatch):

@@ -16,6 +16,8 @@ from forgegod.models import BudgetMode, ResearchDepth
 DEFAULT_GLOBAL_DIR = Path.home() / ".forgegod"
 DEFAULT_PROJECT_DIR = Path(".forgegod")
 DEFAULT_CONFIG_FILENAME = "config.toml"
+MINIMAX_CN_BASE_URL = "https://api.minimaxi.com/v1"
+MINIMAX_GLOBAL_BASE_URL = "https://api.minimax.io/v1"
 
 # Per-million-token costs (input, output) in USD
 MODEL_COSTS: dict[str, tuple[float, float]] = {
@@ -249,7 +251,8 @@ class MiniMaxConfig(BaseModel):
     """MiniMax M2 provider settings (OpenAI-compatible API)."""
 
     timeout: float = 120.0
-    base_url: str = "https://api.minimaxi.com/v1"
+    base_url: str = "auto"
+    region: str = "auto"  # auto | cn | global
     use_reasoning: bool = False  # enables reasoning_split in extra_body
 
 
@@ -770,3 +773,21 @@ def openai_surface_label(surface: str) -> str:
         "api+codex": "api+codex",
     }
     return labels.get(surface, surface)
+
+
+def minimax_base_urls(config: MiniMaxConfig) -> list[str]:
+    """Return candidate MiniMax base URLs for the configured region.
+
+    `base_url` wins when explicitly set. Otherwise region presets are used.
+    `auto` prefers the CN endpoint first, then falls back to the Global endpoint.
+    """
+    explicit = (config.base_url or "").strip()
+    if explicit and explicit.lower() != "auto":
+        return [explicit.rstrip("/")]
+
+    region = (config.region or "auto").strip().lower()
+    if region == "cn":
+        return [MINIMAX_CN_BASE_URL]
+    if region == "global":
+        return [MINIMAX_GLOBAL_BASE_URL]
+    return [MINIMAX_CN_BASE_URL, MINIMAX_GLOBAL_BASE_URL]
