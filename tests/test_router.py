@@ -410,6 +410,28 @@ class TestModelRouterFallback:
         assert "All models failed" in result
 
     @pytest.mark.asyncio
+    async def test_fallback_exhaustion_preserves_primary_auth_failure(self, router: ModelRouter):
+        """Primary auth failures should remain visible even if later fallbacks fail differently."""
+
+        async def mock_call_ollama(model, prompt, system, max_tokens, temperature, tools):
+            if model == "qwen3-coder-next":
+                raise Exception("401 invalid api key (2049)")
+            if model == "qwen3-coder-backup":
+                raise Exception("timeout")
+            raise Exception("timeout-final")
+
+        router.config.models.coder = "ollama:qwen3-coder-next"
+        router.config.models.reviewer = "ollama:qwen3-coder-backup"
+        router.config.models.escalation = "ollama:qwen3-coder-final"
+        router._call_ollama = mock_call_ollama
+
+        result, _usage = await router.call("Test", role="coder")
+
+        assert "Primary auth failure" in result
+        assert "401 invalid api key (2049)" in result
+        assert "last fallback error: timeout-final" in result
+
+    @pytest.mark.asyncio
     async def test_circuit_breaker_prevents_fallback(self, router: ModelRouter):
         """Circuit breaker prevents calling failed provider."""
         # Open circuit for ollama

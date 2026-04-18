@@ -24,6 +24,12 @@ from forgegod.worktree_paths import ensure_worktree_base
 logger = logging.getLogger("forgegod.hive")
 
 
+def _looks_like_terminal_worker_failure(result: HiveWorkerResult) -> bool:
+    output = (result.output or "").strip()
+    error = (result.error or "").strip()
+    return output.startswith("[ERROR:") or error.startswith("[ERROR:")
+
+
 @dataclass
 class HiveWorker:
     worker_id: str
@@ -249,6 +255,15 @@ Ready stories:
                 story.status = StoryStatus.BLOCKED
                 if result.error:
                     story.error_log.append(result.error)
+                elif result.output:
+                    story.error_log.append(result.output)
+                self.state.stories_failed += 1
+                await self._cleanup_worker(worker)
+                continue
+
+            if _looks_like_terminal_worker_failure(result):
+                story.status = StoryStatus.BLOCKED
+                story.error_log.append(result.error or result.output or "worker returned terminal failure payload")
                 self.state.stories_failed += 1
                 await self._cleanup_worker(worker)
                 continue

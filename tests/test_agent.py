@@ -669,3 +669,30 @@ class TestCompletionEvidence:
         event_names = [name for name, _ in events]
         assert event_names[:3] == ["task_started", "turn_started", "model_response"]
         assert "task_completed" in event_names
+
+    @pytest.mark.asyncio
+    async def test_agent_treats_router_error_payload_as_failure(self, tmp_path):
+        from forgegod.agent import Agent
+
+        project_dir = tmp_path / ".forgegod"
+        project_dir.mkdir()
+        router = FakeRouter([
+            "[ERROR: All models failed for role=coder.\n  Last error: timeout]"
+        ])
+        config = ForgeGodConfig()
+        config.project_dir = project_dir
+        config.agent.research_before_code = False
+
+        agent = Agent(
+            config=config,
+            router=router,
+            system_prompt="You are a test agent.",
+            max_turns=2,
+        )
+        agent.memory = None
+
+        result = await agent.run("Implement the API handler")
+        agent.budget.close()
+
+        assert result.success is False
+        assert "All models failed" in result.error

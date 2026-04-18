@@ -74,6 +74,7 @@ PERMISSION_ERROR_MARKERS = (
     "not in the allowed tool list",
     "cannot proceed",
 )
+ROUTER_ERROR_PREFIX = "[ERROR:"
 
 # Stuck detection patterns for auto-research trigger (SOTA 2026 self-healing)
 STUCK_PATTERNS = (
@@ -369,6 +370,25 @@ class Agent:
                     max_tokens=4096,
                     temperature=0.3,
                 )
+                if response_text.strip().startswith(ROUTER_ERROR_PREFIX):
+                    logger.error("Router returned terminal failure payload for role=%s", self.role)
+                    failed = self._build_result(
+                        success=False,
+                        output=response_text,
+                        elapsed=time.time() - start,
+                        error=response_text,
+                        completion_blockers=self._completion_blockers(
+                            requires_code_changes=requires_code_changes
+                        ),
+                    )
+                    await self._emit_event(
+                        "task_failed",
+                        error=failed.error,
+                        output=failed.output,
+                        blockers=failed.completion_blockers,
+                    )
+                    await self._record_episode(task_id, task, failed)
+                    return failed
                 await self._emit_event(
                     "model_response",
                     turn=self._turn,

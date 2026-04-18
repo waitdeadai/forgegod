@@ -976,12 +976,12 @@ class HarnessEvalRunner:
 
         config = self.config.model_copy(deep=True)
         config.models = ModelsConfig(
-            planner="minimax:minimax-m2",
-            coder="minimax:minimax-m2",
-            reviewer="minimax:minimax-m2",
-            sentinel="minimax:minimax-m2",
-            escalation="minimax:minimax-m2",
-            researcher="minimax:minimax-m2",
+            planner="minimax:MiniMax-M2.7-highspeed",
+            coder="minimax:MiniMax-M2.7-highspeed",
+            reviewer="minimax:MiniMax-M2.7-highspeed",
+            sentinel="minimax:MiniMax-M2.7-highspeed",
+            escalation="minimax:MiniMax-M2.7-highspeed",
+            researcher="minimax:MiniMax-M2.7-highspeed",
         )
 
         async def _run() -> tuple[list[EvalLiveProbeResult], float, int]:
@@ -1021,7 +1021,7 @@ class HarnessEvalRunner:
                                 provider=provider,
                                 model=model,
                                 passed=passed,
-                                detail="minimax:minimax-m2",
+                                detail="minimax:MiniMax-M2.7-highspeed",
                                 usage=usage.model_dump(),
                             )
                         )

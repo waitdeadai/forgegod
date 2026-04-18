@@ -453,22 +453,29 @@ def _write_json_result(
 ) -> None:
     from forgegod.models import HiveWorkerResult, ModelUsage
 
+    output_text = result.output if result else ""
+    effective_error = error or (result.error if result else "")
+    terminal_model_failure = _looks_like_terminal_model_failure_text(output_text) or _looks_like_terminal_model_failure_text(effective_error)
     payload = HiveWorkerResult(
         story_id=story_id,
-        success=bool(result and result.success and exit_code == 0),
+        success=bool(result and result.success and exit_code == 0 and not terminal_model_failure),
         exit_code=exit_code,
-        output=(result.output if result else ""),
+        output=output_text,
         files_modified=(result.files_modified if result else []),
         verification_commands=(result.verification_commands if result else []),
         reviewed_final_diff=bool(result and result.reviewed_final_diff),
         completion_blockers=(result.completion_blockers if result else []),
         review_verdict=(review_result.verdict.value if review_result else ""),
         review_reasoning=(review_result.reasoning if review_result else ""),
-        error=error or (result.error if result else ""),
+        error=effective_error,
         total_usage=(result.total_usage if result else ModelUsage()),
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+
+
+def _looks_like_terminal_model_failure_text(text: str) -> bool:
+    return text.strip().startswith("[ERROR:")
 
 
 async def _execute_run_task(
@@ -502,6 +509,17 @@ async def _execute_run_task(
             event_callback=narrator,
         )
         result = await agent.run(task)
+        if result.success and (
+            _looks_like_terminal_model_failure_text(result.output)
+            or _looks_like_terminal_model_failure_text(result.error)
+        ):
+            result.success = False
+            if not result.error:
+                result.error = result.output
+            result.completion_blockers = _merge_unique(
+                result.completion_blockers,
+                ["Upstream model routing failed before a valid coding result was produced."],
+            )
 
         if not result.success:
             failure = _safe_console_text(result.error or result.output or "Unknown failure")

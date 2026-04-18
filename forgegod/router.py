@@ -26,6 +26,17 @@ from forgegod.native_auth import (
 logger = logging.getLogger("forgegod.router")
 
 
+def _looks_like_auth_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return (
+        "401" in lowered
+        or "unauthorized" in lowered
+        or "authenticationerror" in lowered
+        or "invalid api key" in lowered
+        or "api key" in lowered and "invalid" in lowered
+    )
+
+
 class CircuitBreaker:
     """Per-provider circuit breaker with half-open state and sliding window.
 
@@ -232,6 +243,7 @@ class ModelRouter:
                 seen_specs.add(local_key)
 
         last_error = ""
+        auth_error = ""
         for spec in specs:
             if self.circuit.is_open(spec.provider):
                 continue
@@ -242,6 +254,8 @@ class ModelRouter:
                 )
             except Exception as e:
                 last_error = str(e)
+                if not auth_error and _looks_like_auth_error(last_error):
+                    auth_error = f"{spec}: {last_error}"
                 # Only trip circuit breaker for server errors (5xx, timeouts),
                 # NOT for client errors (400) which are our bug, not provider outage
                 err_str = str(e)
@@ -250,10 +264,16 @@ class ModelRouter:
                     self.circuit.record_failure(spec.provider)
                 logger.warning(f"{spec} failed: {e}, trying next")
 
-        logger.error(f"All models failed for role={role}. Last: {last_error}")
+        error_detail = last_error
+        if auth_error and auth_error != last_error:
+            error_detail = f"Primary auth failure: {auth_error}; last fallback error: {last_error}"
+        elif auth_error:
+            error_detail = auth_error
+
+        logger.error(f"All models failed for role={role}. Last: {error_detail}")
         return (
             f"[ERROR: All models failed for role={role}.\n"
-            f"  Last error: {last_error}\n"
+            f"  Last error: {error_detail}\n"
             f"  Fix: Check `forgegod doctor` or try a different model with --model]"
         ), ModelUsage()
 

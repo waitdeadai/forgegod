@@ -130,6 +130,44 @@ async def test_hive_rejects_prompt_approval_mode(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_hive_blocks_terminal_worker_error_payload(tmp_path):
+    if not _git_available():
+        pytest.skip("git is required for hive worktree tests")
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_git_repo_with_commit(repo)
+
+    config = ForgeGodConfig()
+    config.project_dir = repo / ".forgegod"
+    config.project_dir.mkdir(parents=True, exist_ok=True)
+    config.audit.enabled = False
+
+    prd_path = config.project_dir / "prd.json"
+    prd = PRD(
+        project="Hive Failure Test",
+        stories=[Story(id="T001", title="Do the thing")],
+    )
+    prd_path.write_text(prd.model_dump_json(indent=2), encoding="utf-8")
+
+    async def fake_runner(worker: HiveWorker) -> HiveWorkerResult:
+        return HiveWorkerResult(
+            story_id=worker.story_id,
+            success=True,
+            exit_code=0,
+            output="[ERROR: All models failed for role=coder.\n  Last error: timeout]",
+            files_modified=[],
+        )
+
+    coordinator = HiveCoordinator(config=config, worker_runner=fake_runner)
+    await coordinator.run(prd_path, max_iterations=1, max_workers=1, dry_run=False)
+
+    loaded = PRD.model_validate_json(prd_path.read_text(encoding="utf-8"))
+    assert loaded.stories[0].status == StoryStatus.BLOCKED
+    assert coordinator.state.stories_failed == 1
+
+
+@pytest.mark.asyncio
 async def test_hive_blocks_when_audit_gate_is_not_ready(tmp_path, monkeypatch):
     repo = tmp_path / "repo"
     repo.mkdir()

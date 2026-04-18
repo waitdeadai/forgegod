@@ -142,7 +142,10 @@ def _check_ollama(project: Path) -> HealthCheck:
 
 
 def _check_api_keys() -> HealthCheck:
-    """Check if any API keys are set."""
+    """Check if any auth surfaces are present.
+
+    This is intentionally a presence check, not a live provider validation probe.
+    """
     from forgegod.native_auth import codex_login_status_sync
 
     keys = {
@@ -167,7 +170,7 @@ def _check_api_keys() -> HealthCheck:
             found.append(name)
 
     if found:
-        return HealthCheck(t("doctor_api_keys"), True, ", ".join(found))
+        return HealthCheck(t("doctor_api_keys"), True, f"Detected: {', '.join(found)}")
 
     env_path = Path(".forgegod/.env")
     if env_path.exists():
@@ -177,7 +180,7 @@ def _check_api_keys() -> HealthCheck:
                 found.append(name)
 
     if found:
-        return HealthCheck(t("doctor_api_keys"), True, f"{', '.join(found)} (from .env)")
+        return HealthCheck(t("doctor_api_keys"), True, f"Detected: {', '.join(found)} (from .env)")
 
     return HealthCheck(
         t("doctor_api_keys"),

@@ -155,7 +155,7 @@ coder = "minimax:MiniMax-M2.7-highspeed"
 reviewer = "zai:glm-5"
 
 [minimax]
-base_url = "https://api.minimax.io/v1"
+base_url = "https://api.minimaxi.com/v1"
 timeout = 120.0
 
 [zai]

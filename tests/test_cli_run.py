@@ -470,6 +470,43 @@ def test_run_json_out_writes_machine_readable_summary(monkeypatch, tmp_path):
     assert payload["verification_commands"] == ["python -m pytest -q"]
 
 
+def test_run_json_out_downgrades_terminal_model_failure_payload(monkeypatch, tmp_path):
+    project_dir = tmp_path / ".forgegod"
+    project_dir.mkdir()
+    json_out = tmp_path / "result.json"
+
+    config = ForgeGodConfig()
+    config.project_dir = project_dir
+
+    class FailingAgent:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def run(self, _task: str) -> AgentResult:
+            return AgentResult(
+                success=True,
+                output="[ERROR: All models failed for role=coder.\n  Last error: timeout]",
+                files_modified=[],
+                total_usage=ModelUsage(),
+            )
+
+    monkeypatch.setattr("forgegod.cli._print_banner", lambda *args, **kwargs: None)
+    monkeypatch.setattr("forgegod.cli.console.print", lambda *args, **_kwargs: None)
+    monkeypatch.setattr("forgegod.config.load_config", lambda: config)
+    monkeypatch.setattr("forgegod.agent.Agent", FailingAgent)
+    monkeypatch.setattr("forgegod.router.ModelRouter", lambda _config: FakeRouter())
+
+    result = runner.invoke(
+        app,
+        ["run", "Implement the handler", "--no-review", "--json-out", str(json_out)],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(json_out.read_text(encoding="utf-8"))
+    assert payload["success"] is False
+    assert payload["output"].startswith("[ERROR:")
+
+
 def test_worker_maps_payload_to_run_entrypoint(monkeypatch, tmp_path):
     payload_path = tmp_path / "payload.json"
     json_out = tmp_path / "worker-result.json"

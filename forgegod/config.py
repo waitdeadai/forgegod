@@ -57,6 +57,10 @@ MODEL_COSTS: dict[str, tuple[float, float]] = {
     "kimi-k2-0905-preview": (0.60, 2.50),
     # MiniMax (OpenAI-compatible — pricing from platform.minimaxi.com)
     "minimax-m2": (0.50, 1.50),
+    "minimax-m2.7": (0.50, 1.50),
+    "minimax-m2.7-highspeed": (0.50, 1.50),
+    "MiniMax-M2.7": (0.50, 1.50),
+    "MiniMax-M2.7-highspeed": (0.50, 1.50),
     # OpenRouter (varies — user overrides)
 }
 
@@ -245,7 +249,7 @@ class MiniMaxConfig(BaseModel):
     """MiniMax M2 provider settings (OpenAI-compatible API)."""
 
     timeout: float = 120.0
-    base_url: str = "https://api.minimax.io/v1"
+    base_url: str = "https://api.minimaxi.com/v1"
     use_reasoning: bool = False  # enables reasoning_split in extra_body
 
 
@@ -467,7 +471,7 @@ def recommend_model_defaults(
     if profile == "single-model":
         unified = pick([
             "zai:glm-5.1",
-            "minimax:minimax-m2",
+            "minimax:MiniMax-M2.7-highspeed",
             "openai:gpt-5.4",
             "openai-codex:gpt-5.4",
             "openai:gpt-5.4-mini",
@@ -489,7 +493,7 @@ def recommend_model_defaults(
 
     planner = pick([
         "zai:glm-5.1",
-        "minimax:minimax-m2",
+        "minimax:MiniMax-M2.7-highspeed",
         "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
         "openai:gpt-5.4-mini",
@@ -505,7 +509,7 @@ def recommend_model_defaults(
 
     coder = pick([
         "openai:gpt-5.4-mini",
-        "minimax:minimax-m2",
+        "minimax:MiniMax-M2.7-highspeed",
         "openai:gpt-5.4",
         "zai:glm-5.1",
         "openai-codex:gpt-5.4",
@@ -521,7 +525,7 @@ def recommend_model_defaults(
 
     reviewer = pick([
         "openai-codex:gpt-5.4",
-        "minimax:minimax-m2",
+        "minimax:MiniMax-M2.7-highspeed",
         "openai:gpt-5.4",
         "openai:gpt-5.4-mini",
         "zai:glm-5.1",
@@ -538,7 +542,7 @@ def recommend_model_defaults(
     sentinel = pick([
         "openai:gpt-5.4",
         "openai-codex:gpt-5.4",
-        "minimax:minimax-m2",
+        "minimax:MiniMax-M2.7-highspeed",
         "openai:gpt-5.4-mini",
         "zai:glm-5.1",
         "anthropic:claude-opus-4-6-20250610",

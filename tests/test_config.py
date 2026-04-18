@@ -41,6 +41,7 @@ def test_default_config():
     assert config.openai.parallel_tool_calls is True
     assert config.zai.use_coding_plan is True
     assert config.zai.coding_plan_base_url == "https://api.z.ai/api/coding/paas/v4"
+    assert config.minimax.base_url == "https://api.minimaxi.com/v1"
     assert config.audit.enabled is True
     assert config.audit.command == "auto"
     assert config.audit.auto_run_on_loop is True
@@ -104,6 +105,12 @@ def test_recommend_model_defaults_prefers_zai_when_no_local():
     models = recommend_model_defaults(["zai"], ollama_available=False)
     assert models.coder == "zai:glm-5.1"
     assert models.planner == "zai:glm-5.1"
+
+
+def test_recommend_model_defaults_prefers_minimax_highspeed_when_available():
+    models = recommend_model_defaults(["minimax"], ollama_available=False)
+    assert models.planner == "minimax:MiniMax-M2.7-highspeed"
+    assert models.coder == "minimax:MiniMax-M2.7-highspeed"
 
 
 def test_recommend_model_defaults_prefers_zai_over_ollama_when_cloud_ready():
