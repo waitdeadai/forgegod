@@ -129,6 +129,18 @@ a:hover {
   background: var(--color-cyan);
 }
 
+html.is-embedded,
+body.is-embedded {
+  scrollbar-width: none;
+}
+
+html.is-embedded::-webkit-scrollbar,
+body.is-embedded::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* Utility: visually hidden (screen reader only) */
 .sr-only {
   position: absolute;

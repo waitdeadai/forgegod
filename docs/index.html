@@ -514,6 +514,7 @@ nav .container {
 /* -- Showcase -- */
 .showcase-section { padding: 5rem 0; background: var(--bg); }
 .showcase-frame-wrapper {
+  --showcase-embed-height: clamp(760px, 90vh, 1180px);
   position: relative;
   border: 1px solid var(--surface-border);
   border-radius: 16px;
@@ -564,10 +565,11 @@ nav .container {
 }
 .showcase-iframe {
   width: 100%;
-  height: clamp(760px, 90vh, 1180px);
+  height: var(--showcase-embed-height);
   border: none;
   display: block;
   background: #090b10;
+  transition: height 0.24s ease;
 }
 .showcase-footer {
   display: flex;
@@ -758,7 +760,7 @@ nav .container {
   color: var(--text-dim);
 }
 @media (max-width: 640px) {
-  .showcase-iframe { height: 88dvh; min-height: 720px; }
+  .showcase-frame-wrapper { --showcase-embed-height: max(720px, 88dvh); }
   .showcase-stats { grid-template-columns: repeat(2, 1fr); }
   .showcase-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
   .showcase-actions { width: 100%; }
@@ -2792,6 +2794,53 @@ function copyInstall() {
     setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
   });
 }
+
+var SHOWCASE_EMBED = {
+  messageType: 'forgegod:showcase-height',
+  minHeight: 760,
+  mobileMinHeight: 720,
+  maxHeight: 3200
+};
+
+function isAllowedShowcaseOrigin(origin) {
+  return origin === 'https://tarot.forgegod.com' || /^https:\/\/tarot-[a-z0-9-]+\.vercel\.app$/i.test(origin);
+}
+
+function getShowcaseFallbackHeight() {
+  var viewportHeight = window.innerHeight || 900;
+  var mobile = window.matchMedia('(max-width: 640px)').matches;
+  if (mobile) {
+    return Math.max(SHOWCASE_EMBED.mobileMinHeight, Math.round(viewportHeight * 0.88));
+  }
+  return Math.max(SHOWCASE_EMBED.minHeight, Math.min(Math.round(viewportHeight * 0.9), 1180));
+}
+
+function syncShowcaseIframeHeight(nextHeight) {
+  var iframe = document.getElementById('showcase-iframe');
+  if (!iframe) return;
+
+  var numericHeight = Number(nextHeight);
+  if (!isFinite(numericHeight) || numericHeight <= 0) return;
+
+  var clamped = Math.max(SHOWCASE_EMBED.mobileMinHeight, Math.min(Math.ceil(numericHeight), SHOWCASE_EMBED.maxHeight));
+  iframe.style.height = clamped + 'px';
+}
+
+window.addEventListener('message', function(event) {
+  var iframe = document.getElementById('showcase-iframe');
+  if (!iframe) return;
+  if (!isAllowedShowcaseOrigin(event.origin)) return;
+  if (event.source !== iframe.contentWindow) return;
+
+  var payload = event.data || {};
+  if (payload.type !== SHOWCASE_EMBED.messageType) return;
+
+  syncShowcaseIframeHeight(payload.height);
+});
+
+window.addEventListener('load', function() {
+  syncShowcaseIframeHeight(getShowcaseFallbackHeight());
+});
 
 function openShowcaseFullscreen() {
   var wrapper = document.getElementById('showcase-frame');

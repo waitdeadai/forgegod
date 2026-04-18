@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DM_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import { notFound } from "next/navigation";
 import "../globals.css";
+import EmbedResizeBridge from "@/components/ritual/EmbedResizeBridge";
 import {
   defaultLocale,
   getMessages,
@@ -123,6 +124,7 @@ export default async function LocaleLayout({
       className={`${dmSans.variable} ${jetbrainsMono.variable} ${syne.variable}`}
     >
       <body>
+        <EmbedResizeBridge />
         {children}
         {enableObservability ? (
           <>
