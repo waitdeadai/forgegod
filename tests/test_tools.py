@@ -16,6 +16,7 @@ from forgegod.tools import (
 )
 from forgegod.tools.filesystem import edit_file, glob_files, grep_files, read_file, write_file
 from forgegod.tools.git import git_worktree_create, git_worktree_remove
+from forgegod.worktree_paths import resolve_worktree_base
 
 
 @pytest.fixture(autouse=True)
@@ -259,11 +260,12 @@ async def test_git_worktree_create_roundtrip(tmp_path):
     token = set_tool_context(config)
     try:
         result = await git_worktree_create("forgegod/test-worktree")
-        assert result.startswith("Worktree created at .forgegod/worktrees/")
+        assert result.startswith("Worktree created at ")
 
         created_rel = result.split("Worktree created at ", 1)[1].split(" on branch", 1)[0]
-        created_path = workspace / created_rel
+        created_path = Path(created_rel)
         assert created_path.exists()
+        assert created_path.parent == resolve_worktree_base(config.project_dir)
 
         removed = await git_worktree_remove(created_rel)
     finally:

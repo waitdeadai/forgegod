@@ -1269,7 +1269,6 @@ def audit_status(
 
     root, config = _load_audit_bridge_config(path)
     state = load_audit_state(config, project_root=root)
-    command = resolve_audit_command(config)
 
     if state.exists:
         console.print(f"[forge.primary]Audit[/forge.primary] {summarize_audit_state(state)}")
@@ -1286,6 +1285,7 @@ def audit_status(
                 )
         return
 
+    command = resolve_audit_command(config)
     if command is None:
         console.print(
             "[yellow]No cached audit artifacts found and audit-agent is unavailable.[/yellow]"

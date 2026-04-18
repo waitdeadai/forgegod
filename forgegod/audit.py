@@ -40,7 +40,11 @@ def resolve_audit_command(config: ForgeGodConfig) -> list[str] | None:
         return shlex.split(spec)
     if shutil.which("audit"):
         return ["audit"]
-    if importlib.util.find_spec("audit_agent.cli.main") is not None:
+    try:
+        found = importlib.util.find_spec("audit_agent.cli.main")
+    except ModuleNotFoundError:
+        found = None
+    if found is not None:
         return [sys.executable, "-m", "audit_agent.cli.main"]
     return None
 
@@ -91,10 +95,11 @@ def ensure_audit_ready(
     """Ensure base audit artifacts exist and are current enough for ForgeGod."""
     repo_root = Path(project_root or config.project_dir.parent).resolve()
     state = load_audit_state(config, project_root=repo_root)
-    command_prefix = resolve_audit_command(config)
 
     if not config.audit.enabled:
         return state
+
+    command_prefix = resolve_audit_command(config)
 
     should_auto_run = (
         (reason == "loop" and config.audit.auto_run_on_loop)

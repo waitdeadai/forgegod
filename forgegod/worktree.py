@@ -18,6 +18,7 @@ from forgegod.config import ForgeGodConfig
 from forgegod.models import AgentResult, Story, WorkerStatus
 from forgegod.router import ModelRouter
 from forgegod.tools.git import _run_git
+from forgegod.worktree_paths import ensure_worktree_base
 
 logger = logging.getLogger("forgegod.worktree")
 
@@ -43,7 +44,7 @@ class WorktreePool:
         self.max_workers = max_workers or config.loop.parallel_workers
         self.tool_approver = tool_approver
         self._workers: list[WorkerStatus] = []
-        self._worktree_base = config.project_dir / "worktrees"
+        self._worktree_base = ensure_worktree_base(config.project_dir)
 
         if config.security.approval_mode == "prompt":
             if self.max_workers > 1:

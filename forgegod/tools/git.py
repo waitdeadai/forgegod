@@ -7,6 +7,7 @@ from pathlib import Path
 
 from forgegod.sandbox import SandboxUnavailableError, run_in_real_sandbox
 from forgegod.tools import get_tool_config, get_workspace_root, register_tool
+from forgegod.worktree_paths import ensure_worktree_base
 
 
 async def _run_git(*args: str, cwd: Path | None = None) -> str:
@@ -104,12 +105,16 @@ async def git_worktree_create(branch: str) -> str:
         )
 
     worktree_id = uuid.uuid4().hex[:8]
-    path = f".forgegod/worktrees/{worktree_id}"
+    config = get_tool_config()
+    if config is None:
+        return "Error: Tool context is not configured."
 
-    result = await _run_git("worktree", "add", "-b", branch, path)
+    path = ensure_worktree_base(config.project_dir) / worktree_id
+
+    result = await _run_git("worktree", "add", "-b", branch, str(path))
     if result.startswith("Error"):
         return result
-    return f"Worktree created at {path} on branch {branch}"
+    return f"Worktree created at {path.resolve()} on branch {branch}"
 
 
 async def git_worktree_remove(path: str) -> str:

@@ -19,6 +19,7 @@ from forgegod.models import PRD, HiveState, HiveWorkerPayload, HiveWorkerResult,
 from forgegod.router import ModelRouter
 from forgegod.tools.git import _run_git
 from forgegod.worktree import WorktreePool
+from forgegod.worktree_paths import ensure_worktree_base
 
 logger = logging.getLogger("forgegod.hive")
 
@@ -53,7 +54,7 @@ class HiveCoordinator:
         self._state_path = self.config.project_dir / "hive" / "state.json"
         self._results_dir = self.config.project_dir / "hive" / "results"
         self._queue_dir = self.config.project_dir / "hive" / "queue"
-        self._worktree_base = self.config.project_dir / "worktrees"
+        self._worktree_base = ensure_worktree_base(self.config.project_dir)
         self._obsidian = None
         if self.config.obsidian.enabled:
             try:

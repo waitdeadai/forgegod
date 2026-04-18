@@ -189,6 +189,25 @@ def _git_available() -> bool:
         return False
 
 
+def _init_git_repo_with_commit(repo) -> None:
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "forgegod@example.com"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "ForgeGod"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+    (repo / "README.md").write_text("hello\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
+
+
 @pytest.mark.asyncio
 async def test_hive_exports_latest_summary_note(tmp_path):
     if not _git_available():
@@ -196,10 +215,7 @@ async def test_hive_exports_latest_summary_note(tmp_path):
 
     repo = tmp_path / "repo"
     repo.mkdir()
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
-    (repo / "README.md").write_text("hello\n", encoding="utf-8")
-    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
+    _init_git_repo_with_commit(repo)
 
     config = ForgeGodConfig()
     config.project_dir = repo / ".forgegod"

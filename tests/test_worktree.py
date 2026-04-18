@@ -8,6 +8,7 @@ import pytest
 from forgegod.config import ForgeGodConfig
 from forgegod.models import AgentResult, Story
 from forgegod.worktree import WorktreePool
+from forgegod.worktree_paths import resolve_worktree_base
 
 
 def _init_git_repo(workspace: Path) -> None:
@@ -120,7 +121,7 @@ async def test_worktree_pool_passes_tool_approver_to_worker_agent(monkeypatch, t
     assert results[0][1].success is True
     assert captured["tool_approver"] is approver
     assert isinstance(captured["project_dir"], Path)
-    assert captured["project_dir"].parent.parent == config.project_dir / "worktrees"
+    assert captured["project_dir"].parent.parent == resolve_worktree_base(config.project_dir)
 
 
 @pytest.mark.asyncio
