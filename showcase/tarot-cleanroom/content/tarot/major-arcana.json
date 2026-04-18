@@ -1,0 +1,222 @@
+[
+  {
+    "id": "the-fool",
+    "name": "The Fool",
+    "suit": "major",
+    "arcanaIndex": 0,
+    "keywords": ["beginnings", "innocence", "spontaneity", "free will"],
+    "uprightMeaning": "A leap of faith into the unknown. The Fool represents new beginnings, unrestricted potential, and the courage to embrace uncertainty. Trust the journey, even without a map.",
+    "reversedMeaning": "Hold back. Recklessness, naivety, or acting without considering consequences. Pause before leaping — the cliff is real.",
+    "symbolism": ["circle", "cliff", "white sun", "satchel", "dog"]
+  },
+  {
+    "id": "the-magician",
+    "name": "The Magician",
+    "suit": "major",
+    "arcanaIndex": 1,
+    "keywords": ["willpower", "creation", "manifestation", "skill"],
+    "uprightMeaning": "You hold all four elements. The Magician is the archetype of focused will — tools are present, intention is clear, and manifestation is imminent.",
+    "reversedMeaning": "Scattered energy, untapped potential, deception. The tools exist but are misaligned or being squandered.",
+    "symbolism": ["table of implements", "infinity symbol above head", "red robe", "wand pointing upward"]
+  },
+  {
+    "id": "the-high-priestess",
+    "name": "The High Priestess",
+    "suit": "major",
+    "arcanaIndex": 2,
+    "keywords": ["intuition", "mystery", "inner knowledge", "the unconscious"],
+    "uprightMeaning": "Sit with the silence. The High Priestess guards hidden knowledge — what is not yet known to the conscious mind is still valid and present.",
+    "reversedMeaning": "Secrets revealed, withdrawal from inner knowing, surface living. The voice of intuition is being ignored or drowned out.",
+    "symbolism": ["crescent moon", "scroll with TORA", "pillar", "veil", "water"]
+  },
+  {
+    "id": "the-empress",
+    "name": "The Empress",
+    "suit": "major",
+    "arcanaIndex": 3,
+    "keywords": ["abundance", "nurturing", "creativity", "nature"],
+    "uprightMeaning": "Fertile ground. The Empress is the embodiment of creative growth and nurturing presence — ideas ripen into form, care produces results.",
+    "reversedMeaning": "Creative block, stagnation, dependence. The garden is overgrown or the nurturing has become suffocating.",
+    "symbolism": ["heart shield", "Venus symbol on pillow", "grain fields", "tree of life"]
+  },
+  {
+    "id": "the-emperor",
+    "name": "The Emperor",
+    "suit": "major",
+    "arcanaIndex": 4,
+    "keywords": ["authority", "structure", "stability", "leadership"],
+    "uprightMeaning": "Build with precision. The Emperor represents the power of disciplined structure — rules exist to be understood, not feared.",
+    "reversedMeaning": "Rigidity, domination, lack of discipline. The structure is either too loose or too rigid — neither holds.",
+    "symbolism": ["throne with four ram heads", "armor", "orb and cruz"]
+  },
+  {
+    "id": "the-hierophant",
+    "name": "The Hierophant",
+    "suit": "major",
+    "arcanaIndex": 5,
+    "keywords": ["tradition", "guidance", "conformity", "education"],
+    "uprightMeaning": "Seek the established path. The Hierophant represents certified wisdom — tradition and formal institutions as valid sources of truth.",
+    "reversedMeaning": "Subversion, rebellion, new methods. Breaking from convention is necessary when the old path is corrupt.",
+    "symbolism": ["papal throne", "two pillars", "hand gesture of benediction", "keys"]
+  },
+  {
+    "id": "the-lovers",
+    "name": "The Lovers",
+    "suit": "major",
+    "arcanaIndex": 6,
+    "keywords": ["union", "choices", "alignment", "relationships"],
+    "uprightMeaning": "Choose with your whole self. The Lovers represents the moment of decisive alignment — a choice that reveals what you truly value.",
+    "reversedMeaning": "Disharmony, misalignment of values, difficult choices. The union is strained or the choice is being made for the wrong reasons.",
+    "symbolism": ["naked Adam and Eve", "the serpent", "the tree of knowledge", "clouds with six winged angels"]
+  },
+  {
+    "id": "the-chariot",
+    "name": "The Chariot",
+    "suit": "major",
+    "arcanaIndex": 7,
+    "keywords": ["determination", "willpower", "victory", "control"],
+    "uprightMeaning": "Drive forward. The Chariot is the card of iron will — opposing forces are harnessed, not reconciled, and momentum is built through focus.",
+    "reversedMeaning": "Lack of direction, aggression, obstacles. The chariot moves but toward the wrong destination.",
+    "symbolism": ["white and black sphinx", "cubit", "starry breastplate", "city in background"]
+  },
+  {
+    "id": "strength",
+    "name": "Strength",
+    "suit": "major",
+    "arcanaIndex": 8,
+    "keywords": ["courage", "patience", "compassion", "inner strength"],
+    "uprightMeaning": "Gentle dominance. True strength is not the roar of the lion but the quiet certainty that you can face what needs facing.",
+    "reversedMeaning": "Weakness, self-doubt, raw emotion without control. The lion is not tamed — it is fed fear.",
+    "symbolism": ["woman closing lion's mouth", "infinity symbol above her head", "flower garland"]
+  },
+  {
+    "id": "the-hermit",
+    "name": "The Hermit",
+    "suit": "major",
+    "arcanaIndex": 9,
+    "keywords": ["introspection", "solitude", "guidance", "inner search"],
+    "uprightMeaning": "Turn inward. The Hermit is the master of the deliberate solitude — clarity is found in stillness, not in motion.",
+    "reversedMeaning": "Isolation, withdrawal, lost. The solitude has become an escape rather than a search.",
+    "symbolism": ["lantern with six-pointed star", "staff", "cloaked figure on mountain"]
+  },
+  {
+    "id": "wheel-of-fortune",
+    "name": "Wheel of Fortune",
+    "suit": "major",
+    "arcanaIndex": 10,
+    "keywords": ["change", "cycles", "destiny", "turning points"],
+    "uprightMeaning": "The wheel turns. Fate is in motion — cycles shift, luck ebbs and flows, and what was hidden rises while what was high descends.",
+    "reversedMeaning": "Bad luck, resistance to change, internal conflict. Fighting the turn of the wheel instead of riding it.",
+    "symbolism": ["eight-spoked wheel", "miniature figures on wheel", "sphinx with sword", "snake of Typhon"]
+  },
+  {
+    "id": "justice",
+    "name": "Justice",
+    "suit": "major",
+    "arcanaIndex": 11,
+    "keywords": ["fairness", "truth", "law", "cause and effect"],
+    "uprightMeaning": "What is true endures. Justice is the cold, clear mirror — actions have weight, debts accumulate, and balance is not negotiable.",
+    "reversedMeaning": "Unfairness, lack of accountability, dishonesty. The mirror is fogged or the scales are rigged.",
+    "symbolism": ["woman with sword and scales", "throne", "crown with eight square tiles"]
+  },
+  {
+    "id": "the-hanged-man",
+    "name": "The Hanged Man",
+    "suit": "major",
+    "arcanaIndex": 12,
+    "keywords": ["surrender", "new perspective", "letting go", "pause"],
+    "uprightMeaning": "Suspend the climb. The Hanged Man is not defeat — it is the deliberate choice to see differently. Turning the world upside down reveals new truths.",
+    "reversedMeaning": "Delays, resistance, stalling. The pause has become permanent paralysis.",
+    "symbolism": ["figure suspended from tree by one foot", "halo of light around head", "rocky pedestal"]
+  },
+  {
+    "id": "death",
+    "name": "Death",
+    "suit": "major",
+    "arcanaIndex": 13,
+    "keywords": ["endings", "transformation", "transition", "inevitability"],
+    "uprightMeaning": "Something ends so something else can begin. Death is the great recycler — what is finished must be cleared to make room for what is next.",
+    "reversedMeaning": "Resistance to change, fear of endings, stagnation. Holding onto what is already dead.",
+    "symbolism": ["armored skeleton with black banner", "rising sun behind distant mountains", "scattered nobles on ground"]
+  },
+  {
+    "id": "temperance",
+    "name": "Temperance",
+    "suit": "major",
+    "arcanaIndex": 14,
+    "keywords": ["balance", "patience", "moderation", "synthesis"],
+    "uprightMeaning": "Find the middle. Temperance is the alchemist who blends opposites — time and circumstance are mixed into something greater than their parts.",
+    "reversedMeaning": "Imbalance, excess, lack of harmony. The mixture is wrong — too much of one thing, too little of another.",
+    "symbolism": ["angel with one foot on water one on land", "wine chalice", "crown with small triangle and circle"]
+  },
+  {
+    "id": "the-devil",
+    "name": "The Devil",
+    "suit": "major",
+    "arcanaIndex": 15,
+    "keywords": ["shadow", "bondage", "materialism", "attachment"],
+    "uprightMeaning": "Name the chains. The Devil reveals what binds — the choices made from fear, the cycles repeated from avoidance, the weight you carry by choice.",
+    "reversedMeaning": "Breaking free, releasing burden, redefining limits. The chains were never as strong as they appeared.",
+    "symbolism": ["goat-headed figure on altar", "chained man and woman", "torch of eternal fire between them"]
+  },
+  {
+    "id": "the-tower",
+    "name": "The Tower",
+    "suit": "major",
+    "arcanaIndex": 16,
+    "keywords": ["upheaval", "revelation", "awakening", "destruction"],
+    "uprightMeaning": "The foundations crack for a reason. The Tower is not punishment — it is the necessary collapse of what was built on a false base.",
+    "reversedMeaning": "Avoiding disaster, inner upheaval, fear of truth. The tower is swaying but hasn't fallen — the dread is worse than the impact.",
+    "symbolism": ["tower struck by lightning", "figures falling", "crown blown off", "sea in background"]
+  },
+  {
+    "id": "the-star",
+    "name": "The Star",
+    "suit": "major",
+    "arcanaIndex": 17,
+    "keywords": ["hope", "inspiration", "renewal", "serenity"],
+    "uprightMeaning": "After the fall, the star. The Star is the quiet hope that remains after destruction — a steady light that says: healing is possible.",
+    "reversedMeaning": "Despair, disconnection, hopelessness. The star is obscured — faith in the future is not yet available.",
+    "symbolism": ["naked woman pouring water into pool and river", "eight-pointed star above her head", "bird on tree"]
+  },
+  {
+    "id": "the-moon",
+    "name": "The Moon",
+    "suit": "major",
+    "arcanaIndex": 18,
+    "keywords": ["illusion", "intuition", "unconscious", "fear"],
+    "uprightMeaning": "Trust what you feel, not what you see. The Moon illuminates the path through the unconscious — what rises from the deep is not always literal.",
+    "reversedMeaning": "Confusion, fear, misinterpretation. The path through the dark is being walked without a compass.",
+    "symbolism": ["two pillars", "pool in foreground", "dog and wolf howling", "crayfish emerging from water", "red rays above and white rays below"]
+  },
+  {
+    "id": "the-sun",
+    "name": "The Sun",
+    "suit": "major",
+    "arcanaIndex": 19,
+    "keywords": ["joy", "success", "vitality", "clarity"],
+    "uprightMeaning": "Light without conditions. The Sun is the uncomplicated warmth of things working — vitality, optimism, and the right to be exactly where you are.",
+    "reversedMeaning": "Temporary setbacks, feeling down, clouded joy. The sun is there — the clouds are just thicker today.",
+    "symbolism": ["child on white horse", "sun with 21 rays", "red feather in child's helmet", "wall of garden in background"]
+  },
+  {
+    "id": "judgment",
+    "name": "Judgment",
+    "suit": "major",
+    "arcanaIndex": 20,
+    "keywords": ["reckoning", "awakening", "rebirth", "assessment"],
+    "uprightMeaning": "Answer the call. Judgment is the trumpet that asks you to see your whole self — past, present, and the path that led here — and to rise accordingly.",
+    "reversedMeaning": "Self-doubt, ignoring the call, harsh self-judgment. The trumpet sounds but you cannot yet answer.",
+    "symbolism": ["angel with trumpet", "naked figures rising from tombs", "banner with cross", "white clouds"]
+  },
+  {
+    "id": "the-world",
+    "name": "The World",
+    "suit": "major",
+    "arcanaIndex": 21,
+    "keywords": ["completion", "integration", "accomplishment", "wholeness"],
+    "uprightMeaning": "The circuit closes. The World represents the completion of a cycle — integration of all lessons, the breath after the exhale, wholeness achieved.",
+    "reversedMeaning": "Incompletion, stagnation, seeking outside for fulfillment. The cycle is not yet closed — something remains undone.",
+    "symbolism": ["figure in circle of wreath", "four figures around the edge", "clouds", "figure with wand"]
+  }
+]

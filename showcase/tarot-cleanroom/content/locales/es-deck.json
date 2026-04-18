@@ -1,0 +1,1323 @@
+{
+  "the-fool": {
+    "name": "El Loco",
+    "keywords": [
+      "comienzos",
+      "inocencia",
+      "espontaneidad",
+      "libre albedrío"
+    ],
+    "uprightMeaning": "Un salto de fe hacia lo desconocido. El Loco representa nuevos comienzos, potencial sin restricciones y el coraje de abrazar la incertidumbre. Confía en el camino, incluso sin mapa.",
+    "reversedMeaning": "Detente. Imprudencia, naïidad o actuar sin considerar las consecuencias. Pausa antes de saltar — el precipicio es real.",
+    "symbolism": [
+      "círculo",
+      "acantilado",
+      "sol blanco",
+      "morral",
+      "perro"
+    ]
+  },
+  "the-magician": {
+    "name": "El Mago",
+    "keywords": [
+      "voluntad",
+      "creación",
+      "manifestación",
+      "habilidad"
+    ],
+    "uprightMeaning": "Sostienes los cuatro elementos. El Mago representa la voluntad concentrada — las herramientas están presentes, la intención es clara y la manifestación es inminente.",
+    "reversedMeaning": "Energía dispersa, potencial sin aprovechar, engaño. Las herramientas existen pero están desalineadas o se están desperdiciando.",
+    "symbolism": [
+      "mesa de implementos",
+      "símbolo de infinito sobre la cabeza",
+      "túnica roja",
+      "varita apuntando hacia arriba"
+    ]
+  },
+  "the-high-priestess": {
+    "name": "La Gran Sacerdotisa",
+    "keywords": [
+      "intuición",
+      "misterio",
+      "conocimiento interior",
+      "el inconsciente"
+    ],
+    "uprightMeaning": "Permanece en el silencio. La Gran Sacerdotisa guarda conocimiento oculto — lo que aún no es consciente sigue siendo válido y presente.",
+    "reversedMeaning": "Secretos revelados, retiro del conocimiento interior, vida superficial. La voz de la intuición se ignora o se ahoga.",
+    "symbolism": [
+      "luna creciente",
+      "pergamino con TORA",
+      "columna",
+      "velo",
+      "agua"
+    ]
+  },
+  "the-empress": {
+    "name": "La Emperadora",
+    "keywords": [
+      "abundancia",
+      "nutrimiento",
+      "creatividad",
+      "naturaleza"
+    ],
+    "uprightMeaning": "Tierra fértil. La Emperadora encarna el crecimiento creativo y la presencia nutriente — las ideas maduran en forma, el cuidado produce resultados.",
+    "reversedMeaning": "Bloqueo creativo, estancamiento, dependencia. El jardín está sobrecargado o el cuidado se ha vuelto sofocante.",
+    "symbolism": [
+      "escudo con corazón",
+      "símbolo de Venus en almohadón",
+      "campos de cereal",
+      "árbol de la vida"
+    ]
+  },
+  "the-emperor": {
+    "name": "El Emperador",
+    "keywords": [
+      "autoridad",
+      "estructura",
+      "estabilidad",
+      "liderazgo"
+    ],
+    "uprightMeaning": "Construye con precisión. El Emperador representa el poder de la estructura disciplinada — las reglas existen para ser comprendidas, no temidas.",
+    "reversedMeaning": "Rigidez, dominación, falta de disciplina. La estructura es demasiado suelta o demasiado rígida; ninguna sostiene.",
+    "symbolism": [
+      "trono con cuatro cabezas de ariete",
+      "armadura",
+      "orbe y cruz"
+    ]
+  },
+  "the-hierophant": {
+    "name": "El Hierofante",
+    "keywords": [
+      "tradición",
+      "guía",
+      "conformismo",
+      "educación"
+    ],
+    "uprightMeaning": "Busca el camino establecido. El Hierofante representa sabiduría certificada — la tradición y las instituciones formales como fuentes válidas de verdad.",
+    "reversedMeaning": "Subversión, rebelión, nuevos métodos. Romper con la convención es necesario cuando el camino antiguo está corrupto.",
+    "symbolism": [
+      "trono papal",
+      "dos columnas",
+      "gesto de bendición con la mano",
+      "llaves"
+    ]
+  },
+  "the-lovers": {
+    "name": "Los Amantes",
+    "keywords": [
+      "unión",
+      "elecciones",
+      "alineación",
+      "relaciones"
+    ],
+    "uprightMeaning": "Elige con todo tu ser. Los Amantes representa el momento de alineación decisiva — una elección que revela lo que realmente valoras.",
+    "reversedMeaning": "Desarmonía, desalineación de valores, elecciones difíciles. La unión está tensada o la elección se hace por razones equivocadas.",
+    "symbolism": [
+      "Adán y Eva desnudos",
+      "la serpiente",
+      "el árbol del conocimiento",
+      "nubes con seis ángeles alados"
+    ]
+  },
+  "the-chariot": {
+    "name": "El Carro",
+    "keywords": [
+      "determinación",
+      "fuerza de voluntad",
+      "victoria",
+      "control"
+    ],
+    "uprightMeaning": "Avanza con determinación. El Carro es la carta de la voluntad férrea — las fuerzas opuestas se aprovechan, no se concilian, y el impulso se construye mediante el enfoque.",
+    "reversedMeaning": "Falta de dirección, agresión, obstáculos. El carro avanza pero hacia el destino equivocado.",
+    "symbolism": [
+      "esfinges blanca y negra",
+      "codo",
+      "pechera estrellada",
+      "ciudad al fondo"
+    ]
+  },
+  "strength": {
+    "name": "La Fuerza",
+    "keywords": [
+      "coraje",
+      "paciencia",
+      "compasión",
+      "fuerza interior"
+    ],
+    "uprightMeaning": "Dominio gentil. La verdadera fuerza no es el rugido del león sino la quietud certera de que puedes enfrentar lo que necesita ser enfrentado.",
+    "reversedMeaning": "Debilidad, duda de uno mismo, emoción cruda sin control. El león no está domado — se alimenta del miedo.",
+    "symbolism": [
+      "mujer cerrando la boca del león",
+      "símbolo del infinito sobre su cabeza",
+      "guirnalda de flores"
+    ]
+  },
+  "the-hermit": {
+    "name": "El Ermitaño",
+    "keywords": [
+      "introspección",
+      "soledad",
+      "guía",
+      "búsqueda interior"
+    ],
+    "uprightMeaning": "Voltéate hacia adentro. El Ermitaño es el maestro de la soledad deliberada — la claridad se encuentra en la quietud, no en el movimiento.",
+    "reversedMeaning": "Aislamiento, retiro, pérdida. La soledad se ha convertido en una fuga en lugar de una búsqueda.",
+    "symbolism": [
+      "linterna con estrella de seis puntas",
+      "bastón",
+      "figura encapuchada en la montaña"
+    ]
+  },
+  "wheel-of-fortune": {
+    "name": "La Rueda de la Fortuna",
+    "keywords": [
+      "cambio",
+      "ciclos",
+      "destino",
+      "puntos de inflexión"
+    ],
+    "uprightMeaning": "La rueda gira. El destino está en movimiento — los ciclos cambian, la suerte sube y baja, y lo oculto emerge mientras lo alto desciende.",
+    "reversedMeaning": "Mala suerte, resistencia al cambio, conflicto interno. Luchar contra el giro de la rueda en lugar de montarla.",
+    "symbolism": [
+      "rueda de ocho rayos",
+      "figuras diminutas sobre la rueda",
+      "esfinge con espada",
+      "serpiente de Tifón"
+    ]
+  },
+  "justice": {
+    "name": "La Justicia",
+    "keywords": [
+      "equidad",
+      "verdad",
+      "ley",
+      "causa y efecto"
+    ],
+    "uprightMeaning": "Lo verdadero perdura. La Justicia es el espejo frío y claro — las acciones tienen peso, las deudas se acumulan y el equilibrio no es negociable.",
+    "reversedMeaning": "Iniquidad, falta de responsabilidad, deshonestidad. El espejo está empañado o las balanzas están amañadas.",
+    "symbolism": [
+      "mujer con espada y balanza",
+      "trono",
+      "corona con ocho cuadrados"
+    ]
+  },
+  "the-hanged-man": {
+    "name": "El Colgado",
+    "keywords": [
+      "rendición",
+      "nueva perspectiva",
+      "soltar",
+      "pausa"
+    ],
+    "uprightMeaning": "Suspende el ascenso. El Colgado no es derrota — es la elección deliberada de ver de manera diferente. Voltear el mundo revela nuevas verdades.",
+    "reversedMeaning": "Retrasos, resistencia, postergación. La pausa se ha vuelto parálisis permanente.",
+    "symbolism": [
+      "figura suspendida de un árbol por un pie",
+      "halo de luz alrededor de la cabeza",
+      "pedestal rocoso"
+    ]
+  },
+  "death": {
+    "name": "La Muerte",
+    "keywords": [
+      "finales",
+      "transformación",
+      "transición",
+      "inevitabilidad"
+    ],
+    "uprightMeaning": "Algo termina para que otra cosa pueda comenzar. La Muerte es el gran reciclador — lo que está terminado debe ser despejado para dar espacio a lo que viene.",
+    "reversedMeaning": "Resistencia al cambio, miedo a los finales, estancamiento. Agarrarse a lo que ya está muerto.",
+    "symbolism": [
+      "esqueleto blindado con bandera negra",
+      "sol naciente detrás de montañas lejanas",
+      "nobles esparcidos en el suelo"
+    ]
+  },
+  "temperance": {
+    "name": "La Templanza",
+    "keywords": [
+      "equilibrio",
+      "paciencia",
+      "moderación",
+      "síntesis"
+    ],
+    "uprightMeaning": "Encuentra el medio. La Templanza es el alquimista que mezcla opuestos — el tiempo y las circunstancias se mezclan en algo mayor que la suma de sus partes.",
+    "reversedMeaning": "Desequilibrio, exceso, falta de armonía. La mezcla está equivocada — demasiado de una cosa, muy poco de otra.",
+    "symbolism": [
+      "ángel con un pie en el agua y otro en la tierra",
+      "cáliz de vino",
+      "corona con un pequeño triángulo y círculo"
+    ]
+  },
+  "the-devil": {
+    "name": "El Diablo",
+    "keywords": [
+      "sombra",
+      "cautiverio",
+      "materialismo",
+      "apego"
+    ],
+    "uprightMeaning": "Nombre las cadenas. El Diablo revela lo que ata — las elecciones hechas por miedo, los ciclos repetidos por evasión, el peso que cargás por elección.",
+    "reversedMeaning": "Romper las cadenas, soltar la carga, redefinir límites. Las cadenas nunca fueron tan fuertes como parecían.",
+    "symbolism": [
+      "figura con cabeza de cabra sobre un altar",
+      "hombre y mujer encadenados",
+      "antorcha de fuego eterno entre ellos"
+    ]
+  },
+  "the-tower": {
+    "name": "La Torre",
+    "keywords": [
+      "subversión",
+      "revelación",
+      "despertar",
+      "destrucción"
+    ],
+    "uprightMeaning": "Los cimientos se agrietan por una razón. La Torre no es castigo — es el derrumbe necesario de lo que fue construido sobre una base falsa.",
+    "reversedMeaning": "Evitar el desastre, subversión interna, miedo a la verdad. La torre se balancea pero no ha caído — el miedo al impacto es peor que el impacto mismo.",
+    "symbolism": [
+      "torre azotada por un rayo",
+      "figuras cayendo",
+      "corona arrancada",
+      "mar de fondo"
+    ]
+  },
+  "the-star": {
+    "name": "La Estrella",
+    "keywords": [
+      "esperanza",
+      "inspiración",
+      "renovación",
+      "serenidad"
+    ],
+    "uprightMeaning": "Después de la caída, la estrella. La Estrella es la esperanza silenciosa que queda después de la destrucción — una luz constante que dice: la sanación es posible.",
+    "reversedMeaning": "Desesperanza, desconexión, falta de esperanza. La estrella está oscurecida — la fe en el futuro aún no está disponible.",
+    "symbolism": [
+      "mujer desnuda vertiendo agua en alberca y río",
+      "estrella de ocho puntas sobre su cabeza",
+      "pájaro en un árbol"
+    ]
+  },
+  "the-moon": {
+    "name": "La Luna",
+    "keywords": [
+      "ilusión",
+      "intuición",
+      "inconsciente",
+      "miedo"
+    ],
+    "uprightMeaning": "Confía en lo que sientes, no en lo que ves. La Luna ilumina el camino a través del inconsciente — lo que emerge desde las profundidades no siempre es literal.",
+    "reversedMeaning": "Confusión, miedo, interpretación errónea. El camino a través de la oscuridad se recorre sin brújula.",
+    "symbolism": [
+      "dos pilares",
+      "estanque en primer plano",
+      "perro y lobo aullando",
+      "cangrejo emergiendo del agua",
+      "rayos rojos arriba y rayos blancos abajo"
+    ]
+  },
+  "the-sun": {
+    "name": "El Sol",
+    "keywords": [
+      "alegria",
+      "éxito",
+      "vitalidad",
+      "claridad"
+    ],
+    "uprightMeaning": "Luz sin condiciones. El Sol es el calor sencillo de las cosas funcionando — vitalidad, optimismo, y el derecho de estar exactamente donde estás.",
+    "reversedMeaning": "Reveses temporales, sentirse decaído, alegría nublada. El sol está ahí — las nubes simplemente son más densas hoy.",
+    "symbolism": [
+      "niño en caballo blanco",
+      "sol con 21 rayos",
+      "pluma roja en el casco del niño",
+      "muro de jardín en el fondo"
+    ]
+  },
+  "judgment": {
+    "name": "Juicio",
+    "keywords": [
+      "balance",
+      "despertar",
+      "renacimiento",
+      "evaluación"
+    ],
+    "uprightMeaning": "Responde al llamado. Juicio es la trompeta que te pide ver tu totalidad — pasado, presente, y el camino que te trajo hasta aquí — y elevarte en consecuencia.",
+    "reversedMeaning": "Duda de uno mismo, ignorar el llamado, autocrítica severa. La trompeta suena pero aún no puedes responder.",
+    "symbolism": [
+      "ángel con trompeta",
+      "figuras desnudas emergiendo de tumbas",
+      "estandarte con cruz",
+      "nubes blancas"
+    ]
+  },
+  "the-world": {
+    "name": "El Mundo",
+    "keywords": [
+      "culminación",
+      "integración",
+      "logro",
+      "plenitud"
+    ],
+    "uprightMeaning": "El circuito se cierra. El Mundo representa la culminación de un ciclo — integración de todas las lecciones, la respiración después de exhalar, plenitud alcanzada.",
+    "reversedMeaning": "Incompletud, estancamiento, buscar fuera el llenado. El ciclo aún no se cierra — algo permanece sin hacer.",
+    "symbolism": [
+      "figura dentro de un círculo de guirnalda",
+      "cuatro figuras alrededor del borde",
+      "nubes",
+      "figura con varita"
+    ]
+  },
+  "ace-of-cups": {
+    "name": "As de Copas",
+    "keywords": [
+      "amor",
+      "compasión",
+      "nuevos sentimientos",
+      "despertar emocional"
+    ],
+    "uprightMeaning": "El desbordamiento del corazón. El As de Copas es pura begin emotional — amor ofrecido, dolor liberado, alegría despertada, un corazón abierto.",
+    "reversedMeaning": "Emociones bloqueadas, vacío. Un corazón cerrado — o una inundación de sentimientos que no puede ser contenida.",
+    "symbolism": [
+      "mano ofreciendo copa de la que rebalsa agua",
+      "paloma descendiendo",
+      "forma de corazón sobre el agua",
+      "flor de loto"
+    ]
+  },
+  "two-of-cups": {
+    "name": "Dos de Copas",
+    "keywords": [
+      "asociación",
+      "unidad",
+      "atracción",
+      "conexión"
+    ],
+    "uprightMeaning": "Dos recipientes, un flujo. El Dos de Copas señala atracción mutua y asociación — un intercambio de iguales, una conexión forjada en el entendimiento.",
+    "reversedMeaning": "Relación desequilibrada, tensión. Una conexión que drena en lugar de llenar.",
+    "symbolism": [
+      "dos figuras intercambiando copas",
+      "caduceo sobre las copas unidas",
+      "oferta mutua",
+      "león y serpiente abajo"
+    ]
+  },
+  "three-of-cups": {
+    "name": "Tres de Copas",
+    "keywords": [
+      "celebración",
+      "amistad",
+      "comunidad",
+      "creatividad"
+    ],
+    "uprightMeaning": "Tres corazones alineados. Tres de Copas marca celebración en comunidad — amistad, colaboración creativa, alegría compartida, pertenencia.",
+    "reversedMeaning": "Hiperinvolucramiento, chismes, tercera parte. El trío se fractura — o una influencia externa interrumpe la reunión.",
+    "symbolism": [
+      "tres mujeres en un jardín sosteniendo copas en alto",
+      "risa y baile",
+      "guirnaldas y frutas",
+      "celebración"
+    ]
+  },
+  "four-of-cups": {
+    "name": "Cuatro de Copas",
+    "keywords": [
+      "meditación",
+      "contemplación",
+      "apatía",
+      "reevaluación"
+    ],
+    "uprightMeaning": "Retiro de la abundancia. Cuatro de Copas muestra un estado de desvinculación — una oferta rechazada, regalos no vistos, el yo absorto en su propia insatisfacción.",
+    "reversedMeaning": "Toma de conciencia repentina, elegir la felicidad. El velo se levanta y lo que estaba presente todo el tiempo finalmente se hace visible.",
+    "symbolism": [
+      "figura sentada bajo un árbol con tres copas",
+      "mano emergiendo de una nube ofreciendo una copa",
+      "postura contemplativa",
+      "loto y cielo"
+    ]
+  },
+  "five-of-cups": {
+    "name": "Cinco de Copas",
+    "keywords": [
+      "pérdida",
+      "dolor",
+      "arrepentimiento",
+      "decepción"
+    ],
+    "uprightMeaning": "Vasos derramados, dolor sin sanar. Cinco de Copas se fija en lo que se ha perdido — mientras atrás, dos copas aún permanecen llenas, intactas por el derrame.",
+    "reversedMeaning": "Aceptación, encontrando paz. El dolor es honrado pero la espiral se rompe — una decisión de mirar hacia lo que resta.",
+    "symbolism": [
+      "figura en manto oscuro contemplando tres copas derramadas",
+      "dos copas verticales al fondo",
+      "agua desbordante",
+      "puente arqueado"
+    ]
+  },
+  "six-of-cups": {
+    "name": "Seis de Copas",
+    "keywords": [
+      "nostalgia",
+      "recuerdos",
+      "inocencia",
+      "reencuentro"
+    ],
+    "uprightMeaning": "Retorno al origen. Seis de Copas evoca memorias de pureza infantil — el consuelo de lugares familiares, reencuentro con el pasado, compartir e inocencia.",
+    "reversedMeaning": "Vivir en el pasado, ingenuidad. Los recuerdos son preciados pero no pueden sostener el presente.",
+    "symbolism": [
+      "dos niños intercambiando copas en un jardín",
+      "patio amurallado",
+      "flores y cálices",
+      "maravilla infantil"
+    ]
+  },
+  "seven-of-cups": {
+    "name": "Siete de Copas",
+    "keywords": [
+      "decisiones",
+      "fantasía",
+      "ilusión",
+      "pensamiento deseoso"
+    ],
+    "uprightMeaning": "El bosque de opciones. Siete de Copas presenta una gama desconcertante de elecciones — cada una una fantasía diferente, cada una seductora, la mayoría ilusoria.",
+    "reversedMeaning": "Buscando la verdad, enfoque. Una visión clarificada — o el proceso doloroso de distinguir lo real de la ilusión.",
+    "symbolism": [
+      "figura ante siete copas que contienen visiones",
+      "niebla y nubes",
+      "cálices de deseo",
+      "dragón entre las brumas"
+    ]
+  },
+  "eight-of-cups": {
+    "name": "Ocho de Copas",
+    "keywords": [
+      "alejarse",
+      "desilusión",
+      "búsqueda de verdad",
+      "soltar"
+    ],
+    "uprightMeaning": "La partida deliberada. Ocho de Copas muestra una figura caminando alejándose de lo que ya no la nutre — una copa vacía dejada atrás, un camino elegido hacia la soledad.",
+    "reversedMeaning": "Temor al cambio, evasión. Negarse a partir incluso cuando el camino está claro — o huir cuando la quietud era necesaria.",
+    "symbolism": [
+      "figura caminando alejándose de ocho copas apiladas",
+      "sendero montañés bajo la luna",
+      "bastón en mano",
+      "viaje solitario"
+    ]
+  },
+  "nine-of-cups": {
+    "name": "Nueve de Copas",
+    "keywords": [
+      "bienestar",
+      "satisfacción",
+      "gratitud",
+      "deseo cumplido"
+    ],
+    "uprightMeaning": "El deseo cumplido. El Nueve de Copas representa satisfacción emocional y abundancia — un estado genuino de gratitud, el corazón en reposo ante la plenitud.",
+    "reversedMeaning": "Insatisfacción, codicia. Un corazón que no puede llenarse — o la certeza de que lo deseado no satisface.",
+    "symbolism": [
+      "figura bien vestida con nueve copas dispuestas en arco",
+      "mostrador o banco de madera",
+      "postura satisfecha",
+      "entorno lujoso"
+    ]
+  },
+  "ten-of-cups": {
+    "name": "Diez de Copas",
+    "keywords": [
+      "armonía",
+      "felicidad",
+      "familia",
+      "alineación"
+    ],
+    "uprightMeaning": "El hogar elevado en amor. El Diez de Copas muestra una familia bajo un arcoíris de copas — dicha doméstica, valores compartidos, una comunidad en alignment.",
+    "reversedMeaning": "Hogar roto, desalineación. Vínculos familiares tensados o rotos — o el coraje de abandonar un hogar falso.",
+    "symbolism": [
+      "familia bajo el arcoíris con diez copas",
+      "niño pequeño alzando los brazos",
+      "pueblo en la distancia",
+      "río de emociones"
+    ]
+  },
+  "page-of-cups": {
+    "name": "Paje de Copas",
+    "keywords": [
+      "oportunidad creativa",
+      "intuición",
+      "curiosidad",
+      "posibilidad"
+    ],
+    "uprightMeaning": "Un mensajero emocional. El Paje de Copas llega trayendo noticias intuitivas — las primeras manifestaciones de un sentimiento que exige atención, un susurro creativo.",
+    "reversedMeaning": "Creencias limitantes, escapismo. Sueños creativos postergados o distorsionados por el miedo.",
+    "symbolism": [
+      "figura sosteniendo copa con pez emergiendo",
+      "escena portuaria mística",
+      "capa ondeante",
+      "postura curiosa"
+    ]
+  },
+  "knight-of-cups": {
+    "name": "Caballero de Copas",
+    "keywords": [
+      "creatividad",
+      "encanto",
+      "imaginación",
+      "seguir el corazón"
+    ],
+    "uprightMeaning": "Cabalgando la corriente emocional. El Caballero de Copas avanza con el deseo del corazón — persuasivo, romántico, a veces impráctico, siempre sincero.",
+    "reversedMeaning": "Cambios de humor, impráctica, manipulación emocional. Un corazón que extravía a otros — o se extravía a sí mismo.",
+    "symbolism": [
+      "caballero a caballo cerca del agua con una copa",
+      "figura blindada sosteniendo el cáliz",
+      "viaje romántico",
+      "poza de marea"
+    ]
+  },
+  "queen-of-cups": {
+    "name": "Reina de Copas",
+    "keywords": [
+      "compasión",
+      "intuición",
+      "seguridad emocional",
+      "cuidado"
+    ],
+    "uprightMeaning": "Trono del sentimiento profundo. La Reina de Copas gobierna el reino de la emoción con compasión — intuitiva, perspicaz, puerto seguro para cualquier corazón.",
+    "reversedMeaning": "Vacío interior, cambios de humor, autoprotección. Un corazón cerrado para protegerse — o abrumado por el dolor ajeno.",
+    "symbolism": [
+      "reina entronizada con copa y agua",
+      "trono de loto",
+      "mirada suave y expresión distante",
+      "manto protector"
+    ]
+  },
+  "king-of-cups": {
+    "name": "Rey de Copas",
+    "keywords": [
+      "equilibrio emocional",
+      "diplomacia",
+      "compasión",
+      "calma"
+    ],
+    "uprightMeaning": "Maestro del dominio del corazón. El Rey de Copas gobierna las emociones con diplomática equilibrada — sereno bajo la tormenta, compasivo sin sentimentalismo.",
+    "reversedMeaning": "Manipulación emocional, cambios de humor, volatilidad. Un ruler que lleva la corona pero es gobernado por la marea.",
+    "symbolism": [
+      "rey entronizado con copa y cetro",
+      "mar sereno más allá del trono",
+      "autoridad serena",
+      "mano equilibrada"
+    ]
+  },
+  "ace-of-swords": {
+    "name": "As de Espadas",
+    "keywords": [
+      "claridad",
+      "ruptura",
+      "nuevas ideas",
+      "verdad"
+    ],
+    "uprightMeaning": "Una hoja de claridad que corta a través de la confusión. El As de Espadas es un momento de ruptura intelectual — claridad de pensamiento, perspicacia decisiva, la verdad que libera.",
+    "reversedMeaning": "Confusión, desinformación, confusión táctica. La hoja está desafilada o vuelta hacia adentro — la claridad corrompida en obsesión.",
+    "symbolism": [
+      "espada suspendida entre nubes",
+      "corona con laurel y paloma",
+      "luz filtrada",
+      "cumbres de montañas"
+    ]
+  },
+  "two-of-swords": {
+    "name": "Dos de Espadas",
+    "keywords": [
+      "indecisión",
+      "postergación",
+      "emociones bloqueadas",
+      "evasión"
+    ],
+    "uprightMeaning": "El punto muerto. Dos de Espadas representa una figura en cuidadoso equilibrio — una decisión deliberadamente postergada, emociones deliberadamente ignoradas.",
+    "reversedMeaning": "Inacción, punto muerto, confusión. El cruce de caminos se pierde — o la decisión se toma por evasión en lugar de por elección.",
+    "symbolism": [
+      "figura vendada sosteniendo dos espadas",
+      "altar de piedra y luna",
+      "balancín de la mente",
+      "estorbo"
+    ]
+  },
+  "three-of-swords": {
+    "name": "Tres de Espadas",
+    "keywords": [
+      "desamor",
+      "dolor",
+      "tristeza",
+      "verdad dolorosa"
+    ],
+    "uprightMeaning": "La herida que enseña. Tres de Espadas es el desamor en su forma más cruda — un duelo que debe sentirse plenamente antes de poder ser liberado.",
+    "reversedMeaning": "Recuperación, perdón, liberación del duelo. La hoja está siendo retirada — la sanación comienza cuando finalmente se limpia la herida.",
+    "symbolism": [
+      "corazón traspasado por tres espadas",
+      "nubes oscuras y lluvia",
+      "gotas de lágrimas y acero",
+      "claridad fría"
+    ]
+  },
+  "four-of-swords": {
+    "name": "Cuatro de Espadas",
+    "keywords": [
+      "descanso",
+      "restauración",
+      "meditación",
+      "contemplación"
+    ],
+    "uprightMeaning": "La retirada necesaria. Cuatro de Espadas es un repliegue forzado o elegido — un período de descanso, recuperación y preparación silenciosa para lo que viene.",
+    "reversedMeaning": "Agotamiento, agotamiento laboral, contemplación profunda. El descanso se ha extendido demasiado — o la quietud nunca fue lo suficientemente profunda para sanar.",
+    "symbolism": [
+      "caballero recostado sobre tumba con cuatro espadas sobre él",
+      "vitral y velas",
+      "retiro del mundo",
+      "preparándose para regresar"
+    ]
+  },
+  "five-of-swords": {
+    "name": "Cinco de Espadas",
+    "keywords": [
+      "conflicto",
+      "derrota",
+      "victoria a cualquier precio",
+      "traición"
+    ],
+    "uprightMeaning": "Victoria pírrica. Cinco de Espadas muestra a un ganador que ya ha perdido — el orgullo que costó más de lo que rindió, una batalla ganada pero la guerra entregada.",
+    "reversedMeaning": "Reconciliación, hacer las paces, resentimiento del pasado. La marea cambia — o la sabiduría de dejar de luchar antes de que todo se pierda.",
+    "symbolism": [
+      "figura recogiendo espadas de dos oponentes caídos",
+      "humo y ceniza",
+      "victoria vacía",
+      "tres espadas en el suelo"
+    ]
+  },
+  "six-of-swords": {
+    "name": "Seis de Espadas",
+    "keywords": [
+      "transición",
+      "dejar atrás",
+      "avanzar",
+      "recuperación"
+    ],
+    "uprightMeaning": "El cruce. Seis de Espadas representa el paso por aguas turbulentas — una transición undertaken, un capítulo difícil que se deja atrás, sanación en curso.",
+    "reversedMeaning": "Atascado en el pasado, resistiendo el cambio, asuntos pendientes. El paso está bloqueado — o la partida se hace antes de estar listo.",
+    "symbolism": [
+      "figura en bote con seis espadas rumbo a aguas más tranquilas",
+      "figura encapuchada guiando",
+      "dejando la turbulencia atrás",
+      "cruce del psicopompo"
+    ]
+  },
+  "seven-of-swords": {
+    "name": "Siete de Espadas",
+    "keywords": [
+      "engaño",
+      "estrategia",
+      "sigilo",
+      "salirse con la suya"
+    ],
+    "uprightMeaning": "El juego de sombras. Siete de Espadas muestra astucia en movimiento — estrategia que cruza líneas éticas, un secreto mantenido mediante astucia en lugar de honestidad.",
+    "reversedMeaning": "Confesión, limpiarse la conciencia, prisión por las propias acciones. El secreto se deshace — o se elige la verdad sobre el escape.",
+    "symbolism": [
+      "figura deslizándose con cinco espadas en la noche",
+      "campamento y centinela al fondo",
+      "sombra y sigilo",
+      "una espada dejada atrás"
+    ]
+  },
+  "eight-of-swords": {
+    "name": "Ocho de Espadas",
+    "keywords": [
+      "restricción",
+      "prisión",
+      "autovictimización",
+      "impotencia"
+    ],
+    "uprightMeaning": "La prisión de la mente. Ocho de Espadas representa ataduras autoinfligidas — restricción más imaginada que real, una prisión cuyas paredes se disuelven cuando se examinan.",
+    "reversedMeaning": "Abrirse a nuevas perspectivas, libertad, liberación. La venda cae — los vínculos se aflojan cuando regresa el coraje.",
+    "symbolism": [
+      "figura atada y vendada entre ocho espadas clavadas en el suelo",
+      "muralla baja y horizonte",
+      "prisión por el pensamiento",
+      "la impotencia es la jaula"
+    ]
+  },
+  "nine-of-swords": {
+    "name": "Nueve de Espadas",
+    "keywords": [
+      "ansiedad",
+      "preocupación",
+      "miedo",
+      "pesadillas"
+    ],
+    "uprightMeaning": "El peso de una mente acelerada. Nueve de Espadas representa la hora oscura antes del amanecer — ansiedad amplificada hasta el dolor físico, la noche en que los miedos se convierten en monstruos.",
+    "reversedMeaning": "Esperanza, buscar ayuda, recuperación. La luz regresa — o aceptar que lo peor no ha sucedido y puede que nunca suceda.",
+    "symbolism": [
+      "figura sentada en la cama con nueve espadas sobre ella",
+      "angustia y desesperación",
+      "luna creciente y cámara de tortura",
+      "la ansiedad toma forma"
+    ]
+  },
+  "ten-of-swords": {
+    "name": "Diez de Espadas",
+    "keywords": [
+      "traición",
+      "fin de un ciclo",
+      "fondo del abismo",
+      "crisis"
+    ],
+    "uprightMeaning": "Lo peor ha sucedido. Diez de Espadas marca el fondo del abismo — el golpe final, el fin absoluto, el momento desde el cual la única dirección es hacia arriba.",
+    "reversedMeaning": "Recuperación, regeneración, resistencia. El cuerpo se recupera antes que el espíritu — pero sí se recupera. Amanecer después de la noche más larga.",
+    "symbolism": [
+      "figura boca abajo con diez espadas en la espalda",
+      "sangre y rayos de luz",
+      "final violento",
+      "renacimiento de la ruina"
+    ]
+  },
+  "page-of-swords": {
+    "name": "Página de Espadas",
+    "keywords": [
+      "curiosidad",
+      "ideas nuevas",
+      "sed de conocimiento",
+      "comunicación"
+    ],
+    "uprightMeaning": "El estudiante ansioso de la verdad. El Página de Espadas llega con curiosidad ardiente — una mente que debe saber, preguntas que demandan respuestas, una idea que no puede descansar.",
+    "reversedMeaning": "Pensamientos dispersos, defensividad, todo hablar sin acción. La mente corre pero los pies se quedan quietos — o ira convertida en crueldad.",
+    "symbolism": [
+      "figura de pie alerta con espada y pergamino",
+      "capa y paisaje azotados por el viento",
+      "formas de nubes y mirada penetrante",
+      "curioso y vigilante"
+    ]
+  },
+  "knight-of-swords": {
+    "name": "Caballero de Espadas",
+    "keywords": [
+      "ambición",
+      "acción",
+      "impulso",
+      "pensamiento rápido"
+    ],
+    "uprightMeaning": "Carga del intelecto. El Caballero de Espadas avanza con ambición feroz — directo, impulsado, a veces imprudente, cortando obstáculos con voluntad pura.",
+    "reversedMeaning": "Imprudencia, precipitación, crueldad. La carga sale mal — o la ambición se dirige hacia el objetivo equivocado.",
+    "symbolism": [
+      "caballero blindado en caballo al ataque con espada levantada",
+      "galopando por campo abierto",
+      "nubes de tormenta adelante",
+      "búsqueda de una sola mente"
+    ]
+  },
+  "queen-of-swords": {
+    "name": "Reina de Espadas",
+    "keywords": [
+      "percepción",
+      "pensamiento claro",
+      "desapego emocional",
+      "comunicación directa"
+    ],
+    "uprightMeaning": "La mente afilada. La Reina de Espadas gobierna con aguda percepción — directa, honesta, emocionalmente desapegada, una mente que corta el pretexto para encontrar la verdad.",
+    "reversedMeaning": "Fría de corazón, cruel, defensividad. La hoja se vuelve maliciosa — inteligencia convertida en daño, o un corazón roto que se niega a sentir.",
+    "symbolism": [
+      "reina entronizada con espada y cabeza cortada",
+      "cielo de invierno y murciélago",
+      "mirada penetrante y porte frío",
+      "sabiduría a través de la pérdida"
+    ]
+  },
+  "king-of-swords": {
+    "name": "Rey de Espadas",
+    "keywords": [
+      "autoridad",
+      "verdad",
+      "pensamiento claro",
+      "poder intelectual"
+    ],
+    "uprightMeaning": "Trono de la mente. El Rey de Espadas comanda a través del intelecto puro — autoridad ganada por la sabiduría, poder manejado con precisión, verdad dicha sin miedo.",
+    "reversedMeaning": "Abuso de poder, tiranía, manipulación. La corona se convierte en arma — intelecto al servicio del ego, autoridad corrompida en crueldad.",
+    "symbolism": [
+      "rey entronizado con espada levantada y libro",
+      "cielo dramático y trono de piedra",
+      "símbolos de cargo y justicia",
+      "la mente hecha soberana"
+    ]
+  },
+  "ace-of-pentacles": {
+    "name": "As de Pentáculos",
+    "keywords": [
+      "manifestación",
+      "oportunidad financiera",
+      "prosperidad",
+      "nueva empresa"
+    ],
+    "uprightMeaning": "Semillas en tierra fértil. El As de Pentáculos es una oportunidad financiera o material — la primera moneda depositada en la cuenta, la tierra ganada, el negocio comenzado.",
+    "reversedMeaning": "Oportunidad perdida, falta de planificación, mentalidad de escasez. La semilla cae en tierra estéril — o la oportunidad se desperdicia antes de que pueda crecer.",
+    "symbolism": [
+      "pentáculo único emergiendo de una nube",
+      "mano extendida",
+      "flor y rosario",
+      "jardín de abundancia"
+    ]
+  },
+  "two-of-pentacles": {
+    "name": "Dos de Pentáculos",
+    "keywords": [
+      "equilibrio",
+      "adaptabilidad",
+      "administración del tiempo",
+      "priorización"
+    ],
+    "uprightMeaning": "El arte de mantener el equilibrio. Dos de Pentáculos representa la equilibración al límite de la capacidad — múltiples prioridades, demandas cambiantes, el baile gracioso de la gestión adaptativa.",
+    "reversedMeaning": "Abrumación, desorganización, plazos incumplidos. Las esferas caen — o el equilibrio era siempre una ilusión que enmascaraba el caos debajo.",
+    "symbolism": [
+      "figura bailando con dos pentáculos en una cuerda en forma de ocho",
+      "mar y barco al fondo",
+      "trabajo de pies ágil",
+      "caos contenido por la habilidad"
+    ]
+  },
+  "three-of-pentacles": {
+    "name": "Tres de Pentáculos",
+    "keywords": [
+      "trabajo en equipo",
+      "colaboración",
+      "aprendizaje",
+      "implementación"
+    ],
+    "uprightMeaning": "El arte del artesano. Tres de Pentáculos muestra el dominio en construcción — manos hábiles trabajando juntas, el artesano consultando el plano, un proyecto que recompensa la colaboración paciente.",
+    "reversedMeaning": "Falta de trabajo en equipo, mala calidad, trabajar solo. La colaboración se rompe — o el trabajo se hace sin el plano que lo haría excelente.",
+    "symbolism": [
+      "arquitectos y canteros trabajando en una catedral",
+      "bóveda y herramientas",
+      "tres figuras colaborando",
+      "plano y ejecución"
+    ]
+  },
+  "four-of-pentacles": {
+    "name": "Cuatro de Pentáculos",
+    "keywords": [
+      "seguridad",
+      "conservación",
+      "control",
+      "estabilidad"
+    ],
+    "uprightMeaning": "El guardián de las monedas. Cuatro de Pentáculos representa el aferramiento con puño cerrado — seguridad buscada a través de la acumulación, estabilidad comprada mediante el control, el avaro que lo tiene todo y no disfruta de nada.",
+    "reversedMeaning": "Avaricia, materialismo, soltar el control. El agarre se afloja — o el control se convierte en la jaula que mantiene la abundancia afuera.",
+    "symbolism": [
+      "figura ricamente vestida aferrándose a un pentáculo con un pie",
+      "muro de ciudad y cielo abierto",
+      "postura defensiva",
+      "acaparamiento y protección"
+    ]
+  },
+  "five-of-pentacles": {
+    "name": "Cinco de Oros",
+    "keywords": [
+      "adversidad",
+      "aislamiento",
+      "preocupación",
+      "pérdida financiera"
+    ],
+    "uprightMeaning": "Oscuridad visible. Cinco de Oros muestra una figura caminando junto a una ventana de vitral — pobreza material y espiritual, la iglesia a la vista pero no entrada, preocupación que ciega ante la ayuda disponible.",
+    "reversedMeaning": "Recuperación de pérdidas, pobreza espiritual, encontrar ayuda. La luz se ve finalmente — o aceptar que ya es suficiente y pedir ayuda.",
+    "symbolism": [
+      "figura con manto pasando junto a una iglesia con cinco ventanas",
+      "nieve y adoquines",
+      "carencia espiritual y material",
+      "la iglesia visible pero no entrada"
+    ]
+  },
+  "six-of-pentacles": {
+    "name": "Seis de Oros",
+    "keywords": [
+      "generosidad",
+      "caridad",
+      "dar y recibir",
+      "compartir"
+    ],
+    "uprightMeaning": "Equilibrio en el intercambio. Seis de Oros representa dar y recibir en equilibrio — caridad que empodera en lugar de paternalizar, la alegría de la generosidad equilibrada de quienes tienen hacia quienes necesitan.",
+    "reversedMeaning": "Deuda, condiciones ocultas, inequidad. El regalo tiene condiciones escondidas — o el desequilibrio es deliberado, el poder acumulado en lugar de compartido.",
+    "symbolism": [
+      "figura adinerada dando monedas a dos mendigos",
+      "balanza de la justicia en una mano",
+      "rosas blancas y rojas",
+      "equilibrio entre dar y recibir"
+    ]
+  },
+  "seven-of-pentacles": {
+    "name": "Siete de Oros",
+    "keywords": [
+      "paciencia",
+      "visión a largo plazo",
+      "inversión",
+      "perseverancia"
+    ],
+    "uprightMeaning": "El juego largo. Siete de Oros muestra una figura apoyada en su bastón, contemplando semillas plantadas pero aún no cosechadas — se requiere paciencia, el trabajo ha sido realizado, el retorno aún no es visible.",
+    "reversedMeaning": "Impaciencia, malos rendimientos, esfuerzo desperdiciado. La cosecha no llega — o la espera se extiende indefinidamente mientras la tierra se vuelve estéril.",
+    "symbolism": [
+      "figura apoyada en un bastón examinando una vid cargada de oros",
+      "muro y jardín descuidado",
+      "espera y observación",
+      "se requiere visión a largo plazo"
+    ]
+  },
+  "eight-of-pentacles": {
+    "name": "Ocho de Oros",
+    "keywords": [
+      "aprendizaje",
+      "desarrollo de habilidades",
+      "dedicación",
+      "calidad"
+    ],
+    "uprightMeaning": "El artesano dedicado. Ocho de Oros representa el dominio en progreso — horas de práctica enfocada, habilidades refinadas bajo un maestro, la dignidad silenciosa del trabajo bien hecho por sí mismo.",
+    "reversedMeaning": "Obsesión con el estatus, perfeccionismo, falta de crecimiento. El oficio se convierte en prisión — o el dominio se confunde con el trabajo mismo y se pierde la alegría.",
+    "symbolism": [
+      "tallador de oros en un banco de trabajo",
+      "cinco oros en distintas etapas de terminación",
+      "concentración y aplicación",
+      "el maestro en su obra"
+    ]
+  },
+  "nine-of-pentacles": {
+    "name": "Nueve de Oros",
+    "keywords": [
+      "abundancia",
+      "lujo",
+      "autosuficiencia",
+      "independencia financiera"
+    ],
+    "uprightMeaning": "La buena vida merecida. Nueve de Oros muestra una figura a sus anchas en la abundancia cultivada — confort comprado mediante disciplina, belleza que recompensa al ojo y al alma, independencia que fue construida en lugar de heredada.",
+    "reversedMeaning": "Exceso, superficialidad, vivir por encima de las posibilidades, envidia. El confort se convierte en prisión — o la apariencia de riqueza enmascara la ausencia de sustancia.",
+    "symbolism": [
+      "figura elegante con oro y rosa",
+      "viñas y caracoles",
+      "mansión y jardín",
+      "la abundancia como expresión personal"
+    ]
+  },
+  "ten-of-pentacles": {
+    "name": "Diez de Oros",
+    "keywords": [
+      "legado",
+      "herencia",
+      "familia",
+      "éxito a largo plazo"
+    ],
+    "uprightMeaning": "La riqueza que perdura. Diez de Oros representa abundancia generacional — un patrimonio familiar, prosperidad heredada, la base financiera que le da a la siguiente generación más opciones que a la anterior.",
+    "reversedMeaning": "Conflicto familiar, fracaso financiero, inestabilidad, ruptura con la tradición. El patrimonio se desmorona — o la herencia es una carga que fractura en lugar de unir a la familia.",
+    "symbolism": [
+      "pareja mayor y niño con perro frente a una mansión",
+      "cosecha y monedas en el suelo",
+      "patrimonio y tradición familiares",
+      "tres generaciones"
+    ]
+  },
+  "page-of-pentacles": {
+    "name": "Sota de Pentáculos",
+    "keywords": [
+      "manifestación",
+      "oportunidad financiera",
+      "prosperidad",
+      "nueva empresa"
+    ],
+    "uprightMeaning": "El estudiante ambicioso de la riqueza. La Sota de Pentáculos llega portando una visión de prosperidad — un plan, una oportunidad, un deseo de construir algo que perdure, el primer paso hacia el dominio material.",
+    "reversedMeaning": "Falta de progreso, oportunidades perdidas, esquemas de enriquecimiento rápido. La ambición supera a la disciplina — o el plan nunca abandona la página donde fue escrito.",
+    "symbolism": [
+      "figura juvenil presentando un pentáculo en un escritorio",
+      "paisaje rural y pueblo al fondo",
+      "libro y herramientas cerca",
+      "ansiosa y estudiosa"
+    ]
+  },
+  "knight-of-pentacles": {
+    "name": "Caballo de Pentáculos",
+    "keywords": [
+      "eficiencia",
+      "rutina",
+      "conservadurismo",
+      "trabajo duro"
+    ],
+    "uprightMeaning": "El constructor constante. El Caballo de Pentáculos avanza con determinación paciente — lento, confiable, progreso metódico, la larga campaña de esfuerzo consistente que produce resultados confiables.",
+    "reversedMeaning": "Aburrimiento, estancamiento, perfeccionismo, resistencia al cambio. La lentitud se calcifica en rigidez — o la paciencia se convierte en parálisis cuando se requiere acción.",
+    "symbolism": [
+      "caballero sobre un caballo robusto sosteniendo un pentáculo",
+      "tierras de cultivo fértiles y pueblo",
+      "viaje lento y confiable",
+      "constante y dedicado"
+    ]
+  },
+  "queen-of-pentacles": {
+    "name": "Reina de Pentáculos",
+    "keywords": [
+      "nutrimiento",
+      "practicidad",
+      "abundancia",
+      "seguridad"
+    ],
+    "uprightMeaning": "La madre tierra hecha manifestación. La Reina de Pentáculos gobierna el reino material con practicidad nutritiva — crecimiento abundante, gestión sabia de los recursos, un santuario creado a través del cuidado paciente.",
+    "reversedMeaning": "Inseguridad financiera, suffocación, materialismo, descuido de uno mismo. El nutriimiento se ha convertido en suffocación — o el yo fue descuidado mientras se cuidaba todo lo demás.",
+    "symbolism": [
+      "reina entronizada con pentáculo y planta en crecimiento",
+      "trono opulento y piso de madera",
+      "oso y conejo a sus pies",
+      "abundante y nutritiva"
+    ]
+  },
+  "king-of-pentacles": {
+    "name": "Rey de Pentáculos",
+    "keywords": [
+      "abundancia",
+      "seguridad",
+      "control",
+      "disciplina"
+    ],
+    "uprightMeaning": "Maestro del reino material. El Rey de Pentáculos comanda a través de la acumulación y la gestión sabia — riqueza construida y protegida, recursos administrados con disciplina, el imperio de la mente práctica.",
+    "reversedMeaning": "Codicia, materialismo, malas decisiones financieras, terquedad. El imperio se desmorona porque el rey no pudo adaptarse — o la riqueza acumulada tan apretadamente que se vuelve worthless.",
+    "symbolism": [
+      "rey entronizado con pentáculo y toro",
+      "trono rico y arquitectura gótica",
+      "cosecha y monedas rodeando el trono",
+      "autoridad material"
+    ]
+  },
+  "ace-of-wands": {
+    "name": "As de Bastos",
+    "keywords": [
+      "inspiración",
+      "nuevas oportunidades",
+      "crecimiento",
+      "potencial"
+    ],
+    "uprightMeaning": "Una chispa de fuego creativo. El As de Bastos señala el nacimiento de la pasión y el propósito — un impulso irresistible de crear, comenzar o aventurarse.",
+    "reversedMeaning": "Retrasos, falta de motivación, bloqueo creativo. La llama parpadea pero aún no ha prendido. Nurtúrela antes de forzarla.",
+    "symbolism": [
+      "bastón",
+      "mano emergiendo de las nubes",
+      "rosa latente",
+      "amapolas escarlatas"
+    ]
+  },
+  "two-of-wands": {
+    "name": "Dos de Bastos",
+    "keywords": [
+      "planificación",
+      "decisiones",
+      "descubrimiento",
+      "progreso"
+    ],
+    "uprightMeaning": "De pie en el umbral. El Dos de Bastos muestra la contemplación antes de la acción — el mapa está trazado, los primeros pasos sopesados con cuidado.",
+    "reversedMeaning": "Miedo a lo desconocido, falta de planificación. Hesitación en el umbral — o avanzar sin dirección.",
+    "symbolism": [
+      "figura entre dos bastones",
+      "vista de ciudad y mar",
+      "capa de color frambuesa",
+      "tierras lejanas"
+    ]
+  },
+  "three-of-wands": {
+    "name": "Tres de Bastos",
+    "keywords": [
+      "expansión",
+      "previsión",
+      "oportunidades en el extranjero",
+      "progreso"
+    ],
+    "uprightMeaning": "Los primeros resultados llegan. Tres de Bastos muestra impulso — lo que se plantó comienza a manifestarse, y el horizonte guarda más de lo esperado.",
+    "reversedMeaning": "Jugar demasiado pequeño, carecer de visión, retrasos. Sigue observando el horizonte.",
+    "symbolism": [
+      "figura con tres bastos",
+      "barco navegando hacia el horizonte",
+      "picos de montañas",
+      "sol naciendo"
+    ]
+  },
+  "four-of-wands": {
+    "name": "Cuatro de Bastos",
+    "keywords": [
+      "celebración",
+      "armonía",
+      "matrimonio",
+      "hogar",
+      "comunidad"
+    ],
+    "uprightMeaning": "Fundamentos solidificados. El Cuatro de Bastos representa la alegría de la llegada — un fundamento construido, una comunidad reunida, un hogar establecido.",
+    "reversedMeaning": "Falta de apoyo, inestabilidad, conflicto dentro del hogar o la comunidad. Los fundamentos necesitan atención antes de la celebración.",
+    "symbolism": [
+      "dos personas con bastos enguirnaldados",
+      "cuatro bastos en formación de arco",
+      "arco nupcial",
+      "guirnalda de laurel"
+    ]
+  },
+  "five-of-wands": {
+    "name": "Cinco de Bastos",
+    "keywords": [
+      "competencia",
+      "conflicto",
+      "diversidad",
+      "lucha"
+    ],
+    "uprightMeaning": "Fricción creativa. Cinco de Bastos representa una competencia amigable o feroz — muchas voces, muchas visiones, todas compitiendo por espacio. La resolución requiere arbitraje.",
+    "reversedMeaning": "Evitación del conflicto, liberación de tensión, creación de paz. El ruido se disipa — o comienza una guerra total.",
+    "symbolism": [
+      "cinco figuras con bastos cruzados",
+      "melé caótica",
+      "energía en colisión",
+      "feroz pero juguetona"
+    ]
+  },
+  "six-of-wands": {
+    "name": "Seis de Bastos",
+    "keywords": [
+      "éxito",
+      "reconocimiento público",
+      "progreso",
+      "autoconfianza"
+    ],
+    "uprightMeaning": "Triunfo reconocido. El Seis de Bastos muestra victoria celebrada — una victoria pública, una reputación ganada, los aplausos de la multitud.",
+    "reversedMeaning": "Fracaso, humillación, caída en desgracia. Fama convertida en infamia — o reconocimientos no merecidos.",
+    "symbolism": [
+      "figura en caballo blanco con seis bastos",
+      "multitud celebrando",
+      "guirnalda de laurel",
+      "regreso triunfal"
+    ]
+  },
+  "seven-of-wands": {
+    "name": "Siete de Bastos",
+    "keywords": [
+      "desafío",
+      "perseverancia",
+      "defensa",
+      "mantener el control"
+    ],
+    "uprightMeaning": "Mantenerse firme. Siete de Bastos muestra enfrentar la oposición — posiciones defendidas, territorio ganado, la determinación de no ceder.",
+    "reversedMeaning": "Agotamiento, rendirse. Superado en número y en fuerzas — o la sabiduría de elegir cuidadosamente las batallas.",
+    "symbolism": [
+      "figura defendiendo contra seis bastos atacantes",
+      "defensa en la cima de una colina",
+      "persistencia terca",
+      "retirada estratégica"
+    ]
+  },
+  "eight-of-wands": {
+    "name": "Ocho de Bastos",
+    "keywords": [
+      "velocidad",
+      "acción",
+      "movimiento",
+      "decisiones rápidas"
+    ],
+    "uprightMeaning": "Aceleración rápida. Ocho de Bastos indica progreso veloz — acontecimientos en movimiento, decisiones rápidas, comunicación acelerada y eventos que se deslizan.",
+    "reversedMeaning": "Retrasos, frustración. Cosas varadas en tránsito — o desaceleración intencional.",
+    "symbolism": [
+      "ocho bastos volando por el aire",
+      "movimiento veloz",
+      "aves veloces en vuelo",
+      "viaje urgente"
+    ]
+  },
+  "nine-of-wands": {
+    "name": "Nueve de Bastos",
+    "keywords": [
+      "resiliencia",
+      "coraje",
+      "persistencia",
+      "última resistencia"
+    ],
+    "uprightMeaning": "La última etapa de un viaje difícil. Nueve de Bastos muestra perseverancia — heridas cargadas pero no caído, determinación endurecida por la adversidad.",
+    "reversedMeaning": "Agotamiento, fatiga, rendirse. Cerca del final pero la fuerza falla — o sabiduría aprendida para dejar de luchar.",
+    "symbolism": [
+      "figura con un bastón levantado entre ocho plantados",
+      "cabeza vendada",
+      "guerrero herido",
+      "determinación de veterano"
+    ]
+  },
+  "ten-of-wands": {
+    "name": "Diez de Bastos",
+    "keywords": [
+      "carga",
+      "responsabilidad",
+      "trabajo duro",
+      "estrés"
+    ],
+    "uprightMeaning": "Cargado al límite. Diez de Bastos muestra una carga transportada en soledad — responsabilidades que se han acumulado, el costo del exceso de compromiso.",
+    "reversedMeaning": "Quemado por hacer todo solo. Llevar demasiado peso en soledad — o la libertad hallada al soltar.",
+    "symbolism": [
+      "figura cargando diez bastos agrupados",
+      "carga pesada",
+      "viaje laborioso",
+      "cerca del destino"
+    ]
+  },
+  "page-of-wands": {
+    "name": "Página de Bastos",
+    "keywords": [
+      "exploración",
+      "emoción",
+      "libertad",
+      "descubrimiento"
+    ],
+    "uprightMeaning": "Un mensajero creativo. La Página de Bastos anuncia la llegada de inspiración — una chispa de curiosidad, una invitación a explorar algo nuevo.",
+    "reversedMeaning": "Contratiempos, falta de dirección, energía dispersa. Un comienzo fallido u oportunidad emocionante que no llega a nada.",
+    "symbolism": [
+      "figura sosteniendo un bastón con salamandra",
+      "paisaje desértico",
+      "bufanda de fuego",
+      "postura segura"
+    ]
+  },
+  "knight-of-wands": {
+    "name": "Caballo de Bastos",
+    "keywords": [
+      "energía",
+      "pasión",
+      "aventura",
+      "impulsividad"
+    ],
+    "uprightMeaning": "Avanzando con carga. El Caballo de Bastos encarna acción audaz y apasionada — rápida, directa, a veces imprudente, siempre llena de fuego.",
+    "reversedMeaning": "Pasión, impulsividad, demoras. Un plan ardiente que se incendia — o acción apresurada que no lleva a ninguna parte.",
+    "symbolism": [
+      "caballero a caballo con bastos",
+      "figura blindada",
+      "movimiento de carga",
+      "castillo a lo lejos"
+    ]
+  },
+  "queen-of-wands": {
+    "name": "Reina de Bastos",
+    "keywords": [
+      "coraje",
+      "confianza",
+      "independencia",
+      "calidez"
+    ],
+    "uprightMeaning": "Liderazgo audaz y generoso. La Reina de Bastos comanda con calidez y confianza — visión clara, lealtad feroz, seguridad impoluta en sí misma.",
+    "reversedMeaning": "Egoísmo, celos, exigencia. Una reina que gobierna mediante el miedo — o un trono dejado vacío.",
+    "symbolism": [
+      "reina entronizada con girasol y bastos",
+      "leones flanqueando el trono",
+      "calidez y poder",
+      "corona de girasoles"
+    ]
+  },
+  "king-of-wands": {
+    "name": "Rey de Bastos",
+    "keywords": [
+      "liderazgo",
+      "visión",
+      "éxito",
+      "audacia"
+    ],
+    "uprightMeaning": "Comandante natural. El Rey de Bastos gobierna mediante visión y audacia — estratégico, decisivo, inspirando a otros a actuar con propósito.",
+    "reversedMeaning": "Impulsividad, tiranía, arrogancia. Un rey que gobierna mediante el miedo — o es incapaz de decidir.",
+    "symbolism": [
+      "rey entronizado con bastón",
+      "trono tallado con leones y llamas",
+      "corona y manto",
+      "gesto de mando"
+    ]
+  }
+}
