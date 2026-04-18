@@ -643,6 +643,120 @@ nav .container {
   font-size: 0.72rem;
   color: var(--text-dim);
 }
+.showcase-story-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+.showcase-story-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1.35rem;
+  min-width: 0;
+}
+.showcase-story-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.7rem;
+}
+.showcase-story-title {
+  font-size: 1.1rem;
+  line-height: 1.35;
+  color: var(--text);
+  margin-bottom: 0.7rem;
+}
+.showcase-story-intro {
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.showcase-phase-list {
+  display: grid;
+  gap: 0.95rem;
+  margin-top: 1.2rem;
+}
+.showcase-phase {
+  border-left: 2px solid rgba(0, 229, 255, 0.18);
+  padding-left: 0.95rem;
+}
+.showcase-phase-step {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--cyan);
+  margin-bottom: 0.3rem;
+}
+.showcase-phase p {
+  font-size: 0.76rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+.showcase-proof-list {
+  list-style: none;
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0;
+}
+.showcase-proof-item {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.015);
+  padding: 0.9rem 0.95rem;
+}
+.showcase-proof-item strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--cyan);
+  margin-bottom: 0.35rem;
+}
+.showcase-proof-item span {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.showcase-story-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.showcase-story-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: rgba(0, 229, 255, 0.05);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.showcase-story-link:hover {
+  color: var(--bg);
+  background: var(--cyan);
+  text-decoration: none;
+}
+.showcase-story-note {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
 @media (max-width: 640px) {
   .showcase-iframe { height: 88dvh; min-height: 720px; }
   .showcase-stats { grid-template-columns: repeat(2, 1fr); }
@@ -650,6 +764,8 @@ nav .container {
   .showcase-actions { width: 100%; }
   .showcase-open-btn,
   .showcase-fullscreen-btn { width: 100%; justify-content: center; text-align: center; }
+  .showcase-story-grid { grid-template-columns: 1fr; }
+  .showcase-story-card { padding: 1.1rem; }
 }
 
 /* -- Comparison -- */
@@ -1663,10 +1779,10 @@ forgegod integrations export-openclaw-skill --output ./dist/openclaw</code>
 <section class="showcase-section" id="showcase">
   <div class="container">
     <h2 class="section-title" data-i18n="title_showcase">REFERENCE APP</h2>
-    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-bottom:2rem;max-width:640px;margin-left:auto;margin-right:auto;" data-i18n="showcase_subtitle">A public ForgeGod-built application used to exercise the harness across planning, implementation, review, and mobile UI work. It remains a live reference deployment, not a marketing mockup.</p>
+    <p class="section-subtitle" style="text-align:center;color:var(--text-dim);font-size:0.9rem;margin-bottom:2rem;max-width:760px;margin-left:auto;margin-right:auto;" data-i18n="showcase_subtitle">Tarot 3:33 is the first cleanroom product ForgeGod rebuilt from zero to a live deployment using adversarial review, research-first planning, bilingual release surfaces, and full validation instead of a demo-only pass.</p>
 
     <div class="showcase-frame-wrapper" id="showcase-frame">
-      <div class="showcase-badge">ForgeGod Reference Deployment</div>
+      <div class="showcase-badge" data-i18n="showcase_badge">ForgeGod First Public Showcase</div>
       <iframe
         src="https://tarot-ecru-five.vercel.app/"
         class="showcase-iframe"
@@ -1679,32 +1795,86 @@ forgegod integrations export-openclaw-skill --output ./dist/openclaw</code>
       ></iframe>
       <div class="showcase-footer">
         <div class="showcase-actions">
-          <button type="button" class="showcase-fullscreen-btn" onclick="openShowcaseFullscreen()" data-i18n="showcase_fullscreen">Fullscreen Demo ⤢</button>
+          <button type="button" class="showcase-fullscreen-btn" onclick="openShowcaseFullscreen()" data-i18n="showcase_fullscreen">Fullscreen Demo</button>
           <a href="https://tarot-ecru-five.vercel.app/" target="_blank" rel="noopener" class="showcase-open-btn" data-i18n="showcase_open">
-            Open Reference App ↗
+            Open Live Showcase
           </a>
         </div>
-        <span class="showcase-credit">Built with ForgeGod loops, research, and review passes · Next.js + TypeScript · Deployed to Vercel</span>
+        <span class="showcase-credit" data-i18n="showcase_credit">Built with ForgeGod loops, research, review, and taste passes. Next.js plus TypeScript. Live on Vercel.</span>
       </div>
     </div>
 
     <div class="showcase-stats">
       <div class="showcase-stat">
         <div class="showcase-stat-num">LIVE</div>
-        <div class="showcase-stat-label">Reference status</div>
+        <div class="showcase-stat-label" data-i18n="showcase_stat_live_label">Reference deployment</div>
       </div>
       <div class="showcase-stat">
-        <div class="showcase-stat-num">1st</div>
-        <div class="showcase-stat-label">Public deployment</div>
+        <div class="showcase-stat-num">EN+ES</div>
+        <div class="showcase-stat-label" data-i18n="showcase_stat_locale_label">Bilingual release surfaces</div>
       </div>
       <div class="showcase-stat">
-        <div class="showcase-stat-num">UX</div>
-        <div class="showcase-stat-label">Mobile-ready pass</div>
+        <div class="showcase-stat-num">93+30</div>
+        <div class="showcase-stat-label" data-i18n="showcase_stat_tests_label">Green tests and E2E</div>
       </div>
       <div class="showcase-stat">
-        <div class="showcase-stat-num">NEXT</div>
-        <div class="showcase-stat-label">Active iteration</div>
+        <div class="showcase-stat-num">ADV</div>
+        <div class="showcase-stat-label" data-i18n="showcase_stat_harness_label">Adversarial harness</div>
       </div>
+    </div>
+
+    <div class="showcase-story-grid">
+      <article class="showcase-story-card">
+        <div class="showcase-story-kicker" data-i18n="showcase_case_label">FIRST ADVERSARIAL SHOWCASE</div>
+        <h3 class="showcase-story-title" data-i18n="showcase_case_title">ForgeGod rebuilt Tarot 3:33 in a cleanroom, and the human role stayed on harness supervision instead of product hand-building.</h3>
+        <p class="showcase-story-intro" data-i18n="showcase_case_intro">We threw away the earlier tarot build, forced a cleanroom restart, and used the harness as the product engine. ResearchAgent grounded architecture and release decisions, the review surface stayed adversarial, TasteAgent pushed brand direction toward ForgeGod cyan-white-gold ritual UI, and the result was held until mobile, metadata, and test surfaces were real.</p>
+
+        <div class="showcase-phase-list">
+          <div class="showcase-phase">
+            <div class="showcase-phase-step" data-i18n="showcase_phase_1_label">Phase 1 - Cleanroom reset</div>
+            <p data-i18n="showcase_phase_1_desc">The old tarot code was treated as untrusted. ForgeGod rebuilt the app in a fresh `showcase/tarot-cleanroom` project so architecture, styling, and tests could be verified from zero instead of patched on top of drift.</p>
+          </div>
+          <div class="showcase-phase">
+            <div class="showcase-phase-step" data-i18n="showcase_phase_2_label">Phase 2 - Adversarial engine loop</div>
+            <p data-i18n="showcase_phase_2_desc">MiniMax 2.7 High Speed handled the builder turns inside ForgeGod while OpenAI Codex stayed on the adversarial review and escalation path. The repo policy remained research-backed 2026 before meaningful implementation changes.</p>
+          </div>
+          <div class="showcase-phase">
+            <div class="showcase-phase-step" data-i18n="showcase_phase_3_label">Phase 3 - Productization, not mockup</div>
+            <p data-i18n="showcase_phase_3_desc">ForgeGod added bilingual routing (`en` and `es`), localized metadata and OG surfaces, robots, sitemap, manifest, loading and not-found states, mobile ritual flows, and a reproducible Spanish tarot overlay instead of leaving the app as a one-language prototype.</p>
+          </div>
+          <div class="showcase-phase">
+            <div class="showcase-phase-step" data-i18n="showcase_phase_4_label">Phase 4 - Verification before ship</div>
+            <p data-i18n="showcase_phase_4_desc">The cleanroom was only accepted after lint, type-check, unit and integration tests, Playwright E2E, and production build all went green. The showcase stayed blocked until the harness proved the release surfaces worked under the same repo rules as the engine itself.</p>
+          </div>
+        </div>
+      </article>
+
+      <aside class="showcase-story-card">
+        <div class="showcase-story-kicker" data-i18n="showcase_proof_label">WHAT THIS SHOWCASE PROVED</div>
+        <div class="showcase-proof-list">
+          <div class="showcase-proof-item">
+            <strong data-i18n="showcase_proof_stack_label">Harness split</strong>
+            <span data-i18n="showcase_proof_stack_value">Builder work, research turns, and review pressure did not live in one prompt. ForgeGod routed those roles through the adversarial harness instead of relying on a single model pretending to be its own critic.</span>
+          </div>
+          <div class="showcase-proof-item">
+            <strong data-i18n="showcase_proof_release_label">Release surfaces</strong>
+            <span data-i18n="showcase_proof_release_value">The output is a real Next.js 15.5 cleanroom app with localized routing, metadata, OG images, robots, sitemap, manifest, mobile layout, and Vercel deployment readiness.</span>
+          </div>
+          <div class="showcase-proof-item">
+            <strong data-i18n="showcase_proof_validation_label">Validation</strong>
+            <span data-i18n="showcase_proof_validation_value">Final cleanroom checks were `npm run lint`, `npm run type-check`, `npm test` with 93 passing checks, `npm run build`, and `npm run test:e2e` with 30 green browser flows.</span>
+          </div>
+          <div class="showcase-proof-item">
+            <strong data-i18n="showcase_proof_brand_label">ForgeGod brand system</strong>
+            <span data-i18n="showcase_proof_brand_value">Taste and design passes pushed the product into ForgeGod symbolism instead of generic occult UI: cyan-white-gold palette, ritual timing, branded emblem language, and mobile-first ceremonial pacing.</span>
+          </div>
+        </div>
+        <div class="showcase-story-links">
+          <a class="showcase-story-link" href="https://github.com/waitdeadai/forgegod/tree/main/showcase/tarot-cleanroom" target="_blank" rel="noopener" data-i18n="showcase_link_repo">Open cleanroom repo</a>
+          <a class="showcase-story-link" href="https://github.com/waitdeadai/forgegod/blob/main/showcase/tarot-cleanroom/docs/WEB_RESEARCH_2026-04-18_I18N_PRODUCTIZATION.md" target="_blank" rel="noopener" data-i18n="showcase_link_research">Open productization research</a>
+        </div>
+        <p class="showcase-story-note" data-i18n="showcase_story_note">One trivial test regression still needed monitor intervention during the run. That is kept visible as harness debt, not hidden as product polish. The point of the showcase is to measure what ForgeGod can do end-to-end, then feed the remaining friction back into the engine.</p>
+      </aside>
     </div>
   </div>
 </section>
@@ -1956,10 +2126,39 @@ var STRINGS = {
     title_memory: "5-TIER COGNITIVE MEMORY",
     title_how: "HOW IT WORKS",
     title_showcase: "REFERENCE APP",
-    showcase_subtitle: "A public ForgeGod-built application used to exercise the harness across planning, implementation, review, and mobile UI work. It remains a live reference deployment, not a marketing mockup.",
-    showcase_fullscreen: "Fullscreen Demo ⤢",
-    showcase_open: "Open Reference App ↗",
+    showcase_subtitle: "Tarot 3:33 is the first cleanroom product ForgeGod rebuilt from zero to a live deployment using adversarial review, research-first planning, bilingual release surfaces, and full validation instead of a demo-only pass.",
+    showcase_badge: "ForgeGod First Public Showcase",
+    showcase_fullscreen: "Fullscreen Demo",
+    showcase_open: "Open Live Showcase",
+    showcase_credit: "Built with ForgeGod loops, research, review, and taste passes. Next.js plus TypeScript. Live on Vercel.",
     nav_showcase: "Reference",
+    showcase_stat_live_label: "Reference deployment",
+    showcase_stat_locale_label: "Bilingual release surfaces",
+    showcase_stat_tests_label: "Green tests and E2E",
+    showcase_stat_harness_label: "Adversarial harness",
+    showcase_case_label: "First adversarial showcase",
+    showcase_case_title: "ForgeGod rebuilt Tarot 3:33 in a cleanroom, and the human role stayed on harness supervision instead of product hand-building.",
+    showcase_case_intro: "We threw away the earlier tarot build, forced a cleanroom restart, and used the harness as the product engine. ResearchAgent grounded architecture and release decisions, the review surface stayed adversarial, TasteAgent pushed brand direction toward ForgeGod cyan-white-gold ritual UI, and the result was held until mobile, metadata, and test surfaces were real.",
+    showcase_phase_1_label: "Phase 1 - Cleanroom reset",
+    showcase_phase_1_desc: "The old tarot code was treated as untrusted. ForgeGod rebuilt the app in a fresh `showcase/tarot-cleanroom` project so architecture, styling, and tests could be verified from zero instead of patched on top of drift.",
+    showcase_phase_2_label: "Phase 2 - Adversarial engine loop",
+    showcase_phase_2_desc: "MiniMax 2.7 High Speed handled the builder turns inside ForgeGod while OpenAI Codex stayed on the adversarial review and escalation path. The repo policy remained research-backed 2026 before meaningful implementation changes.",
+    showcase_phase_3_label: "Phase 3 - Productization, not mockup",
+    showcase_phase_3_desc: "ForgeGod added bilingual routing (`en` and `es`), localized metadata and OG surfaces, robots, sitemap, manifest, loading and not-found states, mobile ritual flows, and a reproducible Spanish tarot overlay instead of leaving the app as a one-language prototype.",
+    showcase_phase_4_label: "Phase 4 - Verification before ship",
+    showcase_phase_4_desc: "The cleanroom was only accepted after lint, type-check, unit and integration tests, Playwright E2E, and production build all went green. The showcase stayed blocked until the harness proved the release surfaces worked under the same repo rules as the engine itself.",
+    showcase_proof_label: "What this showcase proved",
+    showcase_proof_stack_label: "Harness split",
+    showcase_proof_stack_value: "Builder work, research turns, and review pressure did not live in one prompt. ForgeGod routed those roles through the adversarial harness instead of relying on a single model pretending to be its own critic.",
+    showcase_proof_release_label: "Release surfaces",
+    showcase_proof_release_value: "The output is a real Next.js 15.5 cleanroom app with localized routing, metadata, OG images, robots, sitemap, manifest, mobile layout, and Vercel deployment readiness.",
+    showcase_proof_validation_label: "Validation",
+    showcase_proof_validation_value: "Final cleanroom checks were `npm run lint`, `npm run type-check`, `npm test` with 93 passing checks, `npm run build`, and `npm run test:e2e` with 30 green browser flows.",
+    showcase_proof_brand_label: "ForgeGod brand system",
+    showcase_proof_brand_value: "Taste and design passes pushed the product into ForgeGod symbolism instead of generic occult UI: cyan-white-gold palette, ritual timing, branded emblem language, and mobile-first ceremonial pacing.",
+    showcase_link_repo: "Open cleanroom repo",
+    showcase_link_research: "Open productization research",
+    showcase_story_note: "One trivial test regression still needed monitor intervention during the run. That is kept visible as harness debt, not hidden as product polish. The point of the showcase is to measure what ForgeGod can do end-to-end, then feed the remaining friction back into the engine.",
     title_compare: "HOW WE COMPARE",
     cmp_hint: "Swipe horizontally to compare.",
     title_providers: "SUPPORTED PROVIDERS",
@@ -2178,10 +2377,39 @@ var STRINGS = {
     title_memory: "MEMORIA COGNITIVA DE 5 NIVELES",
     title_how: "CÓMO FUNCIONA",
     title_showcase: "APP DE REFERENCIA",
-    showcase_subtitle: "Una aplicación pública construida con ForgeGod para exigir el harness en planificación, implementación, review y UI mobile. Sigue siendo un deployment de referencia vivo, no una maqueta de marketing.",
-    showcase_fullscreen: "Demo en pantalla completa ⤢",
-    showcase_open: "Abrir app de referencia ↗",
+    showcase_subtitle: "Tarot 3:33 es el primer producto cleanroom que ForgeGod reconstruyo desde cero hasta un deployment vivo usando review adversarial, planificacion research-first, superficies de lanzamiento bilingues y validacion completa en lugar de una demo parcial.",
+    showcase_badge: "Primer showcase publico de ForgeGod",
+    showcase_fullscreen: "Demo en pantalla completa",
+    showcase_open: "Abrir showcase en vivo",
+    showcase_credit: "Construido con loops, research, review y taste passes de ForgeGod. Next.js mas TypeScript. Vivo en Vercel.",
     nav_showcase: "Referencia",
+    showcase_stat_live_label: "Deployment de referencia",
+    showcase_stat_locale_label: "Superficies bilingues",
+    showcase_stat_tests_label: "Tests y E2E en verde",
+    showcase_stat_harness_label: "Harness adversarial",
+    showcase_case_label: "Primer showcase adversarial",
+    showcase_case_title: "ForgeGod reconstruyo Tarot 3:33 en cleanroom y el rol humano quedo limitado a supervisar el harness en lugar de hand-buildar el producto.",
+    showcase_case_intro: "Descartamos el tarot anterior, forzamos un reinicio cleanroom y usamos el harness como motor de producto. ResearchAgent grounding la arquitectura y las decisiones de release, la superficie de review siguio adversarial, TasteAgent empujo la direccion visual hacia una UI ritual ForgeGod cyan-white-gold, y el resultado quedo bloqueado hasta que mobile, metadata y tests fueron reales.",
+    showcase_phase_1_label: "Fase 1 - Reset cleanroom",
+    showcase_phase_1_desc: "El codigo tarot anterior se trato como no confiable. ForgeGod reconstruyo la app en un proyecto fresco `showcase/tarot-cleanroom` para verificar arquitectura, estilos y tests desde cero en lugar de parchear encima del drift.",
+    showcase_phase_2_label: "Fase 2 - Loop adversarial del engine",
+    showcase_phase_2_desc: "MiniMax 2.7 High Speed llevo los turnos builder dentro de ForgeGod mientras OpenAI Codex quedo en el camino adversarial de review y escalacion. La politica del repo siguio siendo research-backed 2026 antes de cambios de implementacion importantes.",
+    showcase_phase_3_label: "Fase 3 - Productizacion, no maqueta",
+    showcase_phase_3_desc: "ForgeGod agrego ruteo bilingue (`en` y `es`), metadata y superficies OG localizadas, robots, sitemap, manifest, estados de loading y not-found, flujos rituales mobile y un overlay reproducible del tarot en espanol en lugar de dejar una app prototipo de un solo idioma.",
+    showcase_phase_4_label: "Fase 4 - Verificacion antes de shippear",
+    showcase_phase_4_desc: "El cleanroom solo se acepto despues de dejar en verde lint, type-check, tests unitarios e integracion, Playwright E2E y build de produccion. El showcase siguio bloqueado hasta que el harness probo que las superficies de release funcionaban bajo las mismas reglas del engine.",
+    showcase_proof_label: "Que probo este showcase",
+    showcase_proof_stack_label: "Split del harness",
+    showcase_proof_stack_value: "El trabajo builder, los turnos de research y la presion de review no vivieron en un solo prompt. ForgeGod ruteo esos roles por el harness adversarial en lugar de depender de un modelo unico fingiendo ser su propio critico.",
+    showcase_proof_release_label: "Superficies de release",
+    showcase_proof_release_value: "La salida es una app cleanroom real en Next.js 15.5 con ruteo localizado, metadata, OG images, robots, sitemap, manifest, layout mobile y readiness para deploy en Vercel.",
+    showcase_proof_validation_label: "Validacion",
+    showcase_proof_validation_value: "Los chequeos finales del cleanroom fueron `npm run lint`, `npm run type-check`, `npm test` con 93 checks pasando, `npm run build` y `npm run test:e2e` con 30 flujos browser en verde.",
+    showcase_proof_brand_label: "Sistema de marca ForgeGod",
+    showcase_proof_brand_value: "Las pasadas de taste y diseno empujaron el producto hacia la simbologia ForgeGod en lugar de una UI ocultista generica: paleta cyan-white-gold, timing ritual, lenguaje de emblema de marca y ritmo ceremonial mobile-first.",
+    showcase_link_repo: "Abrir repo cleanroom",
+    showcase_link_research: "Abrir research de productizacion",
+    showcase_story_note: "Durante la corrida un regression trivial de tests todavia necesito intervencion del monitor. Eso queda visible como deuda del harness, no escondido como si fuera polish de producto. La funcion del showcase es medir que puede hacer ForgeGod end-to-end y devolver la friccion restante al engine.",
     title_compare: "CÓMO NOS COMPARAMOS",
     cmp_hint: "Deslizá horizontalmente para comparar.",
     title_providers: "PROVEEDORES SOPORTADOS",
