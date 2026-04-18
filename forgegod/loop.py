@@ -284,6 +284,13 @@ class RalphLoop:
             return True
 
         if not cache["ready"]:
+            if not self.config.audit.require_ready_to_plan:
+                logger.warning(
+                    "Audit preflight reported ready_to_plan=False, but "
+                    "require_ready_to_plan is disabled for this workspace. "
+                    "Continuing loop execution."
+                )
+                return True
             blockers = cache["blockers"]
             logger.error(
                 "AUDIT.md blocked — ready_to_plan=False. "

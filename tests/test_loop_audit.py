@@ -49,3 +49,27 @@ def test_loop_check_audit_allows_missing_bridge(monkeypatch, tmp_path):
     monkeypatch.setattr("forgegod.loop.ensure_audit_ready", lambda *args, **kwargs: MissingState())
 
     assert loop._check_audit() is True
+
+
+def test_loop_check_audit_can_ignore_not_ready_when_config_disabled(monkeypatch, tmp_path):
+    config = ForgeGodConfig()
+    config.project_dir = tmp_path / ".forgegod"
+    config.project_dir.mkdir()
+    config.audit.require_ready_to_plan = False
+
+    loop = RalphLoop(config=config, prd=PRD(project="demo"))
+
+    class DummyState:
+        exists = True
+        ready_to_plan = False
+        blockers = ["stale audit data"]
+        high_risk_modules = []
+        recommended_start_points = []
+        specialist_summaries = {}
+        source = "AUDIT.json"
+        message = "audit refreshed"
+
+    monkeypatch.setattr("forgegod.loop.ensure_audit_ready", lambda *args, **kwargs: DummyState())
+
+    assert loop._check_audit() is True
+    assert loop.state.status.value != "paused"
