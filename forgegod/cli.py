@@ -37,6 +37,7 @@ from forgegod.integrations import (
     scaffold_openclaw_backend,
     scaffold_openclaw_skill,
 )
+from forgegod.review_artifacts import collect_review_artifact
 
 app = typer.Typer(
     name="forgegod",
@@ -339,22 +340,12 @@ def _merge_agent_results(primary, followup):
 
 
 async def _load_review_code(config, result) -> str:
-    review_code = result.output[:6000]
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            "git",
-            "diff",
-            "HEAD",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(config.project_dir.parent),
-        )
-        stdout, _ = await proc.communicate()
-        if stdout:
-            review_code = stdout.decode("utf-8", errors="replace")[:6000]
-    except Exception:
-        pass
-    return review_code
+    return await collect_review_artifact(
+        config.project_dir.parent,
+        files_changed=result.files_modified,
+        fallback_text=result.output,
+        max_chars=6000,
+    )
 
 
 async def _run_review(task: str, *, reviewer, config, result):

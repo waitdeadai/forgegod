@@ -1,4 +1,4 @@
-"""ForgeGod Reviewer — frontier model quality gate.
+"""ForgeGod Reviewer - frontier model quality gate.
 
 Inspired by forge/forge_council.py, simplified from multi-member council
 to single reviewer with configurable frontier model.
@@ -11,6 +11,7 @@ import logging
 from forgegod.config import ForgeGodConfig
 from forgegod.json_utils import extract_json
 from forgegod.models import ReviewResult, ReviewVerdict
+from forgegod.review_artifacts import collect_review_artifact
 from forgegod.router import ModelRouter
 from forgegod.terse import TERSE_REVIEWER_PROMPT
 
@@ -18,7 +19,7 @@ logger = logging.getLogger("forgegod.reviewer")
 
 
 class Reviewer:
-    """Quality gate — reviews agent output with a frontier model.
+    """Quality gate - reviews agent output with a frontier model.
 
     Usage:
     - `run` mode: Always review final output
@@ -102,40 +103,32 @@ Output ONLY valid JSON."""
         return self._parse_review(response, usage.model)
 
     async def review_path(self, path: str) -> ReviewResult:
-        """Review code at a file or directory path.
-
-        Reads git diff or file contents and sends for review.
-        """
-        from pathlib import Path as P
+        """Review code at a file or directory path."""
+        from pathlib import Path
 
         workspace_root = self.config.project_dir.parent
-        target = P(path)
+        target = Path(path)
         if not target.is_absolute():
             target = workspace_root / target
+
         if target.is_file():
             code = target.read_text(encoding="utf-8", errors="replace")
             task = f"Review the code in {target}"
         else:
-            # Use git diff for directories
-            import asyncio
-            proc = await asyncio.create_subprocess_exec(
-                "git", "diff", "HEAD", "--", path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=str(workspace_root),
+            if target.exists():
+                files_changed = [
+                    file_path.relative_to(workspace_root).as_posix()
+                    for file_path in target.rglob("*")
+                    if file_path.is_file()
+                ]
+            else:
+                files_changed = [Path(path).as_posix()]
+
+            code = await collect_review_artifact(
+                workspace_root,
+                files_changed=files_changed,
+                max_chars=8000,
             )
-            stdout, _ = await proc.communicate()
-            code = stdout.decode("utf-8", errors="replace")
-            if not code.strip():
-                # No diff — show recent changes
-                proc2 = await asyncio.create_subprocess_exec(
-                    "git", "diff", "HEAD~1", "--", path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=str(workspace_root),
-                )
-                stdout2, _ = await proc2.communicate()
-                code = stdout2.decode("utf-8", errors="replace")
             task = f"Review recent changes in {path}"
 
         if not code.strip():

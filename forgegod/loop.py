@@ -32,6 +32,7 @@ from forgegod.models import (
     Story,
     StoryStatus,
 )
+from forgegod.review_artifacts import collect_review_artifact
 from forgegod.reviewer import Reviewer
 from forgegod.router import ModelRouter
 from forgegod.terse import TERSE_STORY_INSTRUCTIONS
@@ -73,6 +74,7 @@ class RalphLoop:
         self.max_iterations = max_iterations or config.loop.max_iterations
         self.tool_approver = tool_approver
         self.event_callback = event_callback
+        self._story_dirty_baselines: dict[str, set[str]] = {}
 
         # Reviewer (SOTA: sample-based quality gate)
         self.reviewer = Reviewer(config=config, router=self.router)
@@ -426,6 +428,7 @@ class RalphLoop:
             raise RuntimeError(readiness_error)
 
         for story in ready:
+            self._story_dirty_baselines[story.id] = await self._current_dirty_files()
             logger.info(f"Working on in parallel: [{story.id}] {story.title}")
             story.status = StoryStatus.IN_PROGRESS
             story.iterations += 1
@@ -487,6 +490,7 @@ class RalphLoop:
             return
 
         logger.info(f"Working on: [{story.id}] {story.title}")
+        self._story_dirty_baselines[story.id] = await self._current_dirty_files()
         story.status = StoryStatus.IN_PROGRESS
         story.iterations += 1
         await self._emit_event(
@@ -567,6 +571,7 @@ class RalphLoop:
         timeout: bool = False,
     ) -> None:
         """Mark a story for retry or block it after a failed execution."""
+        self._story_dirty_baselines.pop(story.id, None)
         if story.iterations >= self.config.loop.story_max_retries:
             story.status = StoryStatus.BLOCKED
             story.error_log.append(error_text)
@@ -609,29 +614,27 @@ class RalphLoop:
         """Collect the best available code artifact for reviewer analysis."""
         if review_code:
             return review_code[:6000]
+        return await collect_review_artifact(
+            self._workspace_root,
+            files_changed=result.files_modified,
+            fallback_text=result.output,
+            max_chars=6000,
+        )
 
-        review_text = result.output[:6000]
+    async def _current_dirty_files(self) -> set[str]:
+        """Capture the currently dirty tracked files in the workspace."""
         try:
-            diff_proc = await asyncio.create_subprocess_exec(
-                "git", "diff", "HEAD",
+            proc = await asyncio.create_subprocess_exec(
+                "git", "diff", "--name-only", "HEAD",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=str(self._workspace_root),
             )
-            diff_out, _ = await diff_proc.communicate()
-            if not diff_out:
-                diff_proc = await asyncio.create_subprocess_exec(
-                    "git", "log", "-1", "-p", "--stat",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=str(self._workspace_root),
-                )
-                diff_out, _ = await diff_proc.communicate()
-            if diff_out:
-                review_text = diff_out.decode(errors="replace")[:6000]
+            stdout, _ = await proc.communicate()
+            diff_text = stdout.decode(errors="replace")
         except Exception:
-            pass
-        return review_text
+            return set()
+        return {line.strip() for line in diff_text.splitlines() if line.strip()}
 
     async def _lint_check(self, files_modified: list[str] | None) -> bool:
         """Run ruff check --fix on modified Python files. Auto-fixes basic style issues."""
@@ -765,6 +768,7 @@ class RalphLoop:
                             p.strip() for p in diff_out.decode(errors="replace").splitlines()
                             if p.strip()
                         }
+                        changed -= self._story_dirty_baselines.get(story.id, set())
                         touched = set(story.files_touched or [])
                         git_has_changes = bool(changed) if not touched else bool(changed & touched)
                 except Exception:
@@ -897,6 +901,7 @@ class RalphLoop:
             story.status = StoryStatus.DONE
             story.completed_at = datetime.now(timezone.utc).isoformat()
             story.files_touched = result.files_modified
+            self._story_dirty_baselines.pop(story.id, None)
             self.state.stories_completed += 1
             self.state.total_cost_usd += result.total_usage.cost_usd
             self._append_learning(story, result.output)
