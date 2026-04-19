@@ -3,25 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ForgeGod - Research-Backed Autonomous Coding Agent</title>
-<meta name="description" content="Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited against a verified 2026 baseline.">
+<title>ForgeGod - Research-Backed Adversarial Coding Harness</title>
+<meta name="description" content="Open-source autonomous coding harness with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, adversarial review, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited against a verified 2026 baseline.">
 <meta name="keywords" content="coding agent, autonomous coding, AI coding tool, open source, multi-model, Ollama, MiniMax, OpenAI, web research, SOTA, adversarial review, cognitive memory, self-improving, budget control">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://forgegod.com">
-<meta property="og:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta property="og:description" content="Research-backed autonomous coding agent with multi-model routing, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited, tested, and open source.">
+<meta property="og:title" content="ForgeGod - Adversarial Autonomous Coding Harness">
+<meta property="og:description" content="Research-first repo engine with native audit gate, bounded subagents, local hive orchestration, adversarial review, and multi-model routing. Audited, tested, and open source.">
 <meta property="og:image" content="https://forgegod.com/og-image.webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ForgeGod official mascot and autonomous coding agent social card">
+<meta property="og:image:alt" content="ForgeGod social card describing an adversarial autonomous coding harness with hive and subagents">
 <meta property="og:url" content="https://forgegod.com">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ForgeGod">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ForgeGod - Research-Backed Autonomous Coding Agent">
-<meta name="twitter:description" content="Multi-model autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode. Audited and tested against a verified 2026 baseline.">
+<meta name="twitter:title" content="ForgeGod - Adversarial Autonomous Coding Harness">
+<meta name="twitter:description" content="Research-first repo engine with native audit gate, bounded subagents, local hive orchestration, adversarial review, and multi-model routing. Audited, tested, and open source.">
 <meta name="twitter:image" content="https://forgegod.com/og-image.webp">
 <meta name="twitter:image:alt" content="ForgeGod official mascot">
 <link rel="icon" type="image/webp" href="mascot-192.webp">
@@ -36,7 +36,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier cognitive memory, optional Obsidian vault projection, and a verified 2026 baseline.",
+  "description": "Open-source autonomous coding harness with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, adversarial review, 5-tier cognitive memory, optional Obsidian vault projection, and a verified 2026 baseline.",
   "url": "https://forgegod.com",
   "downloadUrl": "https://pypi.org/project/forgegod/",
   "softwareVersion": "0.1.0",
@@ -187,6 +187,36 @@ nav .container {
   font-weight: 500;
 }
 .hero-tagline strong { color: var(--cyan); }
+.hero-badges {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 auto 1.5rem;
+  max-width: 900px;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--surface-border);
+  background: linear-gradient(180deg, rgba(18, 18, 26, 0.88), rgba(18, 18, 26, 0.56));
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+.hero-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+  flex: 0 0 auto;
+}
 .hero-cta {
   display: inline-flex; align-items: center; gap: 0.5rem;
   font-family: var(--font-mono); font-size: 0.95rem;
@@ -1167,6 +1197,11 @@ footer a { color: var(--cyan); }
     padding: 1rem;
   }
   .stat { display: block; }
+  .hero-badge {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.68rem;
+  }
   .results-tier { padding: 1.3rem 1rem; }
   .hero-cta {
     font-size: 0.8rem; padding: 0.7rem 1rem;
@@ -1236,8 +1271,14 @@ body::after {
     </picture>
     <h1>FORGEGOD</h1>
     <p class="hero-tagline" data-i18n-html="hero_tagline">
-      A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, native audit preflight, explicit review, specialist agents, and local or cloud execution.
+      A <strong>research-backed</strong> coding harness for serious software work. Research-first planning, native audit preflight, adversarial review, bounded subagents, and local hive orchestration are built into the runtime.
     </p>
+    <div class="hero-badges">
+      <span class="hero-badge" data-i18n="hero_badge_research">Research-first runtime</span>
+      <span class="hero-badge" data-i18n="hero_badge_audit">Native audit gate</span>
+      <span class="hero-badge" data-i18n="hero_badge_hive">Local hive orchestration</span>
+      <span class="hero-badge" data-i18n="hero_badge_subagents">Bounded subagents</span>
+    </div>
     <div class="hero-cta" onclick="copyInstall()">
       <span class="copy-hint" data-i18n="copy_hint">Click to copy</span>
       <span class="prompt">$</span>
@@ -2111,13 +2152,17 @@ forgegod integrations export-openclaw-skill --output ./dist/openclaw</code>
 // -- i18n Translation System --
 var STRINGS = {
   en: {
-    page_title: "ForgeGod - Research-Backed Autonomous Coding Agent",
-    meta_desc: "Open-source autonomous coding agent with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, 5-tier memory, optional Obsidian vault projection, and $0 local mode.",
+    page_title: "ForgeGod - Research-Backed Adversarial Coding Harness",
+    meta_desc: "Open-source autonomous coding harness with research-first workflows, native audit preflight, bounded subagents, local hive orchestration, adversarial review, 5-tier memory, optional Obsidian vault projection, and $0 local mode.",
     nav_features: "Features",
     nav_results: "Results",
     nav_moats: "Why Us",
     nav_compare: "Compare",
-    hero_tagline: 'A <strong>research-backed</strong> coding harness for serious software work. Current-source grounding, native audit preflight, explicit review, specialist agents, and local or cloud execution.',
+    hero_tagline: 'A <strong>research-backed</strong> coding harness for serious software work. Research-first planning, native audit preflight, adversarial review, bounded subagents, and local hive orchestration are built into the runtime.',
+    hero_badge_research: "Research-first runtime",
+    hero_badge_audit: "Native audit gate",
+    hero_badge_hive: "Local hive orchestration",
+    hero_badge_subagents: "Bounded subagents",
     copy_hint: "Click to copy",
     stat_tools: "Built-in Tools",
     stat_providers: "Provider Families",
@@ -2211,7 +2256,7 @@ var STRINGS = {
     feat_skills_title: "Loadable Skills",
     feat_skills_desc: "Pre-built instruction sets for common tasks \u2014 Django, FastAPI, React, testing, deployment. Load a skill and the agent follows battle-tested patterns instead of improvising.",
     feat_skills_tag: "Reusable expertise",
-    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded automation, optional human-readable memory projection, and first-party bridges into external chat runtimes.",
+    features_subtitle: "Many coding agents still rely on stale model memory or a single unchecked pass. ForgeGod adds current web research, adversarial review, bounded subagents, local hive orchestration, optional human-readable memory projection, and first-party bridges into external chat runtimes.",
     title_moats: "ENGINEERING MOATS",
     moats_subtitle: "Six engineering decisions that define the current ForgeGod harness.",
     moat_1_title: "Research-Gated Changes",
@@ -2362,13 +2407,17 @@ var STRINGS = {
     footer_mascot: 'Official mascot design by <a href="https://www.linkedin.com/in/matt-mesa/">Matias Mesa</a>'
   },
   es: {
-    page_title: "ForgeGod - Agente de Codigo Autonomo Respaldado por Investigacion",
-    meta_desc: "Agente de codigo autonomo open source con workflows research-first, auditoria nativa preflight, subagentes acotados, hive local, memoria de 5 niveles, proyeccion opcional a Obsidian y modo local $0.",
+    page_title: "ForgeGod - Harness de Codigo Adversarial Research-Backed",
+    meta_desc: "Harness de codigo autonomo open source con workflows research-first, auditoria nativa preflight, subagentes acotados, hive local, review adversarial, memoria de 5 niveles, proyeccion opcional a Obsidian y modo local $0.",
     nav_features: "Características",
     nav_results: "Resultados",
     nav_moats: "Por Qu\u00e9",
     nav_compare: "Comparar",
-    hero_tagline: 'Un harness de codigo <strong>research-backed</strong> para trabajo serio de software. Grounding con fuentes actuales, auditoria nativa preflight, review explicito, agentes especialistas y ejecucion local o cloud.',
+    hero_tagline: 'Un harness de codigo <strong>research-backed</strong> para trabajo serio de software. La planificacion research-first, la auditoria nativa preflight, el review adversarial, los subagentes acotados y el hive local viven dentro del runtime.',
+    hero_badge_research: "Runtime research-first",
+    hero_badge_audit: "Gate nativo de auditoria",
+    hero_badge_hive: "Orquestacion hive local",
+    hero_badge_subagents: "Subagentes acotados",
     copy_hint: "Click para copiar",
     stat_tools: "Herramientas",
     stat_providers: "Familias de proveedores",
@@ -2462,7 +2511,7 @@ var STRINGS = {
     feat_skills_title: "Skills Cargables",
     feat_skills_desc: "Instrucciones pre-armadas para tareas comunes \u2014 Django, FastAPI, React, testing, deploy. Carg\u00e1 un skill y el agente sigue patrones probados en vez de improvisar.",
     feat_skills_tag: "Experiencia reutilizable",
-    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial, automatización acotada, proyección opcional de memoria legible y puentes de primera clase hacia runtimes externos de chat.",
+    features_subtitle: "Muchos agentes de código todavía dependen de memoria desactualizada del modelo o de una sola pasada sin control. ForgeGod agrega investigación web actual, review adversarial, subagentes acotados, orquestación hive local, proyección opcional de memoria legible y puentes de primera clase hacia runtimes externos de chat.",
     title_moats: "MOATS DE INGENIERÍA",
     moats_subtitle: "Seis decisiones de ingeniería que definen el harness actual de ForgeGod.",
     moat_1_title: "Cambios Guiados por Investigaci\u00f3n",
