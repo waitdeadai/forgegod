@@ -590,16 +590,14 @@ def load_config(project_root: Path | None = None) -> ForgeGodConfig:
     # 0. Load .env file (python-dotenv) — so users don't need manual exports
     if project_root is None:
         project_root = Path.cwd()
-    _load_dotenv(project_root / ".forgegod" / ".env")
+    global_dir, project_dir = bootstrap_runtime_env(project_root)
 
     # 1. Global config
-    global_dir = Path(os.environ.get("FORGEGOD_GLOBAL_DIR", DEFAULT_GLOBAL_DIR))
     global_config = global_dir / DEFAULT_CONFIG_FILENAME
     if global_config.exists():
         merged = _deep_merge(merged, toml.loads(global_config.read_text()))
 
     # 2. Project config
-    project_dir = project_root / ".forgegod"
     project_config = project_dir / DEFAULT_CONFIG_FILENAME
     if project_config.exists():
         merged = _deep_merge(merged, toml.loads(project_config.read_text()))
@@ -716,18 +714,30 @@ def _load_dotenv(env_path: Path) -> None:
     try:
         from dotenv import load_dotenv
 
-        load_dotenv(env_path, override=False)
+        load_dotenv(env_path, override=False, encoding="utf-8-sig")
     except ImportError:
         # Fallback: manual .env parsing (no dependency needed)
-        for line in env_path.read_text(encoding="utf-8").splitlines():
+        for line in env_path.read_text(encoding="utf-8-sig").splitlines():
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, value = line.partition("=")
-            key = key.strip()
+            key = key.lstrip("\ufeff").strip()
             value = value.strip().strip("'\"")
             if key and key not in os.environ:
                 os.environ[key] = value
+
+
+def bootstrap_runtime_env(project_root: Path | None = None) -> tuple[Path, Path]:
+    """Load global + project ForgeGod .env files into the current process."""
+    if project_root is None:
+        project_root = Path.cwd()
+
+    global_dir = Path(os.environ.get("FORGEGOD_GLOBAL_DIR", DEFAULT_GLOBAL_DIR))
+    project_dir = project_root / ".forgegod"
+    _load_dotenv(global_dir / ".env")
+    _load_dotenv(project_dir / ".env")
+    return global_dir, project_dir
 
 
 def resolve_openai_surface(

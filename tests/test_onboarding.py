@@ -198,6 +198,20 @@ class TestDotenvLoading:
         # Cleanup
         os.environ.pop("TEST_FORGEGOD_EXISTING", None)
 
+    def test_load_dotenv_strips_utf8_bom(self, tmp_path: Path):
+        """UTF-8 BOM should not leak into the env var key."""
+        from forgegod.config import _load_dotenv
+
+        env_file = tmp_path / ".env"
+        env_file.write_text("\ufeffTEST_FORGEGOD_BOM=works\n", encoding="utf-8")
+
+        os.environ.pop("TEST_FORGEGOD_BOM", None)
+        _load_dotenv(env_file)
+        assert os.environ.get("TEST_FORGEGOD_BOM") == "works"
+
+        # Cleanup
+        os.environ.pop("TEST_FORGEGOD_BOM", None)
+
     def test_load_dotenv_missing_file(self, tmp_path: Path):
         """Missing .env file should not crash."""
         from forgegod.config import _load_dotenv

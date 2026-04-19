@@ -54,6 +54,36 @@ def test_auth_status_loads_project_dotenv(tmp_path, monkeypatch, printed):
     assert "ZAI_CODING_API_KEY" in visible
 
 
+def test_auth_status_loads_global_dotenv(tmp_path, monkeypatch, printed):
+    global_dir = tmp_path / "global"
+    global_dir.mkdir()
+    (global_dir / ".env").write_text("MINIMAX_API_KEY=test-global\n", encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("FORGEGOD_GLOBAL_DIR", str(global_dir))
+    monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_CODING_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_login_status_sync",
+        lambda: (False, "Not logged in"),
+    )
+    monkeypatch.setattr(
+        "forgegod.native_auth.codex_automation_status",
+        lambda: (False, "Codex CLI not found on native Windows and WSL is not installed."),
+    )
+
+    result = runner.invoke(app, ["auth", "status"])
+
+    assert result.exit_code == 0
+    visible = printed.getvalue()
+    assert "minimax" in visible
+    assert "ready" in visible
+    assert "MINIMAX_API_KEY" in visible
+
+
 def test_auth_status_marks_codex_needs_setup_when_logged_in(tmp_path, monkeypatch, printed):
     project_env = tmp_path / ".forgegod"
     project_env.mkdir()

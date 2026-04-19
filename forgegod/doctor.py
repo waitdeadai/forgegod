@@ -10,7 +10,7 @@ from pathlib import Path
 from rich.table import Table
 
 from forgegod.cli_ux import console
-from forgegod.config import ForgeGodConfig, minimax_base_urls
+from forgegod.config import ForgeGodConfig, bootstrap_runtime_env, minimax_base_urls
 from forgegod.i18n import t
 from forgegod.sandbox import diagnose_strict_sandbox
 
@@ -68,6 +68,7 @@ def run_doctor(project_path: Path | None = None) -> list[HealthCheck]:
     """Run all health checks. Returns list of HealthCheck results."""
     checks: list[HealthCheck] = []
     project = Path(project_path or ".").resolve()
+    bootstrap_runtime_env(project)
 
     checks.append(_check_python())
     checks.append(_check_config(project))

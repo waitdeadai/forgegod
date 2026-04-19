@@ -1,5 +1,6 @@
 """Tests for ForgeGod configuration."""
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -119,6 +120,19 @@ def test_load_config_defaults(monkeypatch):
         config = load_config(Path(tmpdir))
         assert config.models.planner == "openai:gpt-5.4"
         assert config.ollama.host == "http://localhost:11434"
+
+
+def test_load_config_reads_global_dotenv(monkeypatch, tmp_path):
+    global_dir = tmp_path / "global"
+    global_dir.mkdir()
+    (global_dir / ".env").write_text("MINIMAX_API_KEY=global-test-key\n", encoding="utf-8")
+    monkeypatch.setenv("FORGEGOD_GLOBAL_DIR", str(global_dir))
+    monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
+
+    config = load_config(tmp_path / "project")
+
+    assert config.global_dir == global_dir
+    assert os.environ.get("MINIMAX_API_KEY") == "global-test-key"
 
 
 def test_recommend_model_defaults_openai_codex_only():

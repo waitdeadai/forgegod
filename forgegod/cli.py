@@ -144,10 +144,10 @@ def _detect_runtime_model_defaults(
 ):
     """Detect usable auth surfaces and return recommended model defaults."""
     from forgegod.benchmark import detect_available_models
-    from forgegod.config import ForgeGodConfig, _load_dotenv, recommend_model_defaults
+    from forgegod.config import ForgeGodConfig, bootstrap_runtime_env, recommend_model_defaults
 
     root = Path(project_path or ".").resolve()
-    _load_dotenv(root / ".forgegod" / ".env")
+    bootstrap_runtime_env(root)
     config = ForgeGodConfig()
     config.project_dir = root / ".forgegod"
     models = detect_available_models(config)
@@ -849,9 +849,10 @@ def init(
     # Quick mode: silent auto-detect (original behavior)
     import os
 
-    from forgegod.config import init_project, recommend_model_defaults
+    from forgegod.config import bootstrap_runtime_env, init_project, recommend_model_defaults
     from forgegod.native_auth import codex_login_status_sync
 
+    bootstrap_runtime_env(path)
     _print_banner()
     console.print("[bold]Initializing project...[/bold]")
     console.print()
@@ -986,10 +987,10 @@ def auth_status():
     import os
     from pathlib import Path
 
-    from forgegod.config import _load_dotenv
+    from forgegod.config import bootstrap_runtime_env
     from forgegod.native_auth import codex_automation_status, codex_login_status_sync
 
-    _load_dotenv(Path.cwd() / ".forgegod" / ".env")
+    bootstrap_runtime_env(Path.cwd())
 
     table = Table(title="ForgeGod Auth Status")
     table.add_column("Surface", style="cyan")
