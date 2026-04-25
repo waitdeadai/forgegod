@@ -111,7 +111,11 @@ async def _search_brave(
 async def _search_exa(
     query: str, api_key: str, max_results: int = 5
 ) -> list[dict]:
-    """Search via Exa AI (semantic, best for technical docs)."""
+    """Search via Exa AI (semantic, best for technical docs).
+
+    Requests highlights + text contents in one call so each result has a
+    populated snippet. Snippet falls back across highlights → summary → text.
+    """
     if not api_key:
         return []
     try:
@@ -122,10 +126,14 @@ async def _search_exa(
                     "query": query,
                     "type": "auto",
                     "numResults": max_results,
-                    "useAutoprompt": True,
+                    "contents": {
+                        "highlights": {"numSentences": 3, "highlightsPerUrl": 1},
+                        "text": {"maxCharacters": 1000},
+                    },
                 },
                 headers={
                     "x-api-key": api_key,
+                    "x-exa-integration": "forgegod",
                     "Content-Type": "application/json",
                 },
             )
@@ -133,15 +141,31 @@ async def _search_exa(
             data = resp.json()
             results = []
             for r in data.get("results", [])[:max_results]:
+                snippet = _exa_snippet(r)
                 results.append({
                     "url": r.get("url", ""),
                     "title": r.get("title", ""),
-                    "snippet": r.get("text", "")[:500],
+                    "snippet": snippet[:500],
                 })
             return results
     except Exception as e:
         logger.warning("Exa search failed: %s", e)
         return []
+
+
+def _exa_snippet(result: dict) -> str:
+    """Pick the best snippet from an Exa result, cascading through fields.
+
+    Order: highlights → summary → text. Returns "" if none are present.
+    """
+    highlights = result.get("highlights") or []
+    if highlights:
+        return " ".join(h for h in highlights if h).strip()
+    summary = result.get("summary") or ""
+    if summary:
+        return summary.strip()
+    text = result.get("text") or ""
+    return text.strip()
 
 
 async def _search_duckduckgo(
