@@ -1,9 +1,12 @@
 """Tests for ForgeGod tool system."""
 
+import json
 import subprocess
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
+import httpx
 import pytest
 
 from forgegod.config import ForgeGodConfig
@@ -16,6 +19,7 @@ from forgegod.tools import (
 )
 from forgegod.tools.filesystem import edit_file, glob_files, grep_files, read_file, write_file
 from forgegod.tools.git import git_worktree_create, git_worktree_remove
+from forgegod.tools.web import _exa_snippet, _search_exa
 from forgegod.worktree_paths import resolve_worktree_base
 
 
@@ -273,3 +277,97 @@ async def test_git_worktree_create_roundtrip(tmp_path):
 
     assert removed == "(no output)"
     assert not created_path.exists()
+
+
+# ── Exa search provider ──
+
+
+def _exa_response(results: list[dict]) -> httpx.Response:
+    body = json.dumps({"results": results}).encode()
+    request = httpx.Request("POST", "https://api.exa.ai/search")
+    return httpx.Response(200, content=body, request=request)
+
+
+@pytest.mark.asyncio
+async def test_search_exa_returns_empty_without_api_key():
+    results = await _search_exa("anything", api_key="", max_results=3)
+    assert results == []
+
+
+@pytest.mark.asyncio
+async def test_search_exa_sends_integration_header_and_contents():
+    captured = {}
+
+    async def fake_post(self, url, **kwargs):
+        captured["url"] = url
+        captured["json"] = kwargs.get("json")
+        captured["headers"] = kwargs.get("headers")
+        return _exa_response([
+            {
+                "url": "https://example.com/a",
+                "title": "A",
+                "highlights": ["highlight one", "highlight two"],
+                "text": "body text",
+            },
+        ])
+
+    with patch("httpx.AsyncClient.post", new=fake_post):
+        results = await _search_exa("test query", api_key="key-123", max_results=2)
+
+    assert captured["url"] == "https://api.exa.ai/search"
+    assert captured["headers"]["x-api-key"] == "key-123"
+    assert captured["headers"]["x-exa-integration"] == "forgegod"
+    body = captured["json"]
+    assert body["query"] == "test query"
+    assert body["type"] == "auto"
+    assert body["numResults"] == 2
+    assert "contents" in body
+    assert "highlights" in body["contents"]
+    assert "text" in body["contents"]
+
+    assert results == [
+        {
+            "url": "https://example.com/a",
+            "title": "A",
+            "snippet": "highlight one highlight two",
+        },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_search_exa_handles_http_error_gracefully():
+    async def fake_post(self, url, **kwargs):
+        request = httpx.Request("POST", "https://api.exa.ai/search")
+        return httpx.Response(500, content=b"boom", request=request)
+
+    with patch("httpx.AsyncClient.post", new=fake_post):
+        results = await _search_exa("q", api_key="k", max_results=1)
+
+    assert results == []
+
+
+def test_exa_snippet_prefers_highlights():
+    snippet = _exa_snippet({
+        "highlights": ["alpha", "beta"],
+        "summary": "should not be used",
+        "text": "should not be used",
+    })
+    assert snippet == "alpha beta"
+
+
+def test_exa_snippet_falls_back_to_summary():
+    snippet = _exa_snippet({
+        "highlights": [],
+        "summary": "summary content",
+        "text": "text content",
+    })
+    assert snippet == "summary content"
+
+
+def test_exa_snippet_falls_back_to_text():
+    snippet = _exa_snippet({"text": "  body text  "})
+    assert snippet == "body text"
+
+
+def test_exa_snippet_empty_when_no_content():
+    assert _exa_snippet({}) == ""
