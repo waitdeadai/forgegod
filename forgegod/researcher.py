@@ -200,6 +200,7 @@ class Researcher:
         searxng_url = self.recon.searxng_url
         brave_key = self.recon.brave_api_key
         exa_key = self.recon.exa_api_key
+        tavily_key = self.recon.tavily_api_key
 
         async def _search_one(q: SearchQuery) -> list[SearchResult]:
             raw = await web_search(
@@ -209,6 +210,7 @@ class Researcher:
                 searxng_url=searxng_url,
                 brave_api_key=brave_key,
                 exa_api_key=exa_key,
+                tavily_api_key=tavily_key,
             )
             try:
                 items = json.loads(raw)

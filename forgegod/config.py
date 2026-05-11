@@ -262,10 +262,11 @@ class ReconConfig(BaseModel):
     enabled: bool = False
     max_searches: int = 15
     max_fetch_chars: int = 3000  # per-page content limit
-    search_provider: str = "searxng"  # searxng, brave, exa
+    search_provider: str = "searxng"  # searxng, duckduckgo, brave, exa, tavily
     searxng_url: str = "http://localhost:8888"
     brave_api_key: str = ""
     exa_api_key: str = ""
+    tavily_api_key: str = ""
     debate_rounds: int = 3
     min_approval_score: float = 7.0  # 0-10, plan must score above this
     cache_results: bool = True
