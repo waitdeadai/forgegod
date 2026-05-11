@@ -144,6 +144,30 @@ async def _search_exa(
         return []
 
 
+async def _search_tavily(
+    query: str, api_key: str, max_results: int = 5
+) -> list[dict]:
+    """Search via Tavily API (optimised for LLM pipelines)."""
+    if not api_key:
+        return []
+    try:
+        from tavily import AsyncTavilyClient
+
+        client = AsyncTavilyClient(api_key=api_key)
+        data = await client.search(query=query, max_results=max_results)
+        results = []
+        for r in data.get("results", [])[:max_results]:
+            results.append({
+                "url": r.get("url", ""),
+                "title": r.get("title", ""),
+                "snippet": (r.get("content") or "")[:500],
+            })
+        return results
+    except Exception as e:
+        logger.warning("Tavily search failed: %s", e)
+        return []
+
+
 async def _search_duckduckgo(
     query: str, max_results: int = 5
 ) -> list[dict]:
@@ -174,15 +198,16 @@ async def web_search(
     query: str, provider: str = "searxng", max_results: int = 5,
     searxng_url: str = "http://localhost:8888",
     brave_api_key: str = "", exa_api_key: str = "",
+    tavily_api_key: str = "",
 ) -> str:
     """Search the web. Returns JSON array of {url, title, snippet}.
 
-    Tries providers in order: requested → SearXNG → Brave → Exa.
+    Tries providers in order: requested → SearXNG → DuckDuckGo → Brave → Exa → Tavily.
     """
     results: list[dict] = []
 
     # Try requested provider first, then fallback chain
-    providers = [provider, "searxng", "duckduckgo", "brave", "exa"]
+    providers = [provider, "searxng", "duckduckgo", "brave", "exa", "tavily"]
     seen = set()
 
     for p in providers:
@@ -198,6 +223,8 @@ async def web_search(
             results = await _search_brave(query, brave_api_key, max_results)
         elif p == "exa":
             results = await _search_exa(query, exa_api_key, max_results)
+        elif p == "tavily":
+            results = await _search_tavily(query, tavily_api_key, max_results)
 
     if not results:
         return json.dumps({"error": "All search providers failed", "query": query})
