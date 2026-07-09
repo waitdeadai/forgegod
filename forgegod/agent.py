@@ -67,6 +67,9 @@ VERIFICATION_COMMAND_MARKERS = (
     "yarn lint", "bun run lint", "cargo test", "go test", "deno test",
     "python ", "python3 ", "node ", "php ", "ruby ", "bash ", "sh ",
     "curl ", "wget ", "ping ", "openssl ",
+    # C/C++ build & test tools
+    "cmake", "make ", "ninja", "ctest", "g++", "clang++",
+    "gcc ", "clang ", "meson ", "nasm ",
 )
 PERMISSION_ERROR_MARKERS = (
     "blocked in read-only permission mode",
@@ -247,12 +250,14 @@ class Agent:
         self._gutter_tracker: dict[str, int] = {}  # action_hash -> repeat count
         self._error_solutions_used: list[str] = []  # avoid re-injecting same solution
         self._post_edit_verification_commands: list[str] = []
+        self._last_verification_exit_code: int | None = None  # exit code of last verification bash command
         self._reviewed_final_diff = False
         self._last_write_turn = -1  # turn number of the last write_file/edit_file call
         self._bash_ran_after_last_write = False  # True if bash ran after the last write
         self._closure_ready_turns = 0
         self._completion_closeout_prompted = False
         self._auto_research_count = 0  # auto-research trigger count
+        self._consecutive_empty_responses = 0  # abort story after 4 in a row
         self._last_denied_tool: str | None = None  # tool name from last permission error
         self._latest_research_brief: ResearchBrief | None = None
 
@@ -340,6 +345,7 @@ class Agent:
                 requires_code_changes
                 and self.config.agent.research_before_code
                 and self.config.security.permission_mode != "read-only"
+                and "Build/Test failure" not in task
             ):
                 await self._maybe_auto_research(
                     AutoResearchReason.MANUAL,
@@ -397,6 +403,53 @@ class Agent:
                 )
                 self._accumulate_usage(usage)
                 self.budget.record(usage, role=self.role)
+
+                # Detect consecutive empty responses — the model may be "giving up"
+                # on a context it can't handle. After 4 in a row, abort the story
+                # so it gets a fresh agent instead of looping with poisoned context.
+                if not response_text or not response_text.strip():
+                    self._consecutive_empty_responses += 1
+                    logger.warning(
+                        "Empty model response (%d consecutive), turn=%d",
+                        self._consecutive_empty_responses, self._turn,
+                    )
+                    if self._consecutive_empty_responses >= 4:
+                        logger.warning(
+                            "Aborting story after %d consecutive empty responses",
+                            self._consecutive_empty_responses,
+                        )
+                        failed = self._build_result(
+                            success=False,
+                            output=(
+                                "[Agent aborted: model returned empty responses "
+                                f"{self._consecutive_empty_responses} times in a row. "
+                                "Story will retry with a fresh agent.]"
+                            ),
+                            elapsed=time.time() - start,
+                            error="consecutive empty responses",
+                        )
+                        await self._emit_event(
+                            "task_failed",
+                            error=failed.error,
+                            output=failed.output,
+                        )
+                        await self._record_episode(task_id, task, failed)
+                        return failed
+                    # Add a minimal message so the conversation can continue
+                    self.messages.append({
+                        "role": "assistant",
+                        "content": "",
+                    })
+                    self.messages.append({
+                        "role": "user",
+                        "content": (
+                            "[The model returned an empty response. "
+                            "Please continue working on the task.]"
+                        ),
+                    })
+                    continue
+                else:
+                    self._consecutive_empty_responses = 0
 
                 # BUG #1 FIX: Preserve <think> tags in message history for MiniMax M2.7.
                 # MiniMax uses <think> blocks for chain-of-thought. Stripping them before
@@ -1314,6 +1367,7 @@ class Agent:
 
         if tc.name in {"write_file", "edit_file"}:
             self._post_edit_verification_commands = []
+            self._last_verification_exit_code = None
             self._reviewed_final_diff = False
             self._closure_ready_turns = 0
             self._completion_closeout_prompted = False
@@ -1335,6 +1389,10 @@ class Agent:
             lowered = command.lower()
             if any(marker in lowered for marker in VERIFICATION_COMMAND_MARKERS):
                 self._post_edit_verification_commands.append(command)
+                # Parse exit code from bash output (format: "...\n[exit code: N]")
+                m = re.search(r'\[exit code: (\d+)\]', result.content)
+                if m:
+                    self._last_verification_exit_code = int(m.group(1))
             # Track that bash ran after a write — waives git_diff requirement
             if self._last_write_turn >= 0:
                 self._bash_ran_after_last_write = True
@@ -1428,6 +1486,19 @@ class Agent:
                     "Run at least one meaningful verification command after your last "
                     "code change (tests, lint, build, or typecheck)."
                 )
+
+        # Block completion if the last verification command failed (non-zero exit).
+        # Running a build/test that fails is NOT verification — it's evidence the code is broken.
+        if (
+            self._post_edit_verification_commands
+            and self._last_verification_exit_code is not None
+            and self._last_verification_exit_code != 0
+        ):
+            blockers.append(
+                f"Your last verification command exited with code "
+                f"{self._last_verification_exit_code} — the code is not passing. "
+                f"Fix the build/test failures before completing."
+            )
 
         return blockers
 

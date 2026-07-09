@@ -613,12 +613,12 @@ class RalphLoop:
     async def _collect_review_code(self, result, review_code: str | None = None) -> str:
         """Collect the best available code artifact for reviewer analysis."""
         if review_code:
-            return review_code[:6000]
+            return review_code[:12000]
         return await collect_review_artifact(
             self._workspace_root,
             files_changed=result.files_modified,
             fallback_text=result.output,
-            max_chars=6000,
+            max_chars=12000,
         )
 
     async def _current_dirty_files(self) -> set[str]:
@@ -723,6 +723,91 @@ class RalphLoop:
 
         return True
 
+    async def _run_verify_command(
+        self, command: str, story: Story, gate_name: str
+    ) -> bool:
+        """Run a build/test command. Returns True on exit 0, else routes story back to TODO.
+
+        On failure, the story is sent back to TODO with the compiler output
+        (tail-truncated) appended to error_log, so the next coder attempt
+        sees the exact errors.
+        """
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=str(self._workspace_root),
+            )
+            stdout, _ = await asyncio.wait_for(
+                proc.communicate(), timeout=self.config.verify.timeout_s
+            )
+            output = stdout.decode(errors="replace")
+            if proc.returncode != 0:
+                lines = output.splitlines()
+                max_lines = self.config.verify.max_fail_lines
+                # Extract error lines first — compiler errors contain
+                # "error:", "fatal", "undefined reference", etc.  These
+                # are what the agent needs to fix; the surrounding build
+                # progress ("[ 3%] Built target...") is noise.
+                error_patterns = (
+                    "error:", "Error ", "fatal", "undefined reference",
+                    "cannot find", "No rule to make", "CMake Error",
+                    "FAILED:", "collect2:",
+                )
+                error_lines = [
+                    line for line in lines
+                    if any(p in line for p in error_patterns)
+                ]
+                if error_lines:
+                    truncated = "\n".join(error_lines[-max_lines:])
+                else:
+                    # No recognized error pattern — fall back to tail
+                    tail = lines[-max_lines:] if len(lines) > max_lines else lines
+                    truncated = "\n".join(tail)
+                logger.warning(
+                    f"Story [{story.id}] {gate_name} gate FAILED "
+                    f"(exit {proc.returncode})"
+                )
+                story.status = StoryStatus.TODO
+                story.error_log.append(
+                    f"{gate_name.capitalize()} failed (exit {proc.returncode}):\n"
+                    f"{truncated}"
+                )
+                self.prd.learnings.append(
+                    f"[{story.id}] {gate_name.capitalize()} gate failed — "
+                    f"see error_log for compiler output"
+                )
+                self._save_prd()
+                return False
+            logger.info(f"Story [{story.id}] {gate_name} gate passed")
+            return True
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Story [{story.id}] {gate_name} gate timed out "
+                f"after {self.config.verify.timeout_s}s"
+            )
+            story.status = StoryStatus.TODO
+            story.error_log.append(
+                f"{gate_name.capitalize()} command timed out "
+                f"after {self.config.verify.timeout_s}s"
+            )
+            self._save_prd()
+            return False
+        except FileNotFoundError as e:
+            logger.warning(
+                f"Story [{story.id}] {gate_name} gate: "
+                f"command not found — skipping ({e})"
+            )
+            # Don't block on missing toolchain (e.g. cmake not installed)
+            return True
+        except Exception as e:
+            logger.warning(
+                f"Story [{story.id}] {gate_name} gate error, skipping: {e}"
+            )
+            # Don't block on infrastructure errors
+            return True
+
     async def _finalize_story_result(
         self,
         story: Story,
@@ -798,6 +883,20 @@ class RalphLoop:
                     self._save_prd()
                     return
 
+            # ── Build/Test Gate — require compilation success ────────────────
+            if self.config.verify.enabled and self.config.verify.build_command:
+                build_ok = await self._run_verify_command(
+                    self.config.verify.build_command, story, "build"
+                )
+                if not build_ok:
+                    return
+            if self.config.verify.enabled and self.config.verify.test_command:
+                test_ok = await self._run_verify_command(
+                    self.config.verify.test_command, story, "test"
+                )
+                if not test_ok:
+                    return
+            # ── End Build/Test Gate ───────────────────────────────────────────
             # ── Effort Gate ──────────────────────────────────────────────────────
             if self.effort_gate:
                 try:
@@ -949,6 +1048,35 @@ class RalphLoop:
                         logger.info(f"Story [{story.id}] pushed to origin/main")
                 except Exception:
                     logger.debug("Auto-push skipped")
+            # ── Phase completion check — generate checklist + stop loop ──────
+            phase = story.id.split('-')[0] if '-' in story.id else None
+            if phase:
+                all_done = all(
+                    s.status in (StoryStatus.DONE, StoryStatus.BLOCKED, StoryStatus.SKIPPED)
+                    for s in self.prd.stories
+                    if s.id.startswith(phase + '-')
+                )
+                has_checklist = (self.config.project_dir / f"checklist_{phase}.xlsx").exists()
+                if all_done and not has_checklist:
+                    import subprocess
+                    checklist_path = self.config.project_dir / f"checklist_{phase}.xlsx"
+                    gen_script = self.config.project_dir.parent / "tests" / "generate_checklist.py"
+                    py_bin = str(self.config.project_dir.parent / ".venv" / "bin" / "python")
+                    try:
+                        subprocess.run(
+                            [py_bin, str(gen_script), phase, "-f", "xlsx",
+                             "-o", str(checklist_path)],
+                            cwd=str(self._workspace_root),
+                            capture_output=True, timeout=10,
+                        )
+                        logger.info(f"Phase {phase} complete — checklist generated: {checklist_path}")
+                    except Exception as e:
+                        logger.warning(f"Could not generate checklist for phase {phase}: {e}")
+                    # Drop killswitch so the loop stops for manual testing
+                    killswitch = self.config.project_dir / "KILLSWITCH"
+                    killswitch.touch()
+                    logger.info(f"Phase {phase} complete — killswitch placed, loop will stop")
+            # ── End phase completion check ───────────────────────────────────────
         else:
             self._handle_story_failure(story, result.error or result.output)
             self._export_story_summary(story, result=result)
@@ -1102,9 +1230,22 @@ class RalphLoop:
                 prompt += f"- {learning}\n"
 
         if story.error_log:
-            prompt += "\n## Previous attempt errors (FIX THESE)\n"
+            last_err = story.error_log[-1]
+            # Build/test gate failures just need compiler errors fixed —
+            # no research needed.  Other failures (reviewer, timeout, crash)
+            # may indicate a wrong approach, so research is still warranted.
+            is_build_failure = (
+                last_err.startswith("Build failed")
+                or last_err.startswith("Test failed")
+            )
+            header = (
+                "## Build/Test failure — fix compiler errors (no research needed)"
+                if is_build_failure
+                else "## Previous attempt errors (FIX THESE)"
+            )
+            prompt += f"\n{header}\n"
             for err in story.error_log[-2:]:
-                prompt += f"- {err[:500]}\n"
+                prompt += f"- {err[:2000]}\n"
 
         # Inject relevant memory for this story
         if self.memory:

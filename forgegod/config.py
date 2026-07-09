@@ -320,6 +320,21 @@ class SOTAMonitorConfig(BaseModel):
     cache_ttl_hours: int = 24
 
 
+
+class VerifyConfig(BaseModel):
+    """Build/test verification gate — enforces compilation before story completion.
+
+    When enabled, the loop runs build_command (and optionally test_command) as a
+    subprocess before marking a story DONE.  Non-zero exit routes the story back
+    to TODO with the compiler output appended to error_log.
+    """
+
+    enabled: bool = True
+    build_command: str = ""  # e.g. "cmake --build build"
+    test_command: str = ""   # e.g. "ctest --test-dir build --output-on-failure"
+    timeout_s: float = 300.0
+    max_fail_lines: int = 50  # truncate compiler output stored in error_log
+
 class SubagentsConfig(BaseModel):
     """Parallel subagent orchestration settings."""
 
@@ -396,6 +411,7 @@ class ForgeGodConfig(BaseModel):
     effort: EffortConfig = Field(default_factory=EffortConfig)
     deep_research: DeepResearchConfig = Field(default_factory=DeepResearchConfig)
     sota_monitor: SOTAMonitorConfig = Field(default_factory=SOTAMonitorConfig)
+    verify: VerifyConfig = Field(default_factory=VerifyConfig)
 
     # Runtime paths (not from config file)
     global_dir: Path = DEFAULT_GLOBAL_DIR

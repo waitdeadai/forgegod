@@ -5,6 +5,7 @@ Adapted: Redis -> local tracking, MiniMax -> OpenAI, added OpenRouter.
 """
 
 from __future__ import annotations
+import asyncio
 
 import json
 import logging
@@ -834,48 +835,101 @@ class ModelRouter:
             body["tools"] = tools
 
         client = self._get_client("openrouter", timeout=120.0)
-        # Boundary 1 — what goes IN to the LLM
-        self.wire_logger.debug(
-            ">> SENT [%s] | %d msgs | msgs=%r",
-            model,
-            len(messages),
-            body["messages"],
-        )
-        resp = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=body,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        # Boundary 2 — what comes OUT of the LLM
-        self.wire_logger.debug(
-            "<< RECV [%s] | raw=%r",
-            model,
-            data,
-        )
 
-        choice = data["choices"][0]
-        msg = choice.get("message", {})
-        content = msg.get("content", "")
+        # Retry on empty/null content — with a strict provider filter,
+        # OpenRouter may return "content": null when no provider is
+        # available for the requested model.  Retry gives the router a
+        # chance to find a provider on subsequent attempts.
+        max_retries = 3
+        retry_delay = 4.0  # seconds between attempts
+        content = ""
+        usage: dict[str, Any] = {}
 
-        # Handle OpenRouter tool calls (OpenAI-compatible format)
-        tool_calls_raw = msg.get("tool_calls", [])
-        if tool_calls_raw:
-            tool_calls_json = []
-            for tc in tool_calls_raw:
-                fn = tc.get("function", {})
-                tool_calls_json.append({
-                    "id": tc.get("id", ""),
-                    "name": fn.get("name", ""),
-                    "arguments": fn.get("arguments", "{}"),
-                })
-            content = json.dumps({"tool_calls": tool_calls_json})
+        for attempt in range(max_retries + 1):
+            # Boundary 1 — what goes IN to the LLM
+            self.wire_logger.debug(
+                ">> SENT [%s] | %d msgs | attempt=%d/%d | msgs=%r",
+                model, len(messages), attempt + 1, max_retries + 1,
+                body["messages"],
+            )
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            # Boundary 2 — what comes OUT of the LLM
+            self.wire_logger.debug(
+                "<< RECV [%s] | attempt=%d/%d | raw=%r",
+                model, attempt + 1, max_retries + 1, data,
+            )
 
-        usage = data.get("usage", {})
+            choices = data.get("choices", [])
+            if not choices:
+                # No choices — no provider was available for this model
+                if attempt < max_retries:
+                    logger.warning(
+                        "OpenRouter returned no choices (attempt %d/%d), "
+                        "retrying in %.0fs",
+                        attempt + 1, max_retries + 1, retry_delay,
+                    )
+                    await asyncio.sleep(retry_delay)
+                    continue
+                logger.warning(
+                    "OpenRouter returned no choices after %d attempts",
+                    max_retries + 1,
+                )
+                usage = data.get("usage", {})
+                break
+
+            choice = choices[0]
+            msg = choice.get("message", {})
+            # Normalize None -> "" — OpenRouter returns "content": null
+            # when the model emits only tool calls or hits a content filter.
+            # The bare .get("content", "") default does NOT cover this case
+            # because the key *exists* with value null.
+            content = msg.get("content") or ""
+
+            # Handle OpenRouter tool calls (OpenAI-compatible format)
+            tool_calls_raw = msg.get("tool_calls", [])
+            if tool_calls_raw:
+                tool_calls_json = []
+                for tc in tool_calls_raw:
+                    fn = tc.get("function", {})
+                    tool_calls_json.append({
+                        "id": tc.get("id", ""),
+                        "name": fn.get("name", ""),
+                        "arguments": fn.get("arguments", "{}"),
+                    })
+                content = json.dumps({"tool_calls": tool_calls_json})
+                # Tool calls are a valid response — no retry needed
+                usage = data.get("usage", {})
+                break
+
+            if content:
+                # Got text content — done
+                usage = data.get("usage", {})
+                break
+
+            # Empty content, no tool calls — retry if attempts remain
+            usage = data.get("usage", {})
+            if attempt < max_retries:
+                logger.warning(
+                    "OpenRouter returned empty response (attempt %d/%d), "
+                    "retrying in %.0fs",
+                    attempt + 1, max_retries + 1, retry_delay,
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                logger.warning(
+                    "OpenRouter returned empty response after %d attempts",
+                    max_retries + 1,
+                )
+
         return content, {
             "input_tokens": usage.get("prompt_tokens", 0),
             "output_tokens": usage.get("completion_tokens", 0),
